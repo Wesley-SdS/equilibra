@@ -1,7 +1,7 @@
-import { and, eq, inArray } from "drizzle-orm"
+import { and, desc, eq, inArray, ne, sql } from "drizzle-orm"
 import type { Db } from "./db"
-import { answers, campaigns, responses, sectors } from "./db/schema"
-import { DIMENSIONS, K_ANONYMITY, riskLevel, scoreDimensions, type DimensionId } from "@/lib/methodology"
+import { actions, answers, campaigns, companies, memberships, responses, sectors } from "./db/schema"
+import { DIMENSIONS, K_ANONYMITY, QUESTIONS, itemRisk, riskLevel, scoreDimensions, type DimensionId } from "@/lib/methodology"
 
 export type HeatmapRow = {
   key: string
@@ -106,3 +106,95 @@ export async function computeInsights(db: Db, companyId: string, campaignId: str
 }
 
 export type Insights = NonNullable<Awaited<ReturnType<typeof computeInsights>>>
+
+/** Evolução do índice e de cada dimensão ao longo das campanhas (mais antiga primeiro). */
+export async function computeHistory(db: Db, companyId: string) {
+  const list = await db.select().from(campaigns).where(eq(campaigns.companyId, companyId)).orderBy(campaigns.startsAt)
+  const points = []
+  for (const c of list) {
+    const data = await computeInsights(db, companyId, c.id)
+    if (!data || data.totals.responses < K_ANONYMITY) continue
+    points.push({
+      id: c.id,
+      name: c.name,
+      startsAt: c.startsAt,
+      responses: data.totals.responses,
+      rate: data.totals.rate,
+      index: data.totals.index,
+      scores: Object.fromEntries(data.ranking.map((r) => [r.id, r.score])) as Record<DimensionId, number>,
+    })
+  }
+  return points
+}
+
+/**
+ * Detalhe de uma dimensão: score por item e distribuição das respostas.
+ * Só é exibido com pelo menos K respostas no total, para não expor ninguém.
+ */
+export async function computeDimension(db: Db, companyId: string, campaignId: string, dimension: DimensionId) {
+  const base = await computeInsights(db, companyId, campaignId)
+  if (!base) return null
+  const qs = QUESTIONS.filter((q) => q.dimension === dimension)
+  const resp = await db.select({ id: responses.id }).from(responses).where(eq(responses.campaignId, campaignId))
+  if (resp.length < K_ANONYMITY) {
+    return { campaign: base.campaign, enough: false as const, items: [], sectors: [], score: 0 }
+  }
+  const ans = await db
+    .select()
+    .from(answers)
+    .where(
+      and(
+        inArray(
+          answers.responseId,
+          resp.map((r) => r.id)
+        ),
+        inArray(
+          answers.questionId,
+          qs.map((q) => q.id)
+        )
+      )
+    )
+  const items = qs.map((q) => {
+    const values = ans.filter((a) => a.questionId === q.id)
+    const distribution = [1, 2, 3, 4, 5].map((v) => values.filter((a) => a.value === v).length)
+    const risk = values.length ? Math.round((values.reduce((s, a) => s + itemRisk(q, a.value), 0) / values.length) * 25) : 0
+    return { id: q.id, text: q.text, protective: !q.risk, risk, level: riskLevel(risk), distribution, n: values.length }
+  })
+  const sectorScores = base.heatmap
+    .map((h) => ({ key: h.key, label: h.label, responses: h.responses, score: h.scores[dimension] ?? 0 }))
+    .sort((a, b) => b.score - a.score)
+  const score = base.ranking.find((r) => r.id === dimension)?.score ?? 0
+  return { campaign: base.campaign, enough: true as const, items: items.sort((a, b) => b.risk - a.risk), sectors: sectorScores, score }
+}
+
+/** Resumo de todas as empresas do usuário, para a carteira de contadores e SST. */
+export async function computePortfolio(db: Db, userId: string) {
+  const list = await db
+    .select({ id: companies.id, name: companies.name, employees: companies.employees, role: memberships.role })
+    .from(memberships)
+    .innerJoin(companies, eq(companies.id, memberships.companyId))
+    .where(eq(memberships.userId, userId))
+    .orderBy(companies.name)
+  const out = []
+  for (const co of list) {
+    const latest = await db.query.campaigns.findFirst({
+      where: eq(campaigns.companyId, co.id),
+      orderBy: desc(campaigns.createdAt),
+    })
+    const data = latest ? await computeInsights(db, co.id, latest.id) : null
+    const [{ open }] = (await db
+      .select({ open: sql<number>`count(*)::int` })
+      .from(actions)
+      .where(and(eq(actions.companyId, co.id), ne(actions.status, "done")))) as [{ open: number }]
+    out.push({
+      ...co,
+      campaign: latest ? { name: latest.name, status: latest.status, endsAt: latest.endsAt } : null,
+      responses: data?.totals.responses ?? 0,
+      rate: data?.totals.rate ?? 0,
+      index: data && data.totals.responses ? data.totals.index : null,
+      alerts: data?.totals.alerts ?? 0,
+      openActions: open,
+    })
+  }
+  return out
+}

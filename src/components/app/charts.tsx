@@ -1,6 +1,7 @@
 "use client"
 
 import { motion } from "motion/react"
+import Link from "next/link"
 import { useState } from "react"
 import { barStyle, cellStyle, RiskBadge } from "@/components/ui/primitives"
 import { DIMENSIONS, riskLevel, type DimensionId } from "@/lib/methodology"
@@ -63,13 +64,19 @@ export function Heatmap({ rows }: { rows: Row[] }) {
   )
 }
 
-export function RiskBars({ items }: { items: { id: string; name: string; score: number }[] }) {
+export function RiskBars({ items, linkTo }: { items: { id: string; name: string; score: number }[]; linkTo?: (id: string) => string }) {
   return (
     <ul className="flex flex-col gap-4">
       {items.map((it, i) => (
-        <li key={it.id} className="flex flex-col gap-2">
+        <li key={it.id} className="group relative flex flex-col gap-2">
           <div className="flex items-center justify-between gap-3 text-sm">
-            <span>{it.name}</span>
+            {linkTo ? (
+              <Link href={linkTo(it.id)} className="after:absolute after:inset-0 group-hover:text-brand">
+                {it.name}
+              </Link>
+            ) : (
+              <span>{it.name}</span>
+            )}
             <span className="flex items-center gap-2">
               <span className="font-mono text-muted">{it.score}</span>
               <RiskBadge score={it.score} />

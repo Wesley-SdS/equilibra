@@ -3,6 +3,7 @@ import { ZodError } from "zod"
 import { j } from "./jstack"
 import { authRouter } from "./routers/auth-router"
 import { channelRouter, surveyRouter } from "./routers/public-router"
+import { companyRouter, teamRouter } from "./routers/team-router"
 import {
   actionsRouter,
   campaignsRouter,
@@ -41,6 +42,8 @@ const appRouter = j.mergeRouters(api, {
   survey: withErrors(surveyRouter),
   channel: withErrors(channelRouter),
   channelAdmin: withErrors(channelAdminRouter),
+  team: withErrors(teamRouter),
+  company: withErrors(companyRouter),
 })
 
 export type AppRouter = typeof appRouter

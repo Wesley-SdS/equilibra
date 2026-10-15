@@ -14,17 +14,57 @@ export const companies = pgTable("companies", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 })
 
+export const ROLES = ["owner", "admin", "viewer"] as const
+export type Role = (typeof ROLES)[number]
+
 export const users = pgTable("users", {
+  id: id(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+})
+
+// Um usuário pode acessar várias empresas (ex.: contador ou consultoria de SST com carteira).
+export const memberships = pgTable(
+  "memberships",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    companyId: text("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    role: text("role", { enum: ROLES }).notNull().default("owner"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.companyId] })]
+)
+
+export const invites = pgTable("invites", {
   id: id(),
   companyId: text("company_id")
     .notNull()
     .references(() => companies.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  passwordHash: text("password_hash").notNull(),
-  role: text("role", { enum: ["owner", "admin", "viewer"] })
+  email: text("email").notNull(),
+  role: text("role", { enum: ROLES }).notNull().default("viewer"),
+  token: text("token").notNull().unique(),
+  invitedBy: text("invited_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  acceptedAt: timestamp("accepted_at"),
+})
+
+export const auditLog = pgTable("audit_log", {
+  id: id(),
+  companyId: text("company_id")
     .notNull()
-    .default("owner"),
+    .references(() => companies.id, { onDelete: "cascade" }),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+  action: text("action").notNull(),
+  entity: text("entity").notNull(),
+  entityId: text("entity_id"),
+  summary: text("summary").notNull(),
+  at: timestamp("at").notNull().defaultNow(),
 })
 
 export const sectors = pgTable("sectors", {

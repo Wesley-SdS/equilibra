@@ -6,9 +6,11 @@ import { Button, Card, EmptyState, Select, Spinner } from "@/components/ui/primi
 import { useToast } from "@/components/ui/toast"
 import { CHANNEL_STATUS, categoryLabel } from "@/lib/channel"
 import { client } from "@/lib/client"
+import { useCan } from "@/lib/hooks"
 import { formatDate } from "@/lib/utils"
 
 export default function ChannelAdminPage() {
+  const can = useCan()
   const qc = useQueryClient()
   const toast = useToast()
   const me = useQuery({ queryKey: ["me"], queryFn: async () => (await client.auth.me.$get()).json() })
@@ -55,6 +57,7 @@ export default function ChannelAdminPage() {
                 <Select
                   aria-label={`Status do relato ${r.protocol}`}
                   className="h-9 w-40 text-sm"
+                  disabled={!can.edit}
                   value={r.status}
                   onChange={(e) => setStatus.mutate({ id: r.id, status: e.target.value as keyof typeof CHANNEL_STATUS })}
                 >

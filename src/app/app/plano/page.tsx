@@ -2,11 +2,13 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { AnimatePresence, motion } from "motion/react"
-import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
+import { Suspense, useEffect, useState } from "react"
 import { PageHeader } from "@/components/app/page-header"
 import { Button, Field, Input, Select, Spinner, Textarea } from "@/components/ui/primitives"
 import { useToast } from "@/components/ui/toast"
 import { client } from "@/lib/client"
+import { useCan } from "@/lib/hooks"
 import { DIMENSIONS, dimensionMeta, type DimensionId } from "@/lib/methodology"
 import { cn, formatDate } from "@/lib/utils"
 
@@ -32,10 +34,17 @@ type Draft = {
 
 const EMPTY: Draft = { dimension: "demandas", what: "", why: "", sectorId: null, who: "", due: "", how: "", cost: "", status: "todo" }
 
-export default function PlanPage() {
+function PlanContent() {
+  const can = useCan()
+  const params = useSearchParams()
   const qc = useQueryClient()
   const toast = useToast()
   const [editing, setEditing] = useState<Draft | null>(null)
+  useEffect(() => {
+    if (params.get("nova") !== "1") return
+    const dim = DIMENSIONS.find((d) => d.id === params.get("dimensao"))
+    setEditing({ ...EMPTY, dimension: dim?.id ?? EMPTY.dimension })
+  }, [params])
 
   const actions = useQuery({ queryKey: ["actions"], queryFn: async () => (await client.actions.list.$get()).json() })
   const sectors = useQuery({ queryKey: ["sectors"], queryFn: async () => (await client.sectors.list.$get()).json() })
@@ -80,7 +89,7 @@ export default function PlanPage() {
       <PageHeader
         title="Plano de ação"
         description="Medidas de prevenção no formato 5W2H para cada risco identificado. É isso que a fiscalização vai pedir junto com o inventário."
-        actions={<Button onClick={() => setEditing({ ...EMPTY })}>Nova ação</Button>}
+        actions={can.edit ? <Button onClick={() => setEditing({ ...EMPTY })}>Nova ação</Button> : undefined}
       />
       <div className="mb-6 flex items-center gap-4">
         <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
@@ -123,7 +132,7 @@ export default function PlanPage() {
                       <span className="self-start rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px] text-muted">
                         {dimensionMeta(a.dimension)?.name}
                       </span>
-                      <button type="button" onClick={() => setEditing({ ...a, status: a.status as Status, dimension: a.dimension as DimensionId })} className="text-left text-[15px] font-medium leading-snug hover:text-brand">
+                      <button type="button" disabled={!can.edit} onClick={() => setEditing({ ...a, status: a.status as Status, dimension: a.dimension as DimensionId })} className="text-left text-[15px] font-medium leading-snug hover:text-brand">
                         {a.what}
                       </button>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-subtle">
@@ -131,7 +140,7 @@ export default function PlanPage() {
                         {a.who && <span>Quem: {a.who}</span>}
                         {a.due && <span>Prazo: {formatDate(a.due)}</span>}
                       </div>
-                      <div className="flex gap-1.5">
+                      {can.edit && <div className="flex gap-1.5">
                         {COLUMNS.filter((c) => c.id !== col.id).map((c) => (
                           <button
                             key={c.id}
@@ -142,7 +151,7 @@ export default function PlanPage() {
                             → {c.label}
                           </button>
                         ))}
-                      </div>
+                      </div>}
                     </motion.article>
                   ))}
                 </AnimatePresence>
@@ -163,6 +172,14 @@ export default function PlanPage() {
         onDelete={(id) => remove.mutate(id)}
       />
     </>
+  )
+}
+
+export default function PlanPage() {
+  return (
+    <Suspense>
+      <PlanContent />
+    </Suspense>
   )
 }
 

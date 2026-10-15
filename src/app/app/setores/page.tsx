@@ -8,9 +8,11 @@ import { PageHeader } from "@/components/app/page-header"
 import { Button, ButtonLink, Card, Field, Input, Spinner } from "@/components/ui/primitives"
 import { useToast } from "@/components/ui/toast"
 import { client } from "@/lib/client"
+import { useCan } from "@/lib/hooks"
 import { K_ANONYMITY } from "@/lib/methodology"
 
 function SectorsContent() {
+  const can = useCan()
   const qc = useQueryClient()
   const toast = useToast()
   const isNew = useSearchParams().get("novo") === "1"
@@ -51,6 +53,7 @@ function SectorsContent() {
         </motion.div>
       )}
       <div className="grid gap-4 lg:grid-cols-[1fr_1.4fr]">
+        {can.edit && (
         <Card className="self-start">
           <h2 className="mb-4 text-lg font-semibold">Novo setor</h2>
           <form
@@ -72,6 +75,7 @@ function SectorsContent() {
             </Button>
           </form>
         </Card>
+        )}
         <Card>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Setores cadastrados</h2>
@@ -97,7 +101,7 @@ function SectorsContent() {
                       <p className="font-medium">{s.name}</p>
                       <p className="text-sm text-subtle">{s.headcount} pessoas</p>
                     </div>
-                    <Button
+                    {can.edit && <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => {
@@ -105,7 +109,7 @@ function SectorsContent() {
                       }}
                     >
                       Remover
-                    </Button>
+                    </Button>}
                   </motion.li>
                 ))}
               </AnimatePresence>

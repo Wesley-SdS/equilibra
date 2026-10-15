@@ -8,7 +8,9 @@ import { Heatmap, Legend, RiskBars, Ring } from "@/components/app/charts"
 import { PageHeader } from "@/components/app/page-header"
 import { Button, ButtonLink, Card, EmptyState, RiskBadge, Select, Spinner } from "@/components/ui/primitives"
 import { useToast } from "@/components/ui/toast"
+import { OnboardingChecklist } from "@/components/app/onboarding"
 import { client } from "@/lib/client"
+import { useCan } from "@/lib/hooks"
 import { K_ANONYMITY, RISK_LEVELS } from "@/lib/methodology"
 import { formatDate } from "@/lib/utils"
 
@@ -16,6 +18,7 @@ export default function OverviewPage() {
   const router = useRouter()
   const toast = useToast()
   const qc = useQueryClient()
+  const can = useCan()
   const [campaignId, setCampaignId] = useState<string | undefined>()
 
   const campaigns = useQuery({
@@ -25,6 +28,8 @@ export default function OverviewPage() {
   const insights = useQuery({
     queryKey: ["insights", campaignId],
     queryFn: async () => (await client.insights.overview.$get({ campaignId })).json(),
+    // Campanha ativa: atualiza a cada 10 s para acompanhar as respostas chegando.
+    refetchInterval: (q) => (q.state.data?.campaign.status === "active" ? 10_000 : false),
   })
   const suggest = useMutation({
     mutationFn: async (id: string) => (await client.actions.suggest.$post({ campaignId: id })).json(),
@@ -48,6 +53,7 @@ export default function OverviewPage() {
     return (
       <>
         <PageHeader title="Visão geral" description="Os indicadores aparecem aqui assim que a primeira campanha receber respostas." />
+        <OnboardingChecklist responses={0} hasCampaign={false} />
         <EmptyState
           title="Nenhuma campanha ainda"
           text="Cadastre os setores da empresa e lance a primeira avaliação psicossocial."
@@ -63,7 +69,20 @@ export default function OverviewPage() {
   return (
     <>
       <PageHeader
-        eyebrow={`${formatDate(data.campaign.startsAt)} – ${formatDate(data.campaign.endsAt)}`}
+        eyebrow={
+          <span className="flex items-center gap-2">
+            {data.campaign.status === "active" && (
+              <span className="flex items-center gap-1.5 rounded-full bg-brand/10 px-2 py-0.5 text-xs font-medium text-brand">
+                <span className="relative flex size-1.5">
+                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-brand opacity-75" />
+                  <span className="relative inline-flex size-1.5 rounded-full bg-brand" />
+                </span>
+                Ao vivo
+              </span>
+            )}
+            {formatDate(data.campaign.startsAt)} – {formatDate(data.campaign.endsAt)}
+          </span>
+        }
         title={data.campaign.name}
         actions={
           <>
@@ -90,10 +109,15 @@ export default function OverviewPage() {
             >
               Copiar link
             </Button>
+            <ButtonLink href={`/app/campanhas/${data.campaign.id}/kit`} variant="secondary">
+              Kit de divulgação
+            </ButtonLink>
             <ButtonLink href="/app/relatorio">Gerar relatório</ButtonLink>
           </>
         }
       />
+
+      <OnboardingChecklist responses={totals.responses} hasCampaign />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Kpi i={0} label="Taxa de resposta">
@@ -148,8 +172,8 @@ export default function OverviewPage() {
           <div className="mb-5 flex items-center justify-between gap-3">
             <h2 className="text-lg font-semibold">Ranking de riscos</h2>
           </div>
-          <RiskBars items={data.ranking} />
-          {totals.alerts > 0 && (
+          <RiskBars items={data.ranking} linkTo={(id) => `/app/dimensao/${id}`} />
+          {totals.alerts > 0 && can.edit && (
             <div className="mt-6 rounded-2xl border border-brand/25 bg-brand/[0.06] p-4">
               <p className="text-sm text-fg">
                 {totals.alerts} dimensão(ões) com risco alto ou crítico precisam de ação registrada no PGR.

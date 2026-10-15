@@ -2,11 +2,13 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { AnimatePresence, motion } from "motion/react"
-import { useState } from "react"
+import { useSearchParams } from "next/navigation"
+import { Suspense, useState } from "react"
 import { PageHeader } from "@/components/app/page-header"
 import { Button, ButtonLink, Card, EmptyState, Field, Input, Spinner } from "@/components/ui/primitives"
 import { useToast } from "@/components/ui/toast"
 import { client } from "@/lib/client"
+import { useCan } from "@/lib/hooks"
 import { cn, formatDate } from "@/lib/utils"
 
 function isoIn(days: number) {
@@ -15,10 +17,11 @@ function isoIn(days: number) {
   return d.toISOString().slice(0, 10)
 }
 
-export default function CampaignsPage() {
+function CampaignsContent() {
+  const can = useCan()
   const qc = useQueryClient()
   const toast = useToast()
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(useSearchParams().get("nova") === "1")
   const [form, setForm] = useState({ name: "", startsAt: isoIn(0), endsAt: isoIn(14) })
 
   const campaigns = useQuery({
@@ -46,11 +49,11 @@ export default function CampaignsPage() {
       <PageHeader
         title="Campanhas"
         description="Cada campanha gera um link anônimo para a equipe responder. Recomendamos reavaliar a cada 6 meses."
-        actions={<Button onClick={() => setOpen((v) => !v)}>{open ? "Cancelar" : "Nova campanha"}</Button>}
+        actions={can.edit ? <Button onClick={() => setOpen((v) => !v)}>{open ? "Cancelar" : "Nova campanha"}</Button> : undefined}
       />
 
       <AnimatePresence>
-        {open && (
+        {open && can.edit && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
             <Card className="mb-4">
               <form
@@ -120,9 +123,13 @@ export default function CampaignsPage() {
                     >
                       Copiar link
                     </Button>
+                    <ButtonLink href={`/app/campanhas/${c.id}/kit`} variant="secondary" size="sm">
+                      Kit + QR code
+                    </ButtonLink>
                     <ButtonLink href={`/r/${c.token}`} variant="secondary" size="sm">
                       Abrir questionário
                     </ButtonLink>
+                    {can.edit && (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -130,6 +137,7 @@ export default function CampaignsPage() {
                     >
                       {c.status === "active" ? "Encerrar" : "Reabrir"}
                     </Button>
+                    )}
                   </div>
                 </Card>
               </motion.div>
@@ -138,5 +146,13 @@ export default function CampaignsPage() {
         </div>
       )}
     </>
+  )
+}
+
+export default function CampaignsPage() {
+  return (
+    <Suspense>
+      <CampaignsContent />
+    </Suspense>
   )
 }

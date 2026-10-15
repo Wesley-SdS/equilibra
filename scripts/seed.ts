@@ -1,26 +1,18 @@
 /**
- * Popula o banco local com uma empresa de demonstração.
- * Acesso de teste (somente ambiente local):
- *   e-mail: demo@equilibra.app
- *   senha:  equilibra-demo
+ * Popula o banco local com dados de demonstração.
+ * Acessos de teste (somente ambiente local):
+ *   dona/consultora: demo@equilibra.app  · senha: equilibra-demo   (3 empresas na carteira)
+ *   leitor do RH:    rh@equilibra.app    · senha: equilibra-demo
  */
-import { eq } from "drizzle-orm"
-import { getDb } from "../src/server/db"
-import { actions, answers, campaigns, companies, responses, sectors, users } from "../src/server/db/schema"
+import { eq, inArray } from "drizzle-orm"
+import { getDb, type Db } from "../src/server/db"
+import { actions, answers, auditLog, campaigns, channelReports, companies, memberships, responses, sectors, users } from "../src/server/db/schema"
 import { hashPassword } from "../src/server/auth"
 import { QUESTIONS, type DimensionId } from "../src/lib/methodology"
 
-const DEMO_EMAIL = "demo@equilibra.app"
-const DEMO_PASSWORD = "equilibra-demo"
+const PASSWORD = "equilibra-demo"
 
-// Perfil de risco (0..1) por setor e dimensão para gerar respostas realistas.
-const PROFILE: Record<string, { headcount: number; answered: number; risk: Partial<Record<DimensionId, number>> }> = {
-  Produção: { headcount: 48, answered: 38, risk: { demandas: 0.9, controle: 0.68, lideranca: 0.5, relacoes: 0.28, reconhecimento: 0.66 } },
-  Balcão: { headcount: 36, answered: 27, risk: { demandas: 0.66, controle: 0.52, lideranca: 0.26, relacoes: 0.36, papel: 0.38, reconhecimento: 0.5 } },
-  Entregas: { headcount: 22, answered: 16, risk: { demandas: 0.62, controle: 0.5, lideranca: 0.7, colegas: 0.34, reconhecimento: 0.7 } },
-  Administrativo: { headcount: 12, answered: 9, risk: { demandas: 0.36, papel: 0.3, reconhecimento: 0.4 } },
-  Gerência: { headcount: 4, answered: 3, risk: { demandas: 0.5 } },
-}
+type Profile = Record<string, { headcount: number; answered: number; risk: Partial<Record<DimensionId, number>> }>
 
 let seed = 42
 function rand() {
@@ -28,65 +20,108 @@ function rand() {
   return seed / 4294967296
 }
 
-async function main() {
-  const db = await getDb()
-
-  const existing = await db.query.users.findFirst({ where: eq(users.email, DEMO_EMAIL) })
-  if (existing) {
-    await db.delete(companies).where(eq(companies.id, existing.companyId))
-  }
-
-  const [company] = await db
-    .insert(companies)
-    .values({ name: "Padaria Pão Dourado Ltda.", cnpj: "12345678000190", employees: 122, slug: "pao-dourado" })
-    .returning()
-  await db.insert(users).values({
-    companyId: company!.id,
-    name: "Carla Mendes",
-    email: DEMO_EMAIL,
-    passwordHash: hashPassword(DEMO_PASSWORD),
-  })
-
-  const [campaign] = await db
-    .insert(campaigns)
-    .values({
-      companyId: company!.id,
-      name: "Avaliação psicossocial · out/2026",
-      token: "demo-pao-dourado-out26",
-      startsAt: "2026-10-01",
-      endsAt: "2026-10-31",
-    })
-    .returning()
-
-  for (const [name, p] of Object.entries(PROFILE)) {
-    const [sector] = await db.insert(sectors).values({ companyId: company!.id, name, headcount: p.headcount }).returning()
-    for (let i = 0; i < p.answered; i++) {
+async function addCampaign(
+  db: Db,
+  companyId: string,
+  sectorIds: Record<string, string>,
+  c: { name: string; token: string; startsAt: string; endsAt: string; status: "active" | "closed" },
+  profile: Profile,
+  /** Multiplicador sobre o risco de base (ex.: 1.15 = campanha anterior, pior). */
+  factor = 1
+) {
+  const [campaign] = await db.insert(campaigns).values({ companyId, ...c }).returning()
+  for (const [name, p] of Object.entries(profile)) {
+    const answered = Math.round(p.answered * (factor > 1 ? 0.85 : 1))
+    for (let i = 0; i < answered; i++) {
       const [r] = await db
         .insert(responses)
-        .values({ campaignId: campaign!.id, sectorId: sector!.id, createdDay: `2026-10-${String(1 + (i % 14)).padStart(2, "0")}` })
+        .values({ campaignId: campaign!.id, sectorId: sectorIds[name]!, createdDay: `${c.startsAt.slice(0, 8)}${String(1 + (i % 14)).padStart(2, "0")}` })
         .returning()
       await db.insert(answers).values(
         QUESTIONS.map((q) => {
-          const target = p.risk[q.dimension] ?? 0.15
+          const target = Math.min(0.95, (p.risk[q.dimension] ?? 0.15) * factor)
           const riskVal = Math.max(0, Math.min(4, Math.round(target * 4 + (rand() - 0.5) * 2.2)))
           return { responseId: r!.id, questionId: q.id, value: q.risk ? riskVal + 1 : 5 - riskVal }
         })
       )
     }
   }
+  return campaign!
+}
 
-  await db.insert(actions).values({
-    companyId: company!.id,
-    campaignId: campaign!.id,
-    dimension: "relacoes",
-    what: "Divulgar o canal de relato anônimo e o fluxo de apuração",
-    how: "Cartazes, QR code e comunicado da direção garantindo a não retaliação.",
-    who: "RH · Rafael",
-    due: "2026-11-15",
-    status: "doing",
-  })
+async function addCompany(db: Db, ownerId: string, data: { name: string; cnpj: string; slug: string }, profile: Profile) {
+  const employees = Object.values(profile).reduce((s, p) => s + p.headcount, 0)
+  const [company] = await db.insert(companies).values({ ...data, employees }).returning()
+  await db.insert(memberships).values({ userId: ownerId, companyId: company!.id, role: "owner" })
+  const sectorIds: Record<string, string> = {}
+  for (const [name, p] of Object.entries(profile)) {
+    const [s] = await db.insert(sectors).values({ companyId: company!.id, name, headcount: p.headcount }).returning()
+    sectorIds[name] = s!.id
+  }
+  return { company: company!, sectorIds }
+}
 
-  console.log("Seed concluído: empresa de demonstração criada.")
+async function main() {
+  const db = await getDb()
+
+  // Limpa dados de demonstração anteriores.
+  const old = await db.select().from(users).where(inArray(users.email, ["demo@equilibra.app", "rh@equilibra.app"]))
+  if (old.length) {
+    const ms = await db.select().from(memberships).where(inArray(memberships.userId, old.map((u) => u.id)))
+    if (ms.length) await db.delete(companies).where(inArray(companies.id, ms.map((m) => m.companyId)))
+    await db.delete(users).where(inArray(users.id, old.map((u) => u.id)))
+  }
+
+  const passwordHash = hashPassword(PASSWORD)
+  const [carla] = await db.insert(users).values({ name: "Carla Mendes", email: "demo@equilibra.app", passwordHash }).returning()
+  const [rafael] = await db.insert(users).values({ name: "Rafael Souza", email: "rh@equilibra.app", passwordHash }).returning()
+
+  // 1) Padaria: duas campanhas para mostrar evolução.
+  const padaria: Profile = {
+    Produção: { headcount: 48, answered: 38, risk: { demandas: 0.9, controle: 0.68, lideranca: 0.5, relacoes: 0.28, reconhecimento: 0.66 } },
+    Balcão: { headcount: 36, answered: 27, risk: { demandas: 0.66, controle: 0.52, lideranca: 0.26, relacoes: 0.36, papel: 0.38, reconhecimento: 0.5 } },
+    Entregas: { headcount: 22, answered: 16, risk: { demandas: 0.62, controle: 0.5, lideranca: 0.7, colegas: 0.34, reconhecimento: 0.7 } },
+    Administrativo: { headcount: 12, answered: 9, risk: { demandas: 0.36, papel: 0.3, reconhecimento: 0.4 } },
+    Gerência: { headcount: 4, answered: 3, risk: { demandas: 0.5 } },
+  }
+  const p = await addCompany(db, carla!.id, { name: "Padaria Pão Dourado Ltda.", cnpj: "12345678000190", slug: "pao-dourado" }, padaria)
+  await db.insert(memberships).values({ userId: rafael!.id, companyId: p.company.id, role: "viewer" })
+  await addCampaign(db, p.company.id, p.sectorIds, { name: "Diagnóstico inicial · abr/2026", token: "demo-pao-dourado-abr26", startsAt: "2026-04-06", endsAt: "2026-04-24", status: "closed" }, padaria, 1.18)
+  const atual = await addCampaign(db, p.company.id, p.sectorIds, { name: "Avaliação psicossocial · out/2026", token: "demo-pao-dourado-out26", startsAt: "2026-10-01", endsAt: "2026-10-31", status: "active" }, padaria)
+
+  await db.insert(actions).values([
+    { companyId: p.company.id, campaignId: atual.id, dimension: "relacoes", what: "Divulgar o canal de relato anônimo e o fluxo de apuração", how: "Cartazes, QR code e comunicado da direção garantindo a não retaliação.", who: "RH · Rafael", due: "2026-11-15", status: "doing" },
+    { companyId: p.company.id, campaignId: atual.id, dimension: "lideranca", what: "Capacitar lideranças em feedback e comunicação não violenta", how: "Trilha de 4 encontros de 1h30.", who: "Diretoria", due: "2026-08-30", status: "done", sectorId: p.sectorIds["Entregas"] },
+  ])
+  await db.insert(channelReports).values([
+    { companyId: p.company.id, protocol: "EQ-7F3K-92QD", category: "sobrecarga", body: "No turno da madrugada da produção estamos fazendo a mesma quantidade de pães com duas pessoas a menos desde setembro. Ninguém consegue tirar a pausa.", status: "analyzing", createdDay: "2026-10-08" },
+    { companyId: p.company.id, protocol: "EQ-M4TR-6HXA", category: "assedio_moral", body: "Um encarregado das entregas grita com a equipe na frente dos clientes quando há atraso, e ameaça descontar do salário.", status: "received", createdDay: "2026-10-12" },
+  ])
+  await db.insert(auditLog).values([
+    { companyId: p.company.id, userId: carla!.id, action: "create", entity: "campanha", entityId: atual.id, summary: `Campanha “${atual.name}” criada`, at: new Date("2026-09-30T14:02:00Z") },
+    { companyId: p.company.id, userId: carla!.id, action: "invite", entity: "equipe", summary: "Convite enviado para rh@equilibra.app (Leitor)", at: new Date("2026-09-30T14:10:00Z") },
+    { companyId: p.company.id, userId: rafael!.id, action: "access", entity: "equipe", entityId: rafael!.id, summary: "Rafael Souza entrou na equipe", at: new Date("2026-09-30T15:31:00Z") },
+  ])
+
+  // 2) Carteira da consultora: outras duas empresas clientes.
+  const clinica: Profile = {
+    Recepção: { headcount: 14, answered: 11, risk: { demandas: 0.55, relacoes: 0.45, reconhecimento: 0.4 } },
+    Enfermagem: { headcount: 30, answered: 22, risk: { demandas: 0.85, controle: 0.6, relacoes: 0.5, lideranca: 0.45 } },
+    Médicos: { headcount: 12, answered: 7, risk: { demandas: 0.6, papel: 0.3 } },
+  }
+  const cl = await addCompany(db, carla!.id, { name: "Clínica Vida Plena", cnpj: "45678912000155", slug: "vida-plena" }, clinica)
+  await addCampaign(db, cl.company.id, cl.sectorIds, { name: "Avaliação psicossocial · set/2026", token: "demo-vida-plena-set26", startsAt: "2026-09-08", endsAt: "2026-09-26", status: "closed" }, clinica)
+
+  const metal: Profile = {
+    Usinagem: { headcount: 60, answered: 41, risk: { demandas: 0.4, controle: 0.45, reconhecimento: 0.35 } },
+    Montagem: { headcount: 45, answered: 30, risk: { demandas: 0.35, colegas: 0.2 } },
+    Escritório: { headcount: 18, answered: 14, risk: { papel: 0.25 } },
+  }
+  const mt = await addCompany(db, carla!.id, { name: "Metalúrgica Aço Forte S.A.", cnpj: "78912345000133", slug: "aco-forte" }, metal)
+  await addCampaign(db, mt.company.id, mt.sectorIds, { name: "Avaliação psicossocial · out/2026", token: "demo-aco-forte-out26", startsAt: "2026-10-05", endsAt: "2026-10-30", status: "active" }, metal)
+
+  const count = await db.select().from(memberships).where(eq(memberships.userId, carla!.id))
+  console.log(`Seed concluído: ${count.length} empresas na carteira de demonstração.`)
 }
 
 main().then(

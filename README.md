@@ -11,7 +11,8 @@ Gestão de **riscos psicossociais (NR-1)** para PMEs: questionário anônimo, ma
 | Framework | Next.js 15 (App Router, Turbopack) |
 | API | [jStack](https://jstack.app): Hono com RPC type-safe de ponta a ponta |
 | Validação | Zod 4 (entradas da API e tipos inferidos no client) |
-| Banco | Drizzle ORM + Postgres (PGlite embutido em desenvolvimento) |
+| Banco | Drizzle ORM + Postgres (`DATABASE_URL`) ou PGlite embutido em desenvolvimento |
+| Testes | Vitest (metodologia, k-anonimato, segurança da API) |
 | Dados no client | TanStack Query |
 | UI | Tailwind CSS 4, Motion (animações), fonte Geist |
 
@@ -25,7 +26,24 @@ npm run db:seed   # cria o banco local e a empresa de demonstração
 npm run dev       # http://localhost:3000
 ```
 
-Para entrar no painel de demonstração, use o botão **“Ver painel de demonstração”** na landing (a conta de teste está em `scripts/seed.ts`).
+Para entrar no painel de demonstração, use o botão **“Ver painel de demonstração”** na landing. O seed cria uma consultora com **3 empresas na carteira** (uma com duas campanhas, para mostrar a evolução) e um usuário leitor; as contas de teste estão em `scripts/seed.ts`.
+
+## Funcionalidades
+
+- **Landing** animada (Motion) com calculadora de economia e seção de privacidade/LGPD
+- **Cadastro em 2 passos**, login, convites por link e troca de senha
+- **Multiempresa**: carteira para contadores e SST, troca de empresa e criação de clientes
+- **Papéis**: dono, admin e leitor, validados no servidor a cada requisição
+- **Campanhas** com link anônimo, contador ao vivo e **kit de divulgação** (cartaz com QR code, textos para WhatsApp e e-mail)
+- **Questionário mobile-first** (28 itens, atalhos 1–5, rascunho local, bloqueio de duplicidade)
+- **Visão geral**: mapa de calor setor × dimensão, ranking, participação, checklist de primeiros passos
+- **Detalhe por dimensão**: score por item, distribuição das respostas e medidas recomendadas
+- **Evolução** entre campanhas (linha do índice, antes/depois por dimensão, tabela)
+- **Plano de ação 5W2H** em quadro, com sugestões automáticas para dimensões em alerta
+- **Relatório PGR** imprimível em A4 (metodologia, participação, inventário, plano, evolução)
+- **Canal de relato anônimo** com protocolo de acompanhamento
+- **Trilha de auditoria** de todas as alterações
+- **Paleta de comandos** (Ctrl/⌘ K)
 
 > O PGlite permite **um processo por vez** no banco. Pare o `npm run dev` antes de rodar `npm run db:seed`.
 
@@ -37,6 +55,7 @@ Para entrar no painel de demonstração, use o botão **“Ver painel de demonst
 | `npm run build` / `npm start` | Build e servidor de produção |
 | `npm run typecheck` | Checagem de tipos |
 | `npm run lint` | ESLint |
+| `npm test` | Testes (Vitest, banco em memória) |
 | `npm run db:generate` | Gera a migration a partir de `src/server/db/schema.ts` |
 | `npm run db:seed` | Recria a empresa de demonstração |
 
@@ -75,9 +94,8 @@ design/                   artboards do Claude Design (fonte do visual)
 
 ## Próximos passos (roadmap do PRD)
 
-- [ ] Trocar o PGlite por Postgres gerenciado (Neon/Supabase) com `drizzle-orm/postgres-js` para o deploy
-- [ ] Auth com recuperação de senha e convites (ex.: Better Auth)
-- [ ] Convites e lembretes por WhatsApp/e-mail
-- [ ] Painel multiempresa para contadores e SST (white-label)
+- [ ] Envio de e-mail (convites, recuperação de senha, lembretes) com Resend
+- [ ] Lembretes automáticos por WhatsApp
+- [ ] White-label do painel de parceiros (logo e cores)
 - [ ] Cobrança recorrente
-- [ ] Trilha de auditoria (F12)
+- [ ] Benchmarks por CNAE

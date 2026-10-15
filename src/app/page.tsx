@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "motion/
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { ProductPreview } from "@/components/landing/product-preview"
+import { RoiCalculator } from "@/components/landing/roi-calculator"
 import { Counter, Reveal, SpotlightCard, SplitHeadline, TiltOnScroll } from "@/components/landing/motion-bits"
 import { ButtonLink, Eyebrow, Logo } from "@/components/ui/primitives"
 import { cn } from "@/lib/utils"
@@ -195,6 +196,43 @@ export default function LandingPage() {
         </ol>
       </section>
 
+      {/* PRIVACIDADE */}
+      <section id="seguranca" className="mx-auto max-w-6xl px-4 pb-28 sm:px-6">
+        <div className="grid gap-10 lg:grid-cols-[1fr_1.3fr] lg:items-center">
+          <Reveal className="flex flex-col gap-4">
+            <Eyebrow>{"// PRIVACIDADE E LGPD"}</Eyebrow>
+            <h2 className="text-balance text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">Anonimato por arquitetura, não por promessa.</h2>
+            <p className="text-lg leading-relaxed text-muted">
+              Quem responde precisa confiar. Por isso a identificação é impossível por desenho do sistema, e não depende de alguém “não olhar”.
+            </p>
+          </Reveal>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {PRIVACY.map((p, i) => (
+              <Reveal key={p.t} delay={i * 0.06}>
+                <div className="flex h-full flex-col gap-2 rounded-2xl border border-line bg-surface p-5">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-brand" aria-hidden="true">
+                    <path d={p.icon} />
+                  </svg>
+                  <h3 className="font-semibold">{p.t}</h3>
+                  <p className="text-sm leading-relaxed text-muted">{p.d}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CALCULADORA */}
+      <section id="economia" className="mx-auto max-w-6xl px-4 pb-28 sm:px-6">
+        <Reveal className="mb-12 flex max-w-3xl flex-col gap-4">
+          <Eyebrow>{"// QUANTO VOCÊ ECONOMIZA"}</Eyebrow>
+          <h2 className="text-balance text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">Contínuo custa menos que pontual.</h2>
+        </Reveal>
+        <Reveal>
+          <RoiCalculator />
+        </Reveal>
+      </section>
+
       {/* PLANOS */}
       <section id="planos" className="mx-auto max-w-6xl px-4 pb-28 sm:px-6">
         <Reveal className="flex flex-col gap-4">
@@ -305,6 +343,7 @@ function Nav() {
           {[
             ["#produto", "Produto"],
             ["#nr1", "NR-1"],
+            ["#economia", "Economia"],
             ["#planos", "Planos"],
             ["#parceiros", "Parceiros"],
           ].map(([href, label]) => (
@@ -397,6 +436,13 @@ function Check() {
     </svg>
   )
 }
+
+const PRIVACY = [
+  { t: "Nada que identifique", d: "Sem nome, e-mail, telefone, IP ou user-agent. A data da resposta é guardada só como dia.", icon: "M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z" },
+  { t: "k-anonimato (k ≥ 5)", d: "Grupos com menos de 5 respostas nunca aparecem isolados; são somados ou ficam só no índice geral.", icon: "M17 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M10 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8M21 20v-2a4 4 0 0 0-3-3.9M16 2.1a4 4 0 0 1 0 7.8" },
+  { t: "Isolamento entre empresas", d: "Cada consulta é filtrada pela empresa da sessão, validada no banco a cada requisição.", icon: "M3 7h18v13H3zM8 7V4h8v3" },
+  { t: "Trilha de auditoria", d: "Toda alteração no painel fica registrada com autor e data: evidência para a fiscalização.", icon: "M9 11l3 3 8-8M20 12v7a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h11" },
+]
 
 const SEGMENTS = ["Indústria", "Varejo", "Clínicas e saúde", "Logística", "Restaurantes", "Tecnologia", "Construção", "Educação", "Escritórios contábeis", "Call centers"]
 

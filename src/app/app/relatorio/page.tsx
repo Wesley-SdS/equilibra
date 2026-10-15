@@ -1,6 +1,8 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
+import { useSearchParams } from "next/navigation"
+import { Suspense, useEffect } from "react"
 import { PageHeader } from "@/components/app/page-header"
 import { Button, EmptyState, ButtonLink, Spinner } from "@/components/ui/primitives"
 import { client } from "@/lib/client"
@@ -9,8 +11,12 @@ import { formatCnpj, formatDate } from "@/lib/utils"
 
 const STATUS = { todo: "A fazer", doing: "Em andamento", done: "Concluída" } as const
 
-export default function ReportPage() {
+function ReportContent() {
+  const autoPrint = useSearchParams().get("imprimir") === "1"
   const report = useQuery({ queryKey: ["report"], queryFn: async () => (await client.report.get.$get({})).json() })
+  useEffect(() => {
+    if (autoPrint && report.data?.insights) setTimeout(() => window.print(), 600)
+  }, [autoPrint, report.data])
 
   if (report.isLoading) {
     return (
@@ -28,7 +34,7 @@ export default function ReportPage() {
       </>
     )
   }
-  const { insights, company, plan, sectors } = r
+  const { insights, company, plan, sectors, history } = r
   const sectorName = (id: string | null) => sectors.find((s) => s.id === id)?.name ?? "Toda a empresa"
   const generatedAt = new Date().toLocaleDateString("pt-BR")
 
@@ -138,7 +144,39 @@ export default function ReportPage() {
           )}
         </Section>
 
-        <Section n="5" title="Responsabilidade">
+        {history.length > 1 && (
+          <Section n="5" title="Evolução">
+            <p className="mb-3 text-muted">Índice geral de risco por campanha, evidenciando o monitoramento contínuo exigido pela NR-1.</p>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[560px] text-left text-sm">
+                <thead className="border-b border-line text-subtle">
+                  <tr>
+                    <th className="py-2 pr-4 font-medium">Campanha</th>
+                    <th className="py-2 pr-4 font-medium">Início</th>
+                    <th className="py-2 pr-4 font-medium">Respostas</th>
+                    <th className="py-2 font-medium">Índice</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {history.map((h) => (
+                    <tr key={h.id}>
+                      <td className="py-2.5 pr-4">{h.name}</td>
+                      <td className="py-2.5 pr-4">{formatDate(h.startsAt)}</td>
+                      <td className="py-2.5 pr-4 font-mono">
+                        {h.responses} ({h.rate}%)
+                      </td>
+                      <td className="py-2.5 font-mono">
+                        {h.index} · {RISK_LEVELS[riskLevel(h.index)].label}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Section>
+        )}
+
+        <Section n={history.length > 1 ? "6" : "5"} title="Responsabilidade">
           <p className="text-muted">
             Este documento apoia a gestão dos riscos psicossociais no GRO/PGR (NR-1, Portaria MTE nº 1.419/2024). A validação e a
             assinatura do PGR cabem ao responsável técnico designado pela organização.
@@ -153,6 +191,14 @@ export default function ReportPage() {
         </Section>
       </article>
     </>
+  )
+}
+
+export default function ReportPage() {
+  return (
+    <Suspense>
+      <ReportContent />
+    </Suspense>
   )
 }
 

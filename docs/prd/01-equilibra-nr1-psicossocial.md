@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Status | Em desenvolvimento (MVP) |
+| Status | v1 implementada (F1–F12 + carteira, papéis, evolução, kit de divulgação) |
 | Versão | 1.0 — 15/10/2026 |
 | Stack | Next.js 15 (App Router) · jStack (Hono RPC type-safe) · Drizzle ORM · Postgres · Zod · Tailwind CSS · Motion |
 | Público | PMEs com 10–500 funcionários CLT, contabilidades e consultorias de SST |
