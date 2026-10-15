@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --color-bg: #07090a;
+  --color-surface: #0c1011;
+  --color-surface-2: #11171a;
+  --color-line: rgb(255 255 255 / 0.08);
+  --color-line-strong: rgb(255 255 255 / 0.14);
+  --color-fg: #edefee;
+  --color-muted: #a3ada9;
+  --color-subtle: #8a9692;
+  --color-brand: #c6f56f;
+  --color-brand-strong: #e2ffae;
+  --color-brand-ink: #07090a;
+
+  --color-risk-low: #1f3d31;
+  --color-risk-low-fg: #7fd8a8;
+  --color-risk-mod: #6b5a24;
+  --color-risk-mod-fg: #f0cf6a;
+  --color-risk-high: #f08a3c;
+  --color-risk-high-fg: #ffb07a;
+  --color-risk-crit: #f04e3e;
+  --color-risk-crit-fg: #ff8a7a;
+
+  --animate-marquee: marquee 40s linear infinite;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+}
+
+::selection {
+  background: rgb(198 245 111 / 0.3);
+}
+
+/* Fundo em grade usado no hero e no onboarding */
+.bg-grid {
+  background-image:
+    linear-gradient(rgb(255 255 255 / 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.045) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
+}
+
+/* Borda com gradiente sutil para cards em destaque */
+.ring-gradient {
+  position: relative;
+  isolation: isolate;
+}
+.ring-gradient::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0.02));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* Relatório PGR: impressão em A4 com fundo claro */
+@media print {
+  @page { size: A4; margin: 16mm; }
+  :root { color-scheme: light; }
+  body { background: #fff !important; color: #111 !important; }
+  .no-print { display: none !important; }
+  .print-sheet { background: #fff !important; color: #111 !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; }
+  .print-sheet * { color: #111 !important; border-color: #ccc !important; }
+  .print-break { break-before: page; }
+  .print-sheet .overflow-x-auto { overflow: visible !important; }
+  .print-sheet table { min-width: 0 !important; font-size: 10pt; }
+  .print-sheet tr { break-inside: avoid; }
+}

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Equilibra — Questionário</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&amp;family=Figtree:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1F6B5C}a:hover{color:#134A3F}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; font-family: Figtree, system-ui, sans-serif; color: #10231F; background: #F6F5F1; padding: 24px 20px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; font-size: 13px; color: #5B6B66"><span>Demandas do trabalho</span><span>{{num}} de 28</span></div>
+<div style="height: 6px; border-radius: 99px; background: #E3E5E0"><div style="height: 6px; border-radius: 99px; background: #1F6B5C; width: {{pct}}"></div></div>
+</div>
+<div style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 10px; background: #E4F1EB; font-size: 13px; color: #1E4D42">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1E4D42" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+Anônimo: não coletamos nome, e-mail nem IP.
+</div>
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 28px; line-height: 1.2; font-weight: 700">{{question}}</h1>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<sc-for list="{{options}}" as="o" hint-placeholder-count="5">
+<button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button>
+</sc-for>
+</div>
+<div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center">
+<button onClick="{{back}}" style="min-height: 48px; padding: 0 16px; border: 0; background: transparent; font: inherit; font-weight: 600; color: #3B4F4A">Voltar</button>
+<span style="font-size: 13px; color: #5B6B66">~6 minutos no total</span>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(p){ super(p); this.state = { i: 0, picked: null }; }
+renderVals() {
+var qs = ['Com que frequência você precisa trabalhar muito rápido?','Você tem tempo suficiente para concluir suas tarefas?','As metas do seu setor são realistas?','Você consegue fazer pausas quando precisa?'];
+var labels = ['Nunca','Raramente','Às vezes','Frequentemente','Sempre'];
+var self = this;
+var i = this.state.i % qs.length;
+return {
+num: i + 1,
+pct: Math.round(((i + 1) / 28) * 100) + '%',
+question: qs[i],
+back: function(){ self.setState({ i: Math.max(0, self.state.i - 1), picked: null }); },
+options: labels.map(function(l, k){
+var on = self.state.picked === k;
+return {
+label: l,
+style: 'min-height: 56px; padding: 0 18px; border-radius: 14px; text-align: left; font: inherit; font-size: 17px; font-weight: 500; cursor: pointer; ' + (on ? 'background: #1F6B5C; color: #FFFFFF; border: 1.5px solid #1F6B5C' : 'background: #FFFFFF; color: #10231F; border: 1.5px solid #D5DAD4'),
+pick: function(){ self.setState({ picked: k }); setTimeout(function(){ self.setState({ i: self.state.i + 1, picked: null }); }, 280); }
+};
+})
+};
+}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Equilibra — Painel</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&amp;family=Figtree:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1F6B5C}a:hover{color:#134A3F}
+</style>
+</helmet>
+<div style="font-family: Figtree, system-ui, sans-serif; color: #10231F; background: #F6F5F1; min-height: 100vh; display: flex; flex-wrap: wrap">
+<aside style="flex: 1 1 240px; max-width: 260px; background: #10231F; color: #F6F5F1; padding: 24px 16px; display: flex; flex-direction: column; gap: 6px; box-sizing: border-box">
+<div style="display: flex; align-items: center; gap: 10px; padding: 0 12px 24px"><svg width="24" height="24" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="none" stroke="#7FC4AE" stroke-width="2"></circle><path d="M6 15c3-5 5-5 8 0s5 5 8 0" fill="none" stroke="#7FC4AE" stroke-width="2" stroke-linecap="round"></path></svg><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 20px">Equilibra</span></div>
+<a href="#" style="padding: 12px; border-radius: 10px; background: #1E3A34; color: #FFFFFF; text-decoration: none; font-weight: 600">Visão geral</a>
+<a href="#" style="padding: 12px; border-radius: 10px; color: #B9C7C2; text-decoration: none">Campanhas</a>
+<a href="#" style="padding: 12px; border-radius: 10px; color: #B9C7C2; text-decoration: none">Setores</a>
+<a href="#" style="padding: 12px; border-radius: 10px; color: #B9C7C2; text-decoration: none">Plano de ação</a>
+<a href="#" style="padding: 12px; border-radius: 10px; color: #B9C7C2; text-decoration: none">Relatório PGR</a>
+<a href="#" style="padding: 12px; border-radius: 10px; color: #B9C7C2; text-decoration: none">Canal de relato</a>
+</aside>
+<main style="flex: 999 1 560px; min-width: 0; padding: 32px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center">
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="color: #5B6B66; font-size: 14px">Padaria Pão Dourado Ltda.</span><h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 32px">Campanha outubro/2026</h1></div>
+<div style="display: flex; gap: 10px"><button style="padding: 12px 16px; border-radius: 10px; border: 1.5px solid #C9CFC9; background: #FFFFFF; font: inherit; font-weight: 600; color: #10231F">Copiar link</button><button style="padding: 12px 16px; border-radius: 10px; border: 0; background: #1F6B5C; font: inherit; font-weight: 600; color: #FFFFFF">Gerar relatório</button></div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px">
+<div style="background: #FFFFFF; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 6px"><span style="color: #5B6B66; font-size: 14px">Taxa de resposta</span><span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 36px; font-weight: 700">71%</span><span style="font-size: 13px; color: #1F6B5C">142 de 200 pessoas</span></div>
+<div style="background: #FFFFFF; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 6px"><span style="color: #5B6B66; font-size: 14px">Índice geral de risco</span><span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 36px; font-weight: 700">43</span><span style="font-size: 13px; color: #8A5A00">Moderado</span></div>
+<div style="background: #FFFFFF; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 6px"><span style="color: #5B6B66; font-size: 14px">Dimensões em alerta</span><span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 36px; font-weight: 700">3</span><span style="font-size: 13px; color: #A3361F">1 crítica</span></div>
+<div style="background: #FFFFFF; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 6px"><span style="color: #5B6B66; font-size: 14px">Ações no plano</span><span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 36px; font-weight: 700">8</span><span style="font-size: 13px; color: #5B6B66">2 concluídas</span></div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px">
+<div style="background: #FFFFFF; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 16px; overflow-x: auto">
+<h2 style="margin: 0; font-size: 18px">Mapa de calor · setor × dimensão</h2>
+<div style="display: grid; grid-template-columns: 150px repeat(4, minmax(56px, 1fr)); gap: 6px; font-size: 13px; min-width: 420px">
+<span></span><span style="color: #5B6B66">Produção</span><span style="color: #5B6B66">Balcão</span><span style="color: #5B6B66">Entregas</span><span style="color: #5B6B66">Adm.</span>
+<span>Demandas</span><span style="padding: 10px 0; text-align: center; border-radius: 8px; background: #C2412D; color: #FFFFFF; font-weight: 600">78</span><span style="padding: 10px 0; text-align: center; border-radius: 8px; background: #F0A05A; font-weight: 600">61</span><span style="padding: 10px 0; text-align: center; border-radius: 8px; background: #F0A05A; font-weight: 600">55</span><span style="padding: 10px 0; text-align: center; border-radius: 8px; background: #F5D58A; font-weight: 600">32</span>
+<span>Controle</span><span style="padding: 10px 0; text-align: center; border-radius: 8px; background: #F0A05A; font-weight: 600">52</span><span style="padding: 10px 0; text-align: center; border-radius: 8px; background: #F5D58A; font-weight: 600">41</span><span style="padding: 10px 0; text-align: center; border-radius: 8px; background: #F5D58A; font-weight: 600">38</span><span style="padding: 10px 0; text-align: center; border-radius: 8px; background: #CDE8DC; font-weight: 600">18</span>
+<span>Apoio da liderança</span><span style="padding: 10px 0; text-align: center; border-radius: 8px; background: #F5D58A; font-weight: 600">44</span><span style="padding: 10px 0; text-align: center; border-radius: 8px; background: #CDE8DC; font-weight: 600">22</span><span style="padding: 10px 0; text-align: center; border-radius: 8px; background: #F0A05A; font-weight: 600">57</span><span style="padding: 10px 0; text-align: center; border-radius: 8px; background: #CDE8DC; font-weight: 600">15</span>
+<span>Relacionamentos</span><span style="padding: 10px 0; text-align: center; border-radius: 8px; background: #CDE8DC; font-weight: 600">20</span><span style="padding: 10px 0; text-align: center; border-radius: 8px; background: #F5D58A; font-weight: 600">29</span><span style="padding: 10px 0; text-align: center; border-radius: 8px; background: #CDE8DC; font-weight: 600">12</span><span style="padding: 10px 0; text-align: center; border-radius: 8px; background: #CDE8DC; font-weight: 600">10</span>
+</div>
+<span style="font-size: 13px; color: #5B6B66">Setores com menos de 5 respostas são agrupados para proteger o anonimato.</span>
+</div>
+<div style="background: #FFFFFF; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 18px">Ranking de riscos</h2>
+<div style="display: flex; flex-direction: column; gap: 6px"><div style="display: flex; justify-content: space-between; font-size: 14px"><span>Demandas</span><span style="font-weight: 600">64 · Alto</span></div><div style="height: 10px; border-radius: 99px; background: #EEF0EC"><div style="width: 64%; height: 10px; border-radius: 99px; background: #E07B2E"></div></div></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><div style="display: flex; justify-content: space-between; font-size: 14px"><span>Controle e autonomia</span><span style="font-weight: 600">51 · Alto</span></div><div style="height: 10px; border-radius: 99px; background: #EEF0EC"><div style="width: 51%; height: 10px; border-radius: 99px; background: #E07B2E"></div></div></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><div style="display: flex; justify-content: space-between; font-size: 14px"><span>Reconhecimento</span><span style="font-weight: 600">47 · Moderado</span></div><div style="height: 10px; border-radius: 99px; background: #EEF0EC"><div style="width: 47%; height: 10px; border-radius: 99px; background: #E5B94A"></div></div></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><div style="display: flex; justify-content: space-between; font-size: 14px"><span>Apoio da liderança</span><span style="font-weight: 600">38 · Moderado</span></div><div style="height: 10px; border-radius: 99px; background: #EEF0EC"><div style="width: 38%; height: 10px; border-radius: 99px; background: #E5B94A"></div></div></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><div style="display: flex; justify-content: space-between; font-size: 14px"><span>Relacionamentos e assédio</span><span style="font-weight: 600">19 · Baixo</span></div><div style="height: 10px; border-radius: 99px; background: #EEF0EC"><div style="width: 19%; height: 10px; border-radius: 99px; background: #2F8F6B"></div></div></div>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1240}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
