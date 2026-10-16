@@ -9,10 +9,18 @@ const TIMEOUT_MS = 4000
 
 /**
  * Credencial do AI Gateway: AI_GATEWAY_API_KEY (local/qualquer lugar) ou, em deploy na
- * Vercel, o token OIDC que a plataforma injeta automaticamente (VERCEL_OIDC_TOKEN).
+ * Vercel, o token OIDC do projeto (obtido em runtime pelo @vercel/oidc, sem chave fixa).
  */
-function gatewayToken() {
-  return process.env.AI_GATEWAY_API_KEY ?? process.env.VERCEL_OIDC_TOKEN ?? null
+async function gatewayToken(): Promise<string | null> {
+  if (process.env.AI_GATEWAY_API_KEY) return process.env.AI_GATEWAY_API_KEY
+  if (!process.env.VERCEL) return null
+  try {
+    const { getVercelOidcToken } = await import("@vercel/oidc")
+    return await getVercelOidcToken()
+  } catch (err) {
+    console.error("[jev] token OIDC indisponível", err instanceof Error ? err.message : err)
+    return null
+  }
 }
 
 export type ChoiceQ<K extends string = string> = { type: "choice"; instructions: string; criteria: Record<K, string> }
@@ -36,8 +44,9 @@ export type JevResult<T extends Record<string, Question>> = {
   usage?: { input_tokens: number; output_tokens: number }
 }
 
+/** Indica se há credencial do Gateway disponível (chave explícita ou deploy na Vercel). */
 export function jevEnabled() {
-  return Boolean(gatewayToken())
+  return Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL)
 }
 
 /**
@@ -45,7 +54,7 @@ export function jevEnabled() {
  * não há chave, quando a API falha ou passa do tempo limite — nunca derruba a ação do usuário.
  */
 export async function jevDecide<T extends Record<string, Question>>(state: string | object, questions: T): Promise<JevResult<T> | null> {
-  const key = gatewayToken()
+  const key = await gatewayToken()
   if (!key) return null
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)

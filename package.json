@@ -17,6 +17,7 @@
     "@electric-sql/pglite": "^0.5.10",
     "@react-pdf/renderer": "^4.9.0",
     "@tanstack/react-query": "^5.104.3",
+    "@vercel/oidc": "^4.0.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.4",
     "hono": "^4.13.13",
