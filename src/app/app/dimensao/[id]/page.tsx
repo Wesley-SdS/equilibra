@@ -79,7 +79,7 @@ export default function DimensionPage({ params }: { params: Promise<{ id: string
                 {d.sectors.map((s, i) => (
                   <li key={s.key} className="grid grid-cols-[minmax(0,140px)_minmax(0,1fr)_48px] items-center gap-3 text-sm">
                     <span className="truncate">{s.label}</span>
-                    <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
+                    <div className="h-2 overflow-hidden rounded-full bg-tint/[0.06]">
                       <motion.div
                         className={cn("h-full rounded-full", barStyle[riskLevel(s.score)])}
                         initial={{ width: 0 }}

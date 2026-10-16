@@ -100,7 +100,7 @@ function PortfolioContent() {
           <h2 className="text-lg font-semibold">Empresas</h2>
           <div className="flex gap-1 rounded-lg border border-line p-1 text-xs" role="group" aria-label="Ordenar">
             {(["risk", "name"] as const).map((s) => (
-              <button key={s} type="button" aria-pressed={sort === s} onClick={() => setSort(s)} className={cn("rounded-md px-2.5 py-1", sort === s ? "bg-white/[0.08] text-fg" : "text-muted")}>
+              <button key={s} type="button" aria-pressed={sort === s} onClick={() => setSort(s)} className={cn("rounded-md px-2.5 py-1", sort === s ? "bg-tint/[0.08] text-fg" : "text-muted")}>
                 {s === "risk" ? "Maior risco" : "Nome"}
               </button>
             ))}
@@ -127,7 +127,7 @@ function PortfolioContent() {
               {rows.map((r) => {
                 const current = r.id === me.data?.company.id
                 return (
-                  <tr key={r.id} className="transition-colors hover:bg-white/[0.02]">
+                  <tr key={r.id} className="transition-colors hover:bg-tint/[0.02]">
                     <td className="px-6 py-3.5">
                       <p className="font-medium">{r.name}</p>
                       <p className="text-xs text-subtle">
@@ -160,7 +160,7 @@ function PortfolioContent() {
                     <td className="py-3.5 pr-4 font-mono">{r.openActions}</td>
                     <td className="py-3.5 pr-6 text-right">
                       {current ? (
-                        <span className="text-xs text-brand">Empresa atual</span>
+                        <span className="text-xs text-brand-fg">Empresa atual</span>
                       ) : (
                         <Button size="sm" variant="secondary" loading={switchCompany.isPending && switchCompany.variables === r.id} onClick={() => switchCompany.mutate(r.id)}>
                           Abrir

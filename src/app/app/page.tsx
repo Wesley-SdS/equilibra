@@ -72,7 +72,7 @@ export default function OverviewPage() {
         eyebrow={
           <span className="flex items-center gap-2">
             {data.campaign.status === "active" && (
-              <span className="flex items-center gap-1.5 rounded-full bg-brand/10 px-2 py-0.5 text-xs font-medium text-brand">
+              <span className="flex items-center gap-1.5 rounded-full bg-brand/10 px-2 py-0.5 text-xs font-medium text-brand-fg">
                 <span className="relative flex size-1.5">
                   <span className="absolute inline-flex size-full animate-ping rounded-full bg-brand opacity-75" />
                   <span className="relative inline-flex size-1.5 rounded-full bg-brand" />
@@ -199,7 +199,7 @@ export default function OverviewPage() {
                     {p.responses}/{p.headcount} · {pct}%
                   </span>
                 </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                <div className="h-1.5 overflow-hidden rounded-full bg-tint/[0.06]">
                   <motion.div
                     className="h-full rounded-full bg-brand/80"
                     initial={{ width: 0 }}

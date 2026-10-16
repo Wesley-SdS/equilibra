@@ -41,9 +41,9 @@ export function CompanySwitcher() {
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-3 rounded-xl border border-line bg-white/[0.02] px-3 py-2.5 text-left transition-colors hover:border-line-strong"
+        className="flex w-full items-center gap-3 rounded-xl border border-line bg-tint/[0.02] px-3 py-2.5 text-left transition-colors hover:border-line-strong"
       >
-        <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-white/[0.06] text-sm font-semibold">{company.name.slice(0, 1)}</span>
+        <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-tint/[0.06] text-sm font-semibold">{company.name.slice(0, 1)}</span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-medium">{company.name}</span>
           <span className="block text-xs text-subtle">
@@ -61,7 +61,7 @@ export function CompanySwitcher() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.98 }}
             transition={{ duration: 0.15 }}
-            className="absolute inset-x-3 top-full z-30 mt-2 overflow-hidden rounded-xl border border-line-strong bg-surface-2 p-1.5 shadow-2xl shadow-black/50"
+            className="absolute inset-x-3 top-full z-30 mt-2 overflow-hidden rounded-xl border border-line-strong bg-surface-2 p-1.5 shadow-2xl shadow-[var(--shadow)]"
           >
             <ul role="listbox" aria-label="Empresas">
               {companies.map((co) => (
@@ -73,8 +73,8 @@ export function CompanySwitcher() {
                     disabled={switchCompany.isPending}
                     onClick={() => (co.id === company.id ? setOpen(false) : switchCompany.mutate(co.id))}
                     className={cn(
-                      "flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-white/[0.06]",
-                      co.id === company.id && "text-brand"
+                      "flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-tint/[0.06]",
+                      co.id === company.id && "text-brand-fg"
                     )}
                   >
                     <span className="truncate">{co.name}</span>
@@ -84,10 +84,10 @@ export function CompanySwitcher() {
               ))}
             </ul>
             <div className="mt-1.5 border-t border-line pt-1.5">
-              <Link href="/app/carteira" onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2 text-sm text-muted hover:bg-white/[0.06] hover:text-fg">
+              <Link href="/app/carteira" onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2 text-sm text-muted hover:bg-tint/[0.06] hover:text-fg">
                 Ver carteira completa
               </Link>
-              <Link href="/app/carteira?nova=1" onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2 text-sm text-muted hover:bg-white/[0.06] hover:text-fg">
+              <Link href="/app/carteira?nova=1" onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2 text-sm text-muted hover:bg-tint/[0.06] hover:text-fg">
                 + Adicionar empresa
               </Link>
             </div>

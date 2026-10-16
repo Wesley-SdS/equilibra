@@ -104,7 +104,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 500, damping: 36 }}
-            className="ring-gradient w-full max-w-xl overflow-hidden rounded-2xl bg-surface shadow-2xl shadow-black/60"
+            className="ring-gradient w-full max-w-xl overflow-hidden rounded-2xl bg-surface shadow-2xl shadow-[var(--shadow)]"
           >
             <div className="flex items-center gap-3 border-b border-line px-4">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-subtle" aria-hidden="true">
@@ -155,7 +155,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
                         i === active ? "text-fg" : "text-muted"
                       )}
                     >
-                      {i === active && <motion.span layoutId="cmd-active" className="absolute inset-0 rounded-lg bg-white/[0.07]" transition={{ type: "spring", stiffness: 600, damping: 40 }} />}
+                      {i === active && <motion.span layoutId="cmd-active" className="absolute inset-0 rounded-lg bg-tint/[0.07]" transition={{ type: "spring", stiffness: 600, damping: 40 }} />}
                       <span className="relative">{item.label}</span>
                       {i === active && <span className="relative font-mono text-xs text-subtle">↵</span>}
                     </button>

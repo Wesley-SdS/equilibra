@@ -67,7 +67,7 @@ function LoginForm() {
       </form>
       <p className="mt-6 text-center text-sm text-muted">
         Ainda não tem conta?{" "}
-        <Link href="/comecar" className="font-medium text-brand hover:text-brand-strong">
+        <Link href="/comecar" className="font-medium text-brand-fg hover:text-brand-fg">
           Criar agora
         </Link>
       </p>

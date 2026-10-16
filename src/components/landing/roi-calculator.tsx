@@ -49,7 +49,7 @@ export function RoiCalculator() {
             step={5}
             value={employees}
             onChange={(e) => setEmployees(Number(e.target.value))}
-            className="h-2 w-full cursor-pointer appearance-none rounded-full bg-white/[0.08] accent-[#c6f56f]"
+            className="h-2 w-full cursor-pointer appearance-none rounded-full bg-tint/[0.08] accent-[var(--brand-fg)]"
           />
         </div>
         <div className="flex flex-col gap-3">
@@ -65,7 +65,7 @@ export function RoiCalculator() {
             step={1000}
             value={consultancy}
             onChange={(e) => setConsultancy(Number(e.target.value))}
-            className="h-2 w-full cursor-pointer appearance-none rounded-full bg-white/[0.08] accent-[#c6f56f]"
+            className="h-2 w-full cursor-pointer appearance-none rounded-full bg-tint/[0.08] accent-[var(--brand-fg)]"
           />
           <p className="text-xs text-subtle">Use o valor que você recebeu de orçamento. Padrão: R$ 15 mil.</p>
         </div>
@@ -80,7 +80,7 @@ export function RoiCalculator() {
                 onClick={() => setRounds(n)}
                 className={
                   rounds === n
-                    ? "h-10 flex-1 rounded-xl border border-brand bg-brand/10 text-sm font-medium text-brand"
+                    ? "h-10 flex-1 rounded-xl border border-brand bg-brand/10 text-sm font-medium text-brand-fg"
                     : "h-10 flex-1 rounded-xl border border-line-strong text-sm text-muted hover:text-fg"
                 }
               >
@@ -108,7 +108,7 @@ export function RoiCalculator() {
           <div className="flex flex-col gap-1">
             <dt className="text-muted">Economia estimada no ano</dt>
             <dd>
-              <AnimatedMoney value={saving} className="text-5xl font-semibold tracking-tight text-brand" />
+              <AnimatedMoney value={saving} className="text-5xl font-semibold tracking-tight text-brand-fg" />
             </dd>
           </div>
         </dl>

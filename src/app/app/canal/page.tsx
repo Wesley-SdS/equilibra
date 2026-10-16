@@ -50,8 +50,8 @@ export default function ChannelAdminPage() {
             <Card key={r.id} className="flex flex-col gap-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <span className="font-mono text-sm text-brand">{r.protocol}</span>
-                  <span className="rounded-full bg-white/[0.06] px-2.5 py-0.5 text-xs text-muted">{categoryLabel(r.category)}</span>
+                  <span className="font-mono text-sm text-brand-fg">{r.protocol}</span>
+                  <span className="rounded-full bg-tint/[0.06] px-2.5 py-0.5 text-xs text-muted">{categoryLabel(r.category)}</span>
                   <span className="text-xs text-subtle">{formatDate(r.createdDay)}</span>
                 </div>
                 <Select

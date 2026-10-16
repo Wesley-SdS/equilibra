@@ -2,6 +2,7 @@
 
 import { motion } from "motion/react"
 import Link from "next/link"
+import { ThemeToggle } from "@/components/theme"
 import { Logo } from "@/components/ui/primitives"
 
 export function AuthShell({
@@ -20,19 +21,21 @@ export function AuthShell({
       <div aria-hidden="true" className="bg-grid absolute inset-0" />
       <div
         aria-hidden="true"
-        className="absolute left-1/2 top-[-300px] h-[640px] w-[1000px] -translate-x-1/2 rounded-full"
-        style={{ background: "radial-gradient(closest-side, rgba(150,230,90,0.16), transparent)" }}
+        className="absolute left-1/2 top-[-300px] h-[640px] w-[1000px] -translate-x-1/2 rounded-full bg-glow"
       />
       <div className="relative mx-auto flex min-h-dvh max-w-6xl flex-col px-4 py-6 sm:px-6">
-        <Link href="/" aria-label="Voltar para a página inicial" className="self-start">
-          <Logo />
-        </Link>
+        <div className="flex items-center justify-between">
+          <Link href="/" aria-label="Voltar para a página inicial">
+            <Logo />
+          </Link>
+          <ThemeToggle />
+        </div>
         <div className="flex flex-1 items-center justify-center py-10">
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="ring-gradient w-full max-w-md rounded-3xl bg-surface/80 p-6 shadow-2xl shadow-black/50 backdrop-blur-xl sm:p-8"
+            className="ring-gradient w-full max-w-md rounded-3xl bg-surface/80 p-6 shadow-2xl shadow-[var(--shadow)] backdrop-blur-xl sm:p-8"
           >
             <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
             <p className="mt-1.5 text-[15px] text-muted">{subtitle}</p>

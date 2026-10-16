@@ -111,7 +111,7 @@ function CompanyTab() {
       <Card className="flex flex-col gap-3 self-start">
         <h2 className="text-lg font-semibold">Links públicos</h2>
         <p className="text-sm text-muted">O canal de relato fica disponível o tempo todo, independente de campanha.</p>
-        <code className="break-all rounded-lg bg-white/[0.04] px-3 py-2 font-mono text-xs text-muted">{channelUrl}</code>
+        <code className="break-all rounded-lg bg-tint/[0.04] px-3 py-2 font-mono text-xs text-muted">{channelUrl}</code>
         <Button
           variant="secondary"
           onClick={() => {
@@ -196,7 +196,7 @@ function TeamTab() {
           {invite.error && <p className="mt-3 text-sm text-risk-crit-fg">{invite.error.message}</p>}
           {lastLink && (
             <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mt-4 rounded-xl border border-brand/25 bg-brand/[0.06] p-3 text-sm">
-              Envie este link para a pessoa (já copiado): <code className="break-all font-mono text-xs text-brand">{lastLink}</code>
+              Envie este link para a pessoa (já copiado): <code className="break-all font-mono text-xs text-brand-fg">{lastLink}</code>
             </motion.div>
           )}
         </Card>
@@ -213,7 +213,7 @@ function TeamTab() {
             {team.data?.members.map((m) => (
               <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                 <div className="flex items-center gap-3">
-                  <span className="grid size-9 place-items-center rounded-full bg-white/[0.06] text-sm font-semibold">{m.name.slice(0, 1)}</span>
+                  <span className="grid size-9 place-items-center rounded-full bg-tint/[0.06] text-sm font-semibold">{m.name.slice(0, 1)}</span>
                   <div>
                     <p className="font-medium">
                       {m.name} {m.id === team.data.me && <span className="text-xs text-subtle">(você)</span>}
@@ -242,7 +242,7 @@ function TeamTab() {
                     )}
                   </div>
                 ) : (
-                  <span className="rounded-full bg-white/[0.06] px-2.5 py-1 text-xs text-muted">{ROLE_LABEL[m.role]}</span>
+                  <span className="rounded-full bg-tint/[0.06] px-2.5 py-1 text-xs text-muted">{ROLE_LABEL[m.role]}</span>
                 )}
               </li>
             ))}
@@ -330,8 +330,8 @@ const ACTION_DOT: Record<string, string> = {
   update: "bg-risk-mod-fg",
   status: "bg-risk-mod-fg",
   delete: "bg-risk-crit-fg",
-  invite: "bg-white/60",
-  access: "bg-white/60",
+  invite: "bg-tint/60",
+  access: "bg-tint/60",
 }
 
 function AuditTab() {

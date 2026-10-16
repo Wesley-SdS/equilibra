@@ -101,7 +101,7 @@ function CampaignsContent() {
                       <span
                         className={cn(
                           "rounded-full px-2.5 py-0.5 text-xs font-medium",
-                          c.status === "active" ? "bg-brand/15 text-brand" : "bg-white/[0.06] text-muted"
+                          c.status === "active" ? "bg-brand/15 text-brand-fg" : "bg-tint/[0.06] text-muted"
                         )}
                       >
                         {c.status === "active" ? "Ativa" : "Encerrada"}

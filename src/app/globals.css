@@ -1,31 +1,115 @@
 @import "tailwindcss";
 
+/* Os tokens apontam para variáveis definidas por tema (abaixo), então toda classe
+   do Tailwind (bg-surface, text-muted, bg-tint/[0.05]…) troca junto com o tema. */
 @theme inline {
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
-  --color-bg: #07090a;
-  --color-surface: #0c1011;
-  --color-surface-2: #11171a;
-  --color-line: rgb(255 255 255 / 0.08);
-  --color-line-strong: rgb(255 255 255 / 0.14);
-  --color-fg: #edefee;
-  --color-muted: #a3ada9;
-  --color-subtle: #8a9692;
-  --color-brand: #c6f56f;
-  --color-brand-strong: #e2ffae;
-  --color-brand-ink: #07090a;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  /* Cor de sobreposição: branco no escuro, tinta no claro (use com opacidade). */
+  --color-tint: var(--tint);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-ink: var(--brand-ink);
+  /* Verde da marca para TEXTO: o limão puro não tem contraste em fundo claro. */
+  --color-brand-fg: var(--brand-fg);
 
-  --color-risk-low: #1f3d31;
-  --color-risk-low-fg: #7fd8a8;
-  --color-risk-mod: #6b5a24;
-  --color-risk-mod-fg: #f0cf6a;
-  --color-risk-high: #f08a3c;
-  --color-risk-high-fg: #ffb07a;
-  --color-risk-crit: #f04e3e;
-  --color-risk-crit-fg: #ff8a7a;
+  --color-risk-low: var(--risk-low);
+  --color-risk-low-fg: var(--risk-low-fg);
+  --color-risk-mod: var(--risk-mod);
+  --color-risk-mod-fg: var(--risk-mod-fg);
+  --color-risk-high: var(--risk-high);
+  --color-risk-high-fg: var(--risk-high-fg);
+  --color-risk-crit: var(--risk-crit);
+  --color-risk-crit-fg: var(--risk-crit-fg);
 
   --animate-marquee: marquee 40s linear infinite;
+}
+
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #07090a;
+  --surface: #0c1011;
+  --surface-2: #11171a;
+  --line: rgb(255 255 255 / 0.08);
+  --line-strong: rgb(255 255 255 / 0.14);
+  --fg: #edefee;
+  --muted: #a3ada9;
+  --subtle: #8a9692;
+  --tint: #ffffff;
+  --brand: #c6f56f;
+  --brand-strong: #e2ffae;
+  --brand-ink: #07090a;
+  --brand-fg: #c6f56f;
+
+  --risk-low: #1f3d31;
+  --risk-low-fg: #7fd8a8;
+  --risk-mod: #6b5a24;
+  --risk-mod-fg: #f0cf6a;
+  --risk-high: #f08a3c;
+  --risk-high-fg: #ffb07a;
+  --risk-crit: #f04e3e;
+  --risk-crit-fg: #ff8a7a;
+
+  --grid-line: rgb(255 255 255 / 0.045);
+  --ring-from: rgb(255 255 255 / 0.2);
+  --ring-to: rgb(255 255 255 / 0.02);
+  --glow: rgb(150 230 90 / 0.2);
+  --glow-soft: rgb(40 140 110 / 0.08);
+  --shadow: rgb(0 0 0 / 0.5);
+  /* Rampa sequencial (Nunca → Sempre) em um só tom da marca */
+  --likert-1: #33402a;
+  --likert-2: #4f6a2c;
+  --likert-3: #719a34;
+  --likert-4: #9dcb48;
+  --likert-5: #c6f56f;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f6f7f4;
+  --surface: #ffffff;
+  --surface-2: #f0f2ee;
+  --line: rgb(11 20 16 / 0.09);
+  --line-strong: rgb(11 20 16 / 0.16);
+  --fg: #0b1410;
+  --muted: #4a5752;
+  --subtle: #5f6c67;
+  --tint: #0b1410;
+  --brand: #bdf05c;
+  --brand-strong: #a9e03f;
+  --brand-ink: #07090a;
+  --brand-fg: #3f6212;
+
+  --risk-low: #d4efe0;
+  --risk-low-fg: #17663f;
+  --risk-mod: #f6e6ae;
+  --risk-mod-fg: #855600;
+  --risk-high: #f39a52;
+  --risk-high-fg: #a8480b;
+  --risk-crit: #e2463a;
+  --risk-crit-fg: #b42f1e;
+
+  --grid-line: rgb(11 20 16 / 0.06);
+  --ring-from: rgb(11 20 16 / 0.14);
+  --ring-to: rgb(11 20 16 / 0.04);
+  --glow: rgb(150 220 70 / 0.28);
+  --glow-soft: rgb(40 160 120 / 0.10);
+  --shadow: rgb(11 20 16 / 0.12);
+  --likert-1: #e6f2d2;
+  --likert-2: #c9e6a0;
+  --likert-3: #9fd05a;
+  --likert-4: #6fa52c;
+  --likert-5: #3f6212;
 }
 
 @keyframes marquee {
@@ -33,30 +117,32 @@
   to { transform: translateX(-50%); }
 }
 
-:root {
-  color-scheme: dark;
-}
-
 html {
   scroll-behavior: smooth;
 }
 
 body {
-  background: var(--color-bg);
-  color: var(--color-fg);
+  background: var(--bg);
+  color: var(--fg);
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 ::selection {
-  background: rgb(198 245 111 / 0.3);
+  background: rgb(198 245 111 / 0.35);
 }
 
 /* Fundo em grade usado no hero e no onboarding */
 .bg-grid {
   background-image:
-    linear-gradient(rgb(255 255 255 / 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(255 255 255 / 0.045) 1px, transparent 1px);
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size: 64px 64px;
   mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
+}
+
+/* Brilho radial dos heróis (cor ajustada por tema) */
+.bg-glow {
+  background: radial-gradient(closest-side, var(--glow), var(--glow-soft) 55%, transparent);
 }
 
 /* Borda com gradiente sutil para cards em destaque */
@@ -70,7 +156,7 @@ body {
   inset: 0;
   padding: 1px;
   border-radius: inherit;
-  background: linear-gradient(180deg, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0.02));
+  background: linear-gradient(180deg, var(--ring-from), var(--ring-to));
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;

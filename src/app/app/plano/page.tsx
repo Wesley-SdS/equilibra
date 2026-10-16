@@ -92,7 +92,7 @@ function PlanContent() {
         actions={can.edit ? <Button onClick={() => setEditing({ ...EMPTY })}>Nova ação</Button> : undefined}
       />
       <div className="mb-6 flex items-center gap-4">
-        <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
+        <div className="h-2 flex-1 overflow-hidden rounded-full bg-tint/[0.06]">
           <motion.div className="h-full rounded-full bg-brand" animate={{ width: total ? `${(done / total) * 100}%` : "0%" }} transition={{ duration: 0.6 }} />
         </div>
         <span className="font-mono text-sm text-muted">
@@ -129,10 +129,10 @@ function PlanContent() {
                       transition={{ type: "spring", stiffness: 420, damping: 34 }}
                       className="flex flex-col gap-3 rounded-xl border border-line bg-surface-2 p-4"
                     >
-                      <span className="self-start rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px] text-muted">
+                      <span className="self-start rounded-full bg-tint/[0.06] px-2 py-0.5 text-[11px] text-muted">
                         {dimensionMeta(a.dimension)?.name}
                       </span>
-                      <button type="button" disabled={!can.edit} onClick={() => setEditing({ ...a, status: a.status as Status, dimension: a.dimension as DimensionId })} className="text-left text-[15px] font-medium leading-snug hover:text-brand">
+                      <button type="button" disabled={!can.edit} onClick={() => setEditing({ ...a, status: a.status as Status, dimension: a.dimension as DimensionId })} className="text-left text-[15px] font-medium leading-snug hover:text-brand-fg">
                         {a.what}
                       </button>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-subtle">
@@ -229,7 +229,7 @@ function ActionDrawer({
           >
             <div className="flex items-center justify-between border-b border-line px-6 py-4">
               <h2 className="text-lg font-semibold">{draft.id ? "Editar ação" : "Nova ação"}</h2>
-              <button type="button" onClick={onClose} aria-label="Fechar" className="grid size-9 place-items-center rounded-lg text-muted hover:bg-white/[0.05]">
+              <button type="button" onClick={onClose} aria-label="Fechar" className="grid size-9 place-items-center rounded-lg text-muted hover:bg-tint/[0.05]">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                   <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
                 </svg>

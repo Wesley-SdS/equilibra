@@ -30,27 +30,27 @@ export function IndexTrend({ points }: { points: Point[] }) {
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Evolução do índice geral de risco por campanha">
         {bands.map((b) => (
           <g key={b.label}>
-            <line x1={pad.l} x2={W - pad.r} y1={y(b.from)} y2={y(b.from)} stroke="rgba(255,255,255,0.06)" />
-            <text x={W - 4} y={(y(b.to) + y(b.from)) / 2 + 4} textAnchor="end" fontSize="11" fill="#8a9692">
+            <line x1={pad.l} x2={W - pad.r} y1={y(b.from)} y2={y(b.from)} className="stroke-line" />
+            <text x={W - 4} y={(y(b.to) + y(b.from)) / 2 + 4} textAnchor="end" fontSize="11" className="fill-subtle">
               {b.label}
             </text>
           </g>
         ))}
         {[0, 25, 50, 75, 100].map((v) => (
-          <text key={v} x={pad.l - 10} y={y(v) + 4} textAnchor="end" fontSize="11" fill="#8a9692" fontFamily="var(--font-geist-mono)">
+          <text key={v} x={pad.l - 10} y={y(v) + 4} textAnchor="end" fontSize="11" className="fill-subtle" fontFamily="var(--font-geist-mono)">
             {v}
           </text>
         ))}
-        {h && hover !== null && <line x1={x(hover)} x2={x(hover)} y1={pad.t} y2={H - pad.b} stroke="rgba(255,255,255,0.18)" strokeDasharray="3 3" />}
-        <motion.path d={path} fill="none" stroke="#c6f56f" strokeWidth="2" strokeLinejoin="round" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }} />
+        {h && hover !== null && <line x1={x(hover)} x2={x(hover)} y1={pad.t} y2={H - pad.b} className="stroke-line-strong" strokeDasharray="3 3" />}
+        <motion.path d={path} fill="none" className="stroke-brand-fg" strokeWidth="2" strokeLinejoin="round" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }} />
         {points.map((p, i) => (
           <g key={p.id}>
-            <motion.circle cx={x(i)} cy={y(p.index)} r={hover === i ? 6 : 4.5} fill="#c6f56f" stroke="#0c1011" strokeWidth="2" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3 + i * 0.1 }} />
-            <text x={x(i)} y={H - pad.b + 20} textAnchor="middle" fontSize="11" fill="#a3ada9">
+            <motion.circle cx={x(i)} cy={y(p.index)} r={hover === i ? 6 : 4.5} className="fill-brand stroke-surface" strokeWidth="2" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3 + i * 0.1 }} />
+            <text x={x(i)} y={H - pad.b + 20} textAnchor="middle" fontSize="11" className="fill-muted">
               {formatDate(p.startsAt).slice(3)}
             </text>
             {(i === points.length - 1 || i === 0) && (
-              <text x={x(i)} y={y(p.index) - 12} textAnchor="middle" fontSize="12" fontWeight="600" fill="#edefee">
+              <text x={x(i)} y={y(p.index) - 12} textAnchor="middle" fontSize="12" fontWeight="600" className="fill-fg">
                 {p.index}
               </text>
             )}
@@ -113,9 +113,9 @@ export function DimensionDelta({ rows }: { rows: { id: string; name: string; bef
               <span className="sr-only">{better ? "melhorou" : delta === 0 ? "estável" : "piorou"}</span>
             </span>
             <div className="relative col-span-2 h-6 sm:col-span-1" title={`${r.name}: ${r.before} → ${r.after}`}>
-              <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-white/[0.08]" />
+              <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-tint/[0.08]" />
               {[25, 50, 75].map((t) => (
-                <div key={t} className="absolute top-1 h-4 w-px bg-white/[0.06]" style={{ left: `${t}%` }} />
+                <div key={t} className="absolute top-1 h-4 w-px bg-tint/[0.06]" style={{ left: `${t}%` }} />
               ))}
               <motion.div
                 className={cn("absolute top-1/2 h-1 -translate-y-1/2 rounded-full", better ? "bg-risk-low-fg/50" : "bg-risk-crit/50")}
@@ -139,7 +139,7 @@ export function DimensionDelta({ rows }: { rows: { id: string; name: string; bef
 }
 
 // Rampa sequencial de uma só cor (marca) para a escala ordinal Nunca → Sempre.
-const LIKERT_RAMP = ["#33402a", "#4f6a2c", "#719a34", "#9dcb48", "#c6f56f"]
+const LIKERT_RAMP = ["var(--likert-1)", "var(--likert-2)", "var(--likert-3)", "var(--likert-4)", "var(--likert-5)"]
 
 export function LikertLegend() {
   return (

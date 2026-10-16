@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { CommandPalette } from "@/components/app/command-palette"
 import { CompanySwitcher } from "@/components/app/company-switcher"
+import { ThemeToggle } from "@/components/theme"
 import { Logo, Spinner } from "@/components/ui/primitives"
 import { client } from "@/lib/client"
 import { ROLE_LABEL, useMe } from "@/lib/hooks"
@@ -84,7 +85,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </Link>
           <button
             type="button"
-            className="grid size-10 place-items-center rounded-lg text-muted hover:bg-white/[0.05] lg:hidden"
+            className="grid size-10 place-items-center rounded-lg text-muted hover:bg-tint/[0.05] lg:hidden"
             aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((v) => !v)}
@@ -124,17 +125,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       href={item.href}
                       className={cn(
                         "relative flex h-9 items-center gap-3 rounded-lg px-3 text-[14px] transition-colors",
-                        active ? "text-fg" : "text-muted hover:bg-white/[0.04] hover:text-fg"
+                        active ? "text-fg" : "text-muted hover:bg-tint/[0.04] hover:text-fg"
                       )}
                     >
                       {active && (
                         <motion.span
                           layoutId="nav-active"
-                          className="absolute inset-0 rounded-lg border border-line-strong bg-white/[0.06]"
+                          className="absolute inset-0 rounded-lg border border-line-strong bg-tint/[0.06]"
                           transition={{ type: "spring", stiffness: 500, damping: 38 }}
                         />
                       )}
-                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={cn("relative shrink-0", active && "text-brand")} aria-hidden="true">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={cn("relative shrink-0", active && "text-brand-fg")} aria-hidden="true">
                         <path d={item.icon} />
                       </svg>
                       <span className="relative">{item.label}</span>
@@ -145,8 +146,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             ))}
           </nav>
 
-          <div className="mx-3 flex items-center gap-3 border-t border-line pt-4">
-            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand/15 text-sm font-semibold text-brand">
+          <div className="mx-3 flex items-center justify-between border-t border-line pt-4 text-xs text-subtle">
+            Tema
+            <ThemeToggle />
+          </div>
+          <div className="mx-3 flex items-center gap-3">
+            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand/15 text-sm font-semibold text-brand-fg">
               {me.data.user.name.slice(0, 1).toUpperCase()}
             </span>
             <div className="min-w-0 flex-1">
@@ -158,7 +163,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               onClick={() => logout.mutate()}
               aria-label="Sair"
               title="Sair"
-              className="grid size-9 place-items-center rounded-lg text-subtle transition-colors hover:bg-white/[0.05] hover:text-fg"
+              className="grid size-9 place-items-center rounded-lg text-subtle transition-colors hover:bg-tint/[0.05] hover:text-fg"
             >
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
@@ -169,7 +174,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </aside>
       <main className="min-w-0 flex-1">
         {me.data.role === "viewer" && (
-          <div className="no-print border-b border-line bg-white/[0.02] px-4 py-2 text-center text-xs text-muted">
+          <div className="no-print border-b border-line bg-tint/[0.02] px-4 py-2 text-center text-xs text-muted">
             Você tem acesso de leitura nesta empresa.
           </div>
         )}

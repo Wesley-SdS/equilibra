@@ -32,7 +32,7 @@ export function Toaster({ children }: { children: React.ReactNode }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 8, scale: 0.98 }}
               transition={{ type: "spring", stiffness: 420, damping: 32 }}
-              className="pointer-events-auto flex items-center gap-3 rounded-xl border border-line-strong bg-surface-2/95 px-4 py-3 text-sm shadow-2xl shadow-black/40 backdrop-blur"
+              className="pointer-events-auto flex items-center gap-3 rounded-xl border border-line-strong bg-surface-2/95 px-4 py-3 text-sm shadow-2xl shadow-[var(--shadow)] backdrop-blur"
             >
               <span className={t.tone === "ok" ? "size-2 rounded-full bg-brand" : "size-2 rounded-full bg-risk-crit"} />
               {t.message}

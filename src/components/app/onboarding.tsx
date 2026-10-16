@@ -38,7 +38,7 @@ export function OnboardingChecklist({ responses, hasCampaign }: { responses: num
             {done} de {steps.length} concluídos
           </p>
         </div>
-        <div className="h-1.5 w-40 overflow-hidden rounded-full bg-white/[0.08]">
+        <div className="h-1.5 w-40 overflow-hidden rounded-full bg-tint/[0.08]">
           <motion.div className="h-full rounded-full bg-brand" initial={{ width: 0 }} animate={{ width: `${(done / steps.length) * 100}%` }} transition={{ duration: 0.8 }} />
         </div>
       </div>
@@ -49,10 +49,10 @@ export function OnboardingChecklist({ responses, hasCampaign }: { responses: num
               href={s.href}
               className={cn(
                 "flex h-full items-center gap-3 rounded-xl border px-3 py-2.5 text-sm transition-colors",
-                s.done ? "border-transparent bg-white/[0.03] text-subtle line-through" : "border-line-strong hover:border-brand/50 hover:text-fg"
+                s.done ? "border-transparent bg-tint/[0.03] text-subtle line-through" : "border-line-strong hover:border-brand/50 hover:text-fg"
               )}
             >
-              <span className={cn("grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold", s.done ? "bg-brand text-brand-ink" : "bg-white/[0.06] text-muted")}>
+              <span className={cn("grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold", s.done ? "bg-brand text-brand-ink" : "bg-tint/[0.06] text-muted")}>
                 {s.done ? "✓" : i + 1}
               </span>
               {s.label}

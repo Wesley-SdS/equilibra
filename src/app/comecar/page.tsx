@@ -51,7 +51,7 @@ export default function SignupPage() {
     >
       <div className="mb-6 flex gap-2" aria-hidden="true">
         {[0, 1].map((i) => (
-          <div key={i} className="h-1 flex-1 overflow-hidden rounded-full bg-white/[0.08]">
+          <div key={i} className="h-1 flex-1 overflow-hidden rounded-full bg-tint/[0.08]">
             <motion.div className="h-full bg-brand" initial={false} animate={{ width: step >= i ? "100%" : "0%" }} transition={{ duration: 0.4 }} />
           </div>
         ))}
@@ -119,7 +119,7 @@ export default function SignupPage() {
       </form>
       <p className="mt-6 text-center text-sm text-muted">
         Já tem conta?{" "}
-        <Link href="/entrar" className="font-medium text-brand hover:text-brand-strong">
+        <Link href="/entrar" className="font-medium text-brand-fg hover:text-brand-fg">
           Entrar
         </Link>
       </p>

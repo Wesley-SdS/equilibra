@@ -137,7 +137,7 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
         {phase === "intro" && (
           <motion.div key="intro" exit={{ opacity: 0, y: -12 }} className="flex flex-1 flex-col gap-6">
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-3">
-              <span className="font-mono text-xs text-brand">{data.campaign.name}</span>
+              <span className="font-mono text-xs text-brand-fg">{data.campaign.name}</span>
               <h1 className="text-[32px] font-semibold leading-[1.1] tracking-[-0.03em]">Como está o seu dia a dia no trabalho?</h1>
               <p className="text-[15px] leading-relaxed text-muted">
                 São {QUESTIONS.length} perguntas rápidas, cerca de 6 minutos. Suas respostas ajudam a empresa a melhorar as condições de trabalho.
@@ -151,7 +151,7 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
             >
               {["Não pedimos nome, e-mail nem telefone", "Não registramos IP nem horário exato", "Resultados só aparecem para grupos de 5 ou mais pessoas"].map((t) => (
                 <li key={t} className="flex gap-2.5">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 shrink-0 text-brand" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 shrink-0 text-brand-fg" aria-hidden="true">
                     <rect x="5" y="11" width="14" height="10" rx="2" />
                     <path d="M8 11V7a4 4 0 0 1 8 0v4" />
                   </svg>
@@ -166,7 +166,7 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
                   key={s.id}
                   className={cn(
                     "flex min-h-13 cursor-pointer items-center gap-3 rounded-xl border px-4 text-[15px] transition-all",
-                    sectorId === s.id ? "border-brand bg-brand/10" : "border-line-strong hover:border-white/25"
+                    sectorId === s.id ? "border-brand bg-brand/10" : "border-line-strong hover:border-tint/25"
                   )}
                 >
                   <input type="radio" name="sector" className="sr-only" checked={sectorId === s.id} onChange={() => setSectorId(s.id)} />
@@ -192,7 +192,7 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
                   {index + 1}/{QUESTIONS.length}
                 </span>
               </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.07]" role="progressbar" aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={100}>
+              <div className="h-1.5 overflow-hidden rounded-full bg-tint/[0.07]" role="progressbar" aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={100}>
                 <motion.div className="h-full rounded-full bg-brand" animate={{ width: `${progress}%` }} transition={{ type: "spring", stiffness: 200, damping: 30 }} />
               </div>
             </div>
@@ -224,7 +224,7 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
                           onClick={() => answer(value)}
                           className={cn(
                             "flex min-h-14 items-center justify-between rounded-xl border px-4 text-left text-base font-medium transition-colors",
-                            selected ? "border-brand bg-brand text-brand-ink" : "border-line-strong bg-white/[0.02] hover:border-white/25 hover:bg-white/[0.05]"
+                            selected ? "border-brand bg-brand text-brand-ink" : "border-line-strong bg-tint/[0.02] hover:border-tint/25 hover:bg-tint/[0.05]"
                           )}
                         >
                           {label}
@@ -292,8 +292,7 @@ function Shell({ children, company }: { children: React.ReactNode; company?: str
     <div className="relative min-h-dvh overflow-hidden">
       <div
         aria-hidden="true"
-        className="absolute left-1/2 top-[-240px] h-[480px] w-[700px] -translate-x-1/2 rounded-full"
-        style={{ background: "radial-gradient(closest-side, rgba(150,230,90,0.12), transparent)" }}
+        className="absolute left-1/2 top-[-240px] h-[480px] w-[700px] -translate-x-1/2 rounded-full bg-glow"
       />
       <div className="relative mx-auto flex min-h-dvh max-w-md flex-col px-5 py-6">
         <header className="mb-8 flex items-center justify-between">

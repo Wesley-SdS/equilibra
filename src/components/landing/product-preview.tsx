@@ -18,10 +18,10 @@ export function ProductPreview() {
   return (
     <div className="ring-gradient rounded-[22px] bg-surface/90 p-2 shadow-[0_40px_120px_-40px_rgba(198,245,111,0.25)] backdrop-blur">
       <div className="flex items-center gap-2 border-b border-line px-4 py-3">
-        <span className="size-2.5 rounded-full bg-white/10" />
-        <span className="size-2.5 rounded-full bg-white/10" />
-        <span className="size-2.5 rounded-full bg-white/10" />
-        <span className="ml-3 truncate rounded-md bg-white/[0.04] px-3 py-1 font-mono text-xs text-subtle">app.equilibra.com.br/painel</span>
+        <span className="size-2.5 rounded-full bg-tint/10" />
+        <span className="size-2.5 rounded-full bg-tint/10" />
+        <span className="size-2.5 rounded-full bg-tint/10" />
+        <span className="ml-3 truncate rounded-md bg-tint/[0.04] px-3 py-1 font-mono text-xs text-subtle">app.equilibra.com.br/painel</span>
       </div>
       <div className="grid gap-4 p-3 sm:p-6 lg:grid-cols-[1.4fr_1fr] [&>*]:min-w-0">
         <div className="flex flex-col gap-4 rounded-2xl border border-line bg-bg/60 p-5">
@@ -53,7 +53,7 @@ export function ProductPreview() {
             transition={{ delay: 1.1, duration: 0.6 }}
             className="col-span-2 flex flex-col gap-3 rounded-2xl border border-brand/25 bg-brand/[0.06] p-4"
           >
-            <span className="font-mono text-[11px] uppercase tracking-wider text-brand">Ação sugerida</span>
+            <span className="font-mono text-[11px] uppercase tracking-wider text-brand-fg">Ação sugerida</span>
             <p className="text-[15px] leading-relaxed">
               Redistribuir metas da Produção com a liderança e criar pausas programadas no pico das 6h às 9h.
             </p>

@@ -112,7 +112,7 @@ export default function EvolutionPage() {
             {DIMENSIONS.map((d) => (
               <tr key={d.id}>
                 <td className="py-2.5 pr-4">
-                  <Link href={`/app/dimensao/${d.id}`} className="hover:text-brand">
+                  <Link href={`/app/dimensao/${d.id}`} className="hover:text-brand-fg">
                     {d.name}
                   </Link>
                 </td>

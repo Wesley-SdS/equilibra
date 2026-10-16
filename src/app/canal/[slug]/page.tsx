@@ -49,7 +49,7 @@ export default function ChannelPage({ params }: { params: Promise<{ slug: string
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center gap-4 text-center">
             <h1 className="text-3xl font-semibold tracking-tight">Relato enviado</h1>
             <p className="text-muted">Guarde o protocolo abaixo para acompanhar o andamento. Ele é a única forma de consultar seu relato.</p>
-            <code className="rounded-2xl border border-brand/30 bg-brand/[0.06] px-6 py-4 font-mono text-2xl tracking-wider text-brand">{submit.data.protocol}</code>
+            <code className="rounded-2xl border border-brand/30 bg-brand/[0.06] px-6 py-4 font-mono text-2xl tracking-wider text-brand-fg">{submit.data.protocol}</code>
             <Button variant="secondary" onClick={() => navigator.clipboard.writeText(submit.data.protocol)}>
               Copiar protocolo
             </Button>
@@ -69,7 +69,7 @@ export default function ChannelPage({ params }: { params: Promise<{ slug: string
                   onClick={() => setTab(t)}
                   className={cn("relative h-10 rounded-lg text-sm font-medium", tab === t ? "text-fg" : "text-muted")}
                 >
-                  {tab === t && <motion.span layoutId="tab" className="absolute inset-0 rounded-lg bg-white/[0.08]" />}
+                  {tab === t && <motion.span layoutId="tab" className="absolute inset-0 rounded-lg bg-tint/[0.08]" />}
                   <span className="relative">{t === "new" ? "Novo relato" : "Acompanhar"}</span>
                 </button>
               ))}

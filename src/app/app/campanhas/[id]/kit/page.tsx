@@ -83,8 +83,8 @@ export default function CampaignKitPage({ params }: { params: Promise<{ id: stri
                 Copiar
               </Button>
             </div>
-            <p className="whitespace-pre-line rounded-xl bg-white/[0.03] p-4 text-sm leading-relaxed text-muted">{whatsapp}</p>
-            <a href={`https://wa.me/?text=${encodeURIComponent(whatsapp)}`} target="_blank" rel="noreferrer" className="text-sm text-brand hover:text-brand-strong">
+            <p className="whitespace-pre-line rounded-xl bg-tint/[0.03] p-4 text-sm leading-relaxed text-muted">{whatsapp}</p>
+            <a href={`https://wa.me/?text=${encodeURIComponent(whatsapp)}`} target="_blank" rel="noreferrer" className="text-sm text-brand-fg hover:text-brand-fg">
               Abrir no WhatsApp →
             </a>
           </Card>
@@ -95,7 +95,7 @@ export default function CampaignKitPage({ params }: { params: Promise<{ id: stri
                 Copiar
               </Button>
             </div>
-            <p className="whitespace-pre-line rounded-xl bg-white/[0.03] p-4 text-sm leading-relaxed text-muted">{email}</p>
+            <p className="whitespace-pre-line rounded-xl bg-tint/[0.03] p-4 text-sm leading-relaxed text-muted">{email}</p>
           </Card>
           <Card className="flex flex-col gap-2">
             <h2 className="font-semibold">Dicas para aumentar a adesão</h2>

@@ -47,7 +47,7 @@ function ReportContent() {
       />
       <article className="print-sheet flex flex-col gap-10 rounded-3xl border border-line bg-surface p-6 text-[15px] leading-relaxed sm:p-10">
         <header className="flex flex-col gap-2 border-b border-line pb-8">
-          <span className="font-mono text-xs uppercase tracking-wider text-brand">Inventário de riscos psicossociais · NR-1</span>
+          <span className="font-mono text-xs uppercase tracking-wider text-brand-fg">Inventário de riscos psicossociais · NR-1</span>
           <h2 className="text-3xl font-semibold tracking-tight">{company.name}</h2>
           <p className="text-muted">
             CNPJ {formatCnpj(company.cnpj)} · {insights.campaign.name} · período {formatDate(insights.campaign.startsAt)} a{" "}
@@ -206,7 +206,7 @@ function Section({ n, title, children, className }: { n: string; title: string; 
   return (
     <section className={className}>
       <h3 className="mb-3 flex items-baseline gap-3 text-xl font-semibold">
-        <span className="font-mono text-sm text-brand">{n}</span>
+        <span className="font-mono text-sm text-brand-fg">{n}</span>
         {title}
       </h3>
       {children}

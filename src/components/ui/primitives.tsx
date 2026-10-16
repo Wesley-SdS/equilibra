@@ -10,8 +10,8 @@ type Size = "sm" | "md" | "lg"
 
 const variants: Record<Variant, string> = {
   primary: "bg-brand text-brand-ink hover:bg-brand-strong shadow-[0_0_0_1px_rgba(198,245,111,0.4),0_8px_24px_-8px_rgba(198,245,111,0.5)]",
-  secondary: "border border-line-strong bg-white/[0.03] text-fg hover:bg-white/[0.07]",
-  ghost: "text-muted hover:text-fg hover:bg-white/[0.05]",
+  secondary: "border border-line-strong bg-tint/[0.03] text-fg hover:bg-tint/[0.07]",
+  ghost: "text-muted hover:text-fg hover:bg-tint/[0.05]",
   danger: "border border-risk-crit/40 text-risk-crit-fg hover:bg-risk-crit/10",
 }
 const sizes: Record<Size, string> = {
@@ -78,7 +78,7 @@ export const Input = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTML
     <input
       ref={ref}
       className={cn(
-        "h-11 w-full rounded-xl border border-line-strong bg-white/[0.03] px-3.5 text-[15px] text-fg placeholder:text-subtle transition-colors focus:border-brand/60 focus:bg-white/[0.05] focus:outline-none focus:ring-4 focus:ring-brand/10",
+        "h-11 w-full rounded-xl border border-line-strong bg-tint/[0.03] px-3.5 text-[15px] text-fg placeholder:text-subtle transition-colors focus:border-brand/60 focus:bg-tint/[0.05] focus:outline-none focus:ring-4 focus:ring-brand/10",
         className
       )}
       {...props}
@@ -92,7 +92,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttrib
       <textarea
         ref={ref}
         className={cn(
-          "min-h-28 w-full rounded-xl border border-line-strong bg-white/[0.03] px-3.5 py-3 text-[15px] text-fg placeholder:text-subtle focus:border-brand/60 focus:outline-none focus:ring-4 focus:ring-brand/10",
+          "min-h-28 w-full rounded-xl border border-line-strong bg-tint/[0.03] px-3.5 py-3 text-[15px] text-fg placeholder:text-subtle focus:border-brand/60 focus:outline-none focus:ring-4 focus:ring-brand/10",
           className
         )}
         {...props}
@@ -194,13 +194,13 @@ export function Logo({ className }: { className?: string }) {
 }
 
 export function Eyebrow({ children }: { children: React.ReactNode }) {
-  return <span className="font-mono text-[13px] tracking-wide text-brand">{children}</span>
+  return <span className="font-mono text-[13px] tracking-wide text-brand-fg">{children}</span>
 }
 
 export function EmptyState({ title, text, action }: { title: string; text: string; action?: React.ReactNode }) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-line-strong px-6 py-14 text-center">
-      <div className="grid size-12 place-items-center rounded-full bg-white/[0.04]">
+      <div className="grid size-12 place-items-center rounded-full bg-tint/[0.04]">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="text-subtle" aria-hidden="true">
           <path d="M12 5v14M5 12h14" strokeLinecap="round" />
         </svg>

@@ -48,7 +48,7 @@ export function Heatmap({ rows }: { rows: Row[] }) {
                       title={`${row.label} · ${d.name}: ${v ?? "—"}`}
                       className={cn(
                         "grid h-12 place-items-center rounded-lg font-mono text-[13px] font-medium",
-                        v === null ? "bg-white/[0.03] text-subtle" : cellStyle[riskLevel(v)]
+                        v === null ? "bg-tint/[0.03] text-subtle" : cellStyle[riskLevel(v)]
                       )}
                     >
                       {v ?? "—"}
@@ -71,7 +71,7 @@ export function RiskBars({ items, linkTo }: { items: { id: string; name: string;
         <li key={it.id} className="group relative flex flex-col gap-2">
           <div className="flex items-center justify-between gap-3 text-sm">
             {linkTo ? (
-              <Link href={linkTo(it.id)} className="after:absolute after:inset-0 group-hover:text-brand">
+              <Link href={linkTo(it.id)} className="after:absolute after:inset-0 group-hover:text-brand-fg">
                 {it.name}
               </Link>
             ) : (
@@ -82,7 +82,7 @@ export function RiskBars({ items, linkTo }: { items: { id: string; name: string;
               <RiskBadge score={it.score} />
             </span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
+          <div className="h-2 overflow-hidden rounded-full bg-tint/[0.06]">
             <motion.div
               className={cn("h-full rounded-full", barStyle[riskLevel(it.score)])}
               initial={{ width: 0 }}
@@ -102,13 +102,13 @@ export function Ring({ value, size = 120 }: { value: number; size?: number }) {
   const c = 2 * Math.PI * r
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`${value}% de resposta`}>
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="10" />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" className="stroke-tint/10" strokeWidth="10" />
       <motion.circle
         cx={size / 2}
         cy={size / 2}
         r={r}
         fill="none"
-        stroke="#c6f56f"
+        className="stroke-brand-fg"
         strokeWidth="10"
         strokeLinecap="round"
         strokeDasharray={c}
@@ -117,7 +117,7 @@ export function Ring({ value, size = 120 }: { value: number; size?: number }) {
         transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
         transform={`rotate(-90 ${size / 2} ${size / 2})`}
       />
-      <text x="50%" y="50%" dominantBaseline="central" textAnchor="middle" fill="#edefee" fontSize={size / 4.5} fontWeight="600">
+      <text x="50%" y="50%" dominantBaseline="central" textAnchor="middle" className="fill-fg" fontSize={size / 4.5} fontWeight="600">
         {value}%
       </text>
     </svg>

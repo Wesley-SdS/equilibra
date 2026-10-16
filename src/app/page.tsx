@@ -6,6 +6,7 @@ import { useEffect, useState } from "react"
 import { ProductPreview } from "@/components/landing/product-preview"
 import { RoiCalculator } from "@/components/landing/roi-calculator"
 import { Counter, Reveal, SpotlightCard, SplitHeadline, TiltOnScroll } from "@/components/landing/motion-bits"
+import { ThemeToggle } from "@/components/theme"
 import { ButtonLink, Eyebrow, Logo } from "@/components/ui/primitives"
 import { cn } from "@/lib/utils"
 
@@ -27,8 +28,7 @@ export default function LandingPage() {
         <div aria-hidden="true" className="bg-grid absolute inset-0 h-[900px]" />
         <motion.div
           aria-hidden="true"
-          className="absolute left-1/2 top-[-280px] h-[720px] w-[1200px] -translate-x-1/2 rounded-full"
-          style={{ background: "radial-gradient(closest-side, rgba(150,230,90,0.20), rgba(40,140,110,0.08) 55%, transparent)" }}
+          className="absolute left-1/2 top-[-280px] h-[720px] w-[1200px] -translate-x-1/2 rounded-full bg-glow"
           animate={{ opacity: [0.7, 1, 0.7], scale: [1, 1.05, 1] }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         />
@@ -36,7 +36,7 @@ export default function LandingPage() {
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <Link
               href="#nr1"
-              className="group inline-flex items-center gap-2.5 rounded-full border border-line-strong bg-white/[0.04] py-1.5 pl-1.5 pr-4 text-[13px] text-muted backdrop-blur transition-colors hover:text-fg"
+              className="group inline-flex items-center gap-2.5 rounded-full border border-line-strong bg-tint/[0.04] py-1.5 pl-1.5 pr-4 text-[13px] text-muted backdrop-blur transition-colors hover:text-fg"
             >
               <span className="relative flex items-center gap-1.5 rounded-full bg-risk-crit/15 px-2 py-0.5 font-mono text-xs text-risk-crit-fg">
                 <span className="relative flex size-1.5">
@@ -187,7 +187,7 @@ export default function LandingPage() {
           {STEPS.map((s, i) => (
             <Reveal key={s.t} delay={i * 0.08}>
               <li className="relative flex h-full flex-col gap-3 rounded-3xl border border-line p-6">
-                <span className="grid size-10 place-items-center rounded-xl bg-white/[0.05] font-mono text-sm text-brand">{i + 1}</span>
+                <span className="grid size-10 place-items-center rounded-xl bg-tint/[0.05] font-mono text-sm text-brand-fg">{i + 1}</span>
                 <h3 className="text-lg font-semibold">{s.t}</h3>
                 <p className="leading-relaxed text-muted">{s.d}</p>
               </li>
@@ -210,7 +210,7 @@ export default function LandingPage() {
             {PRIVACY.map((p, i) => (
               <Reveal key={p.t} delay={i * 0.06}>
                 <div className="flex h-full flex-col gap-2 rounded-2xl border border-line bg-surface p-5">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-brand" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-brand-fg" aria-hidden="true">
                     <path d={p.icon} />
                   </svg>
                   <h3 className="font-semibold">{p.t}</h3>
@@ -252,7 +252,7 @@ export default function LandingPage() {
                   <span className="absolute -top-3 left-8 rounded-full bg-brand px-3 py-1 text-xs font-medium text-brand-ink">Mais escolhido</span>
                 )}
                 <div>
-                  <h3 className={cn("font-medium", p.featured ? "text-brand" : "text-muted")}>{p.name}</h3>
+                  <h3 className={cn("font-medium", p.featured ? "text-brand-fg" : "text-muted")}>{p.name}</h3>
                   <p className="text-sm text-subtle">{p.size}</p>
                 </div>
                 <p className="text-5xl font-semibold tracking-tight">
@@ -333,7 +333,7 @@ function Nav() {
         transition={{ duration: 0.6 }}
         className={cn(
           "mx-auto flex max-w-6xl items-center justify-between gap-4 rounded-2xl border px-4 py-2.5 transition-all duration-300",
-          scrolled ? "border-line-strong bg-bg/70 shadow-2xl shadow-black/40 backdrop-blur-xl" : "border-transparent"
+          scrolled ? "border-line-strong bg-bg/70 shadow-2xl shadow-[var(--shadow)] backdrop-blur-xl" : "border-transparent"
         )}
       >
         <Link href="/" aria-label="Equilibra, página inicial">
@@ -347,12 +347,13 @@ function Nav() {
             ["#planos", "Planos"],
             ["#parceiros", "Parceiros"],
           ].map(([href, label]) => (
-            <a key={href} href={href} className="rounded-lg px-3 py-2 transition-colors hover:bg-white/[0.05] hover:text-fg">
+            <a key={href} href={href} className="rounded-lg px-3 py-2 transition-colors hover:bg-tint/[0.05] hover:text-fg">
               {label}
             </a>
           ))}
         </div>
         <div className="flex items-center gap-1.5">
+          <ThemeToggle className="mr-1 hidden sm:inline-flex" />
           <ButtonLink href="/entrar" variant="ghost" size="sm">
             Entrar
           </ButtonLink>
@@ -380,7 +381,7 @@ function BentoBody({
 }) {
   return (
     <div className="flex h-full flex-col justify-between gap-10">
-      <span className={cn("font-mono text-xs", accent ? "text-brand" : "text-subtle")}>{n}</span>
+      <span className={cn("font-mono text-xs", accent ? "text-brand-fg" : "text-subtle")}>{n}</span>
       <div className="flex flex-col gap-2">
         <h3 className="text-2xl font-semibold tracking-tight">{title}</h3>
         <p className="max-w-lg leading-relaxed text-muted">{text}</p>
@@ -402,7 +403,7 @@ function Faq() {
               type="button"
               aria-expanded={isOpen}
               onClick={() => setOpen(isOpen ? null : i)}
-              className="flex w-full items-center justify-between gap-6 px-6 py-5 text-left text-[17px] font-medium transition-colors hover:text-brand"
+              className="flex w-full items-center justify-between gap-6 px-6 py-5 text-left text-[17px] font-medium transition-colors hover:text-brand-fg"
             >
               {f.q}
               <motion.span animate={{ rotate: isOpen ? 45 : 0 }} className="text-2xl leading-none text-subtle">
@@ -431,7 +432,7 @@ function Faq() {
 
 function Check() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="mt-0.5 shrink-0 text-brand" aria-hidden="true">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="mt-0.5 shrink-0 text-brand-fg" aria-hidden="true">
       <path d="M5 12.5l4.5 4.5L19 7.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
