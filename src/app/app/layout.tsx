@@ -8,6 +8,7 @@ import { useEffect, useState } from "react"
 import { CommandPalette } from "@/components/app/command-palette"
 import { CompanySwitcher } from "@/components/app/company-switcher"
 import { ThemeToggle } from "@/components/theme"
+import { BillingBanner } from "@/components/app/billing-banner"
 import { Logo, Spinner } from "@/components/ui/primitives"
 import { client } from "@/lib/client"
 import { ROLE_LABEL, useMe } from "@/lib/hooks"
@@ -36,6 +37,7 @@ const NAV = [
     group: "Conta",
     items: [
       { href: "/app/carteira", label: "Carteira", icon: "M3 7h18v13H3zM8 7V4h8v3" },
+      { href: "/app/assinatura", label: "Assinatura", icon: "M3 6h18v12H3zM3 10h18M7 15h4" },
       { href: "/app/configuracoes", label: "Configurações", icon: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" },
     ],
   },
@@ -174,6 +176,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
       <main className="min-w-0 flex-1">
+        <BillingBanner />
         {me.data.role === "viewer" && (
           <div className="no-print border-b border-line bg-tint/[0.02] px-4 py-2 text-center text-xs text-muted">
             Você tem acesso de leitura nesta empresa.

@@ -11,6 +11,7 @@ import { appUrl } from "../email"
 import { sendCampaignReminder } from "../reminders"
 import { buildReport } from "../report"
 import { chooseActions, triagePriority } from "../decisions"
+import { assertLimit, assertWritable } from "../billing"
 import { rateLimit } from "../rate-limit"
 import { DIMENSIONS, type DimensionId } from "@/lib/methodology"
 
@@ -40,6 +41,7 @@ export const sectorsRouter = j.router({
     return c.superjson(rows)
   }),
   create: editorProcedure.input(sectorInput).mutation(async ({ c, ctx, input }) => {
+    await assertLimit(ctx.db, ctx.session.companyId, "employees", input.headcount)
     const [row] = await ctx.db
       .insert(sectors)
       .values({ ...input, companyId: ctx.session.companyId })
@@ -49,6 +51,8 @@ export const sectorsRouter = j.router({
   }),
   update: editorProcedure.input(sectorInput.extend({ id: z.string() })).mutation(async ({ c, ctx, input }) => {
     const { id, ...data } = input
+    const current = await ctx.db.query.sectors.findFirst({ where: and(eq(sectors.id, id), eq(sectors.companyId, ctx.session.companyId)) })
+    await assertLimit(ctx.db, ctx.session.companyId, "employees", data.headcount - (current?.headcount ?? 0))
     await ctx.db
       .update(sectors)
       .set(data)
@@ -111,6 +115,7 @@ export const campaignsRouter = j.router({
         where: eq(sectors.companyId, ctx.session.companyId),
       })
       if (!hasSectors) throw new HTTPException(400, { message: "Cadastre ao menos um setor antes" })
+      await assertLimit(ctx.db, ctx.session.companyId, "campaignsPerYear", 1)
       const extra = await ctx.db
         .select({ id: customQuestions.id, text: customQuestions.text })
         .from(customQuestions)
@@ -142,6 +147,7 @@ export const campaignsRouter = j.router({
   setStatus: editorProcedure
     .input(z.object({ id: z.string(), status: z.enum(["active", "closed"]) }))
     .mutation(async ({ c, ctx, input }) => {
+      if (input.status === "active") await assertWritable(ctx.db, ctx.session.companyId)
       const [row] = await ctx.db
         .update(campaigns)
         .set({ status: input.status })
@@ -199,6 +205,7 @@ export const actionsRouter = j.router({
     return c.superjson(rows)
   }),
   create: editorProcedure.input(actionInput).mutation(async ({ c, ctx, input }) => {
+    await assertWritable(ctx.db, ctx.session.companyId)
     const [row] = await ctx.db
       .insert(actions)
       .values({ ...input, companyId: ctx.session.companyId })
@@ -236,6 +243,7 @@ export const actionsRouter = j.router({
   }),
   /** Gera ações sugeridas para as dimensões em risco alto ou crítico que ainda não têm ação. */
   suggest: editorProcedure.input(z.object({ campaignId: z.string() })).mutation(async ({ c, ctx, input }) => {
+    await assertWritable(ctx.db, ctx.session.companyId)
     const data = await computeInsights(ctx.db, ctx.session.companyId, input.campaignId)
     if (!data) throw new HTTPException(404, { message: "Campanha não encontrada" })
     const existing = await ctx.db

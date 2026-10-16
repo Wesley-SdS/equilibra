@@ -7,6 +7,7 @@ import { audit } from "../audit"
 import { j, ownerProcedure, privateProcedure } from "../jstack"
 import { appUrl, sendEmail } from "../email"
 import { inviteEmail } from "../email/templates"
+import { assertLimit } from "../billing"
 
 const ROLE_LABEL = { owner: "Dono", admin: "Admin", viewer: "Leitor" } as const
 
@@ -35,6 +36,7 @@ export const teamRouter = j.router({
         .innerJoin(users, eq(users.id, memberships.userId))
         .where(and(eq(memberships.companyId, ctx.session.companyId), eq(users.email, input.email)))
       if (already.length) throw new HTTPException(409, { message: "Esta pessoa já faz parte da equipe" })
+      await assertLimit(ctx.db, ctx.session.companyId, "seats", 1)
       const [invite] = await ctx.db
         .insert(invites)
         .values({ companyId: ctx.session.companyId, email: input.email, role: input.role, token: publicToken(), invitedBy: ctx.session.userId })

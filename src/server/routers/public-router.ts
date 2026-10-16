@@ -7,6 +7,7 @@ import { protocolCode, today } from "../auth"
 import { j, publicProcedure } from "../jstack"
 import { rateLimit } from "../rate-limit"
 import { triageReport } from "../decisions"
+import { entitlements } from "../billing"
 import { QUESTIONS } from "@/lib/methodology"
 
 const questionIds = new Set(QUESTIONS.map((q) => q.id))
@@ -97,6 +98,7 @@ export const channelRouter = j.router({
       rateLimit(`channel:${input.slug}`, 30, 60_000)
       const company = await ctx.db.query.companies.findFirst({ where: eq(companies.slug, input.slug) })
       if (!company) throw new HTTPException(404, { message: "Canal não encontrado" })
+      if (!entitlements(company).limits.channel) throw new HTTPException(403, { message: "O canal de relato não está ativo para esta empresa." })
       const protocol = protocolCode()
       // Triagem automática (Jev): gravidade, urgência e se o texto identifica pessoas.
       const triage = await triageReport(input.body, input.category)

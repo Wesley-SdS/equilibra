@@ -60,9 +60,11 @@ async function addCampaign(
   return campaign!
 }
 
-async function addCompany(db: Db, ownerId: string, data: { name: string; cnpj: string; slug: string }, profile: Profile) {
+type Billing = Partial<Pick<typeof companies.$inferInsert, "plan" | "subscriptionStatus" | "trialEndsAt" | "currentPeriodEnd" | "billingInterval">>
+
+async function addCompany(db: Db, ownerId: string, data: { name: string; cnpj: string; slug: string }, profile: Profile, billing: Billing) {
   const employees = Object.values(profile).reduce((s, p) => s + p.headcount, 0)
-  const [company] = await db.insert(companies).values({ ...data, employees }).returning()
+  const [company] = await db.insert(companies).values({ ...data, employees, ...billing }).returning()
   await db.insert(memberships).values({ userId: ownerId, companyId: company!.id, role: "owner" })
   const sectorIds: Record<string, string> = {}
   for (const [name, p] of Object.entries(profile)) {
@@ -95,7 +97,13 @@ async function main() {
     Administrativo: { headcount: 12, answered: 9, risk: { demandas: 0.36, papel: 0.3, reconhecimento: 0.4 } },
     Gerência: { headcount: 4, answered: 3, risk: { demandas: 0.5 } },
   }
-  const p = await addCompany(db, carla!.id, { name: "Padaria Pão Dourado Ltda.", cnpj: "12345678000190", slug: "pao-dourado" }, padaria)
+  const inDays = (d: number) => new Date(Date.now() + d * 86_400_000)
+  const p = await addCompany(db, carla!.id, { name: "Padaria Pão Dourado Ltda.", cnpj: "12345678000190", slug: "pao-dourado" }, padaria, {
+    plan: "profissional",
+    subscriptionStatus: "active",
+    billingInterval: "yearly",
+    currentPeriodEnd: inDays(210),
+  })
   await db.insert(memberships).values({ userId: rafael!.id, companyId: p.company.id, role: "viewer" })
   await addCampaign(db, p.company.id, p.sectorIds, { name: "Diagnóstico inicial · abr/2026", token: "demo-pao-dourado-abr26", startsAt: "2026-04-06", endsAt: "2026-04-24", status: "closed" }, padaria, 1.18)
   const extraTexts = [
@@ -135,7 +143,11 @@ async function main() {
     Enfermagem: { headcount: 30, answered: 22, risk: { demandas: 0.85, controle: 0.6, relacoes: 0.5, lideranca: 0.45 } },
     Médicos: { headcount: 12, answered: 7, risk: { demandas: 0.6, papel: 0.3 } },
   }
-  const cl = await addCompany(db, carla!.id, { name: "Clínica Vida Plena", cnpj: "45678912000155", slug: "vida-plena" }, clinica)
+  const cl = await addCompany(db, carla!.id, { name: "Clínica Vida Plena", cnpj: "45678912000155", slug: "vida-plena" }, clinica, {
+    plan: "profissional",
+    subscriptionStatus: "active",
+    currentPeriodEnd: inDays(18),
+  })
   await addCampaign(db, cl.company.id, cl.sectorIds, { name: "Avaliação psicossocial · set/2026", token: "demo-vida-plena-set26", startsAt: "2026-09-08", endsAt: "2026-09-26", status: "closed" }, clinica)
 
   const metal: Profile = {
@@ -143,7 +155,11 @@ async function main() {
     Montagem: { headcount: 45, answered: 30, risk: { demandas: 0.35, colegas: 0.2 } },
     Escritório: { headcount: 18, answered: 14, risk: { papel: 0.25 } },
   }
-  const mt = await addCompany(db, carla!.id, { name: "Metalúrgica Aço Forte S.A.", cnpj: "78912345000133", slug: "aco-forte" }, metal)
+  const mt = await addCompany(db, carla!.id, { name: "Metalúrgica Aço Forte S.A.", cnpj: "78912345000133", slug: "aco-forte" }, metal, {
+    plan: "profissional",
+    subscriptionStatus: "trialing",
+    trialEndsAt: inDays(9),
+  })
   await addCampaign(db, mt.company.id, mt.sectorIds, { name: "Avaliação psicossocial · out/2026", token: "demo-aco-forte-out26", startsAt: "2026-10-05", endsAt: "2026-10-30", status: "active" }, metal)
 
   const count = await db.select().from(memberships).where(eq(memberships.userId, carla!.id))

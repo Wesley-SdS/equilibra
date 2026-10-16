@@ -41,6 +41,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
       { id: "can", group: "Navegar", label: "Canal de relato", run: go("/app/canal") },
       { id: "cart", group: "Navegar", label: "Carteira de empresas", run: go("/app/carteira") },
       { id: "cfg", group: "Navegar", label: "Configurações", run: go("/app/configuracoes") },
+      { id: "bill", group: "Navegar", label: "Assinatura e planos", run: go("/app/assinatura") },
       { id: "team", group: "Navegar", label: "Equipe e convites", run: go("/app/configuracoes?aba=equipe") },
       { id: "audit", group: "Navegar", label: "Trilha de auditoria", run: go("/app/configuracoes?aba=auditoria") },
       ...DIMENSIONS.map((d) => ({ id: `dim-${d.id}`, group: "Dimensões", label: d.name, run: go(`/app/dimensao/${d.id}`) })),

@@ -5,6 +5,7 @@ import { authRouter } from "./routers/auth-router"
 import { channelRouter, surveyRouter } from "./routers/public-router"
 import { companyRouter, teamRouter } from "./routers/team-router"
 import { questionsRouter } from "./routers/questions-router"
+import { billingRouter } from "./routers/billing-router"
 import {
   actionsRouter,
   campaignsRouter,
@@ -46,6 +47,7 @@ const appRouter = j.mergeRouters(api, {
   team: withErrors(teamRouter),
   company: withErrors(companyRouter),
   questions: withErrors(questionsRouter),
+  billing: withErrors(billingRouter),
 })
 
 export type AppRouter = typeof appRouter

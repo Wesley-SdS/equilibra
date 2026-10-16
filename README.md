@@ -48,6 +48,8 @@ Para entrar no painel de demonstração, use o botão **“Ver painel de demonst
 - **Recuperação de senha** com link de uso único
 - **Relatório PDF** gerado no servidor
 - **Perguntas personalizadas** da empresa (até 10), relatadas fora do score NR-1
+- **Decisões com o Jev** (TypeSafe via Vercel AI Gateway): triagem do canal, escolha de ações e classificação de perguntas
+- **Assinatura**: planos e limites (`src/lib/plans.ts`), teste grátis de 14 dias, modo leitura, carência, webhook de pagamento com provedor plugável
 
 > O PGlite permite **um processo por vez** no banco. Pare o `npm run dev` antes de rodar `npm run db:seed`.
 

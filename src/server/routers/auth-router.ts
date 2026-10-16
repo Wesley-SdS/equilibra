@@ -13,6 +13,7 @@ import { appUrl, sendEmail } from "../email"
 import { passwordResetEmail, welcomeEmail } from "../email/templates"
 import { rateLimit } from "../rate-limit"
 import { jevEnabled } from "../jev"
+import { trialDefaults } from "../billing"
 
 const RESET_MINUTES = 30
 const sha256 = (v: string) => createHash("sha256").update(v).digest("hex")
@@ -51,7 +52,7 @@ async function createCompany(db: Db, data: z.infer<typeof companyInput>, ownerId
   const slug = `${slugify(data.companyName)}-${crypto.randomUUID().slice(0, 6)}`
   const [company] = await db
     .insert(companies)
-    .values({ name: data.companyName, cnpj: data.cnpj, employees: data.employees, slug })
+    .values({ name: data.companyName, cnpj: data.cnpj, employees: data.employees, slug, ...trialDefaults() })
     .returning()
   await db.insert(memberships).values({ userId: ownerId, companyId: company!.id, role: "owner" })
   return company!

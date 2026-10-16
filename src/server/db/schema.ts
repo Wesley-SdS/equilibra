@@ -11,6 +11,17 @@ export const companies = pgTable("companies", {
   cnpj: text("cnpj").notNull(),
   employees: integer("employees").notNull(),
   slug: text("slug").notNull().unique(),
+  // Assinatura (estrutura independente do provedor de pagamento)
+  plan: text("plan", { enum: ["essencial", "profissional", "empresa"] }).notNull().default("profissional"),
+  subscriptionStatus: text("subscription_status", { enum: ["trialing", "active", "past_due", "canceled"] })
+    .notNull()
+    .default("trialing"),
+  billingInterval: text("billing_interval", { enum: ["monthly", "yearly"] }).notNull().default("monthly"),
+  trialEndsAt: timestamp("trial_ends_at"),
+  currentPeriodEnd: timestamp("current_period_end"),
+  billingProvider: text("billing_provider"),
+  providerCustomerId: text("provider_customer_id"),
+  providerSubscriptionId: text("provider_subscription_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 })
 

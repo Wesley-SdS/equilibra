@@ -6,6 +6,7 @@ import { audit } from "../audit"
 import { computeCustomResults } from "../insights"
 import { editorProcedure, j, privateProcedure } from "../jstack"
 import { classifyQuestion } from "../decisions"
+import { assertLimit } from "../billing"
 
 export const MAX_CUSTOM_QUESTIONS = 10
 const text = z.string().trim().min(8, "Escreva a pergunta com pelo menos 8 caracteres").max(200, "Máximo de 200 caracteres")
@@ -31,6 +32,7 @@ export const questionsRouter = j.router({
     if (active >= MAX_CUSTOM_QUESTIONS) {
       throw new HTTPException(400, { message: `Limite de ${MAX_CUSTOM_QUESTIONS} perguntas ativas. Desative uma para criar outra.` })
     }
+    await assertLimit(ctx.db, ctx.session.companyId, "customQuestions", 1)
     const cls = await classifyQuestion(input.text)
     const [row] = await ctx.db
       .insert(customQuestions)
@@ -45,6 +47,7 @@ export const questionsRouter = j.router({
     .mutation(async ({ c, ctx, input }) => {
       const { id, ...data } = input
       if (data.active) {
+        await assertLimit(ctx.db, ctx.session.companyId, "customQuestions", 1)
         const [{ active }] = (await ctx.db
           .select({ active: sql<number>`count(*)::int` })
           .from(customQuestions)

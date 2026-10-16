@@ -3,14 +3,12 @@
 import { animate, motion, useMotionValue, useTransform } from "motion/react"
 import { useEffect, useState } from "react"
 import { ButtonLink } from "@/components/ui/primitives"
+import { PLANS, brl } from "@/lib/plans"
 
-const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })
 
-// Preços dos planos (PRD 01, seção 9).
+// Plano adequado ao porte, a partir da fonte única de planos.
 function planFor(employees: number) {
-  if (employees <= 50) return { name: "Essencial", monthly: 249 }
-  if (employees <= 200) return { name: "Profissional", monthly: 590 }
-  return { name: "Empresa", monthly: 1290 }
+  return PLANS.find((p) => employees <= p.limits.employees) ?? PLANS[PLANS.length - 1]!
 }
 
 function AnimatedMoney({ value, className }: { value: number; className?: string }) {

@@ -8,6 +8,7 @@ import { RoiCalculator } from "@/components/landing/roi-calculator"
 import { Counter, Reveal, SpotlightCard, SplitHeadline, TiltOnScroll } from "@/components/landing/motion-bits"
 import { ThemeToggle } from "@/components/theme"
 import { ButtonLink, Eyebrow, Logo } from "@/components/ui/primitives"
+import { PLANS as PLAN_LIST, TRIAL_DAYS, brl } from "@/lib/plans"
 import { cn } from "@/lib/utils"
 
 const ENFORCEMENT_START = new Date("2026-05-26T00:00:00-03:00")
@@ -454,11 +455,15 @@ const STEPS = [
   { t: "Exporte o PGR", d: "Inventário de riscos e plano de ação prontos para anexar." },
 ]
 
-const PLANS = [
-  { name: "Essencial", size: "até 50 funcionários", price: "R$ 249", cta: "Começar", items: ["2 campanhas por ano", "Mapa de risco por setor", "Plano de ação 5W2H", "Relatório PGR"] },
-  { name: "Profissional", size: "até 200 funcionários", price: "R$ 590", cta: "Começar", featured: true, items: ["Campanhas ilimitadas", "Canal de relato anônimo", "Histórico e evolução", "Suporte prioritário"] },
-  { name: "Empresa", size: "200 a 500 funcionários", price: "R$ 1.290", cta: "Falar com vendas", items: ["Multiunidades", "SSO e auditoria", "Gerente de sucesso", "Integrações de SST"] },
-]
+// Derivado da fonte única de planos (src/lib/plans.ts).
+const PLANS = PLAN_LIST.map((p) => ({
+  name: p.name,
+  size: p.audience,
+  price: brl(p.monthly),
+  cta: p.id === "empresa" ? "Falar com vendas" : `Testar ${TRIAL_DAYS} dias grátis`,
+  featured: p.featured,
+  items: p.highlights.slice(0, 4),
+}))
 
 const FAQ = [
   { q: "O questionário é realmente anônimo?", a: "Sim. Não coletamos nome, e-mail, IP nem horário exato. Os resultados só aparecem para grupos com 5 ou mais respostas; setores menores são agrupados." },
