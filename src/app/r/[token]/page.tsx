@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { AnimatePresence, motion } from "motion/react"
-import { use, useCallback, useEffect, useState } from "react"
+import { use, useCallback, useEffect, useRef, useState } from "react"
 import { Button, Logo, Spinner } from "@/components/ui/primitives"
 import { client } from "@/lib/client"
 import { DIMENSIONS, QUESTIONS, SCALE } from "@/lib/methodology"
@@ -18,6 +18,7 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
   const [answers, setAnswers] = useState<Record<string, number>>({})
   const [index, setIndex] = useState(0)
   const [direction, setDirection] = useState(1)
+  const advancing = useRef(false)
 
   const info = useQuery({
     queryKey: ["survey", token],
@@ -64,21 +65,45 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
     },
   })
 
+  // Índice e respostas também ficam em refs: handlers de teclado e timers leem sempre o
+  // valor atual, mesmo quando disparam antes do próximo render (teclas muito rápidas).
+  const indexRef = useRef(0)
+  const answersRef = useRef<Record<string, number>>({})
+  indexRef.current = index
+  answersRef.current = answers
+
+  const goTo = useCallback((i: number, dir: number) => {
+    const clamped = Math.min(Math.max(i, 0), QUESTIONS.length - 1)
+    indexRef.current = clamped
+    setDirection(dir)
+    setIndex(clamped)
+  }, [])
+
   const answer = useCallback(
     (value: number) => {
-      const q = QUESTIONS[index]!
-      const next = { ...answers, [q.id]: value }
+      // Trava enquanto a transição para a próxima pergunta (ou o envio) acontece:
+      // cliques/teclas rápidas não podem agendar dois avanços nem pular do fim da lista.
+      if (advancing.current || submit.isPending) return
+      advancing.current = true
+      const current = indexRef.current
+      const q = QUESTIONS[current]!
+      const next = { ...answersRef.current, [q.id]: value }
+      answersRef.current = next
       setAnswers(next)
       setTimeout(() => {
-        if (index < QUESTIONS.length - 1) {
-          setDirection(1)
-          setIndex((i) => i + 1)
+        const missing = QUESTIONS.findIndex((x) => !next[x.id])
+        if (current < QUESTIONS.length - 1) {
+          goTo(current + 1, 1)
+        } else if (missing >= 0) {
+          // Nunca envia incompleto: volta para a primeira pergunta sem resposta.
+          goTo(missing, -1)
         } else {
           submit.mutate(next)
         }
+        advancing.current = false
       }, 220)
     },
-    [answers, index, submit]
+    [goTo, submit]
   )
 
   useEffect(() => {
@@ -86,14 +111,11 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
     const onKey = (e: KeyboardEvent) => {
       const n = Number(e.key)
       if (n >= 1 && n <= 5) answer(n)
-      if (e.key === "ArrowLeft" && index > 0) {
-        setDirection(-1)
-        setIndex((i) => i - 1)
-      }
+      if (e.key === "ArrowLeft" && indexRef.current > 0 && !advancing.current) goTo(indexRef.current - 1, -1)
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [phase, answer, index])
+  }, [phase, answer, goTo])
 
   if (info.isLoading) {
     return (
@@ -127,7 +149,8 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
     )
   }
 
-  const q = QUESTIONS[index]!
+  // Índice sempre dentro da lista (protege também contra rascunhos antigos no aparelho).
+  const q = QUESTIONS[Math.min(Math.max(index, 0), QUESTIONS.length - 1)]!
   const dim = DIMENSIONS.find((d) => d.id === q.dimension)!
   const progress = ((index + (answers[q.id] ? 1 : 0)) / QUESTIONS.length) * 100
 
@@ -243,10 +266,7 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
               <Button
                 variant="ghost"
                 disabled={index === 0 || submit.isPending}
-                onClick={() => {
-                  setDirection(-1)
-                  setIndex((i) => i - 1)
-                }}
+                onClick={() => goTo(indexRef.current - 1, -1)}
               >
                 ← Voltar
               </Button>
