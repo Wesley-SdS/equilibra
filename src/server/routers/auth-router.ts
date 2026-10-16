@@ -1,13 +1,20 @@
-import { and, asc, eq, isNull } from "drizzle-orm"
+import { createHash, randomBytes } from "node:crypto"
+import { and, asc, eq, gt, isNull } from "drizzle-orm"
 import type { Context } from "hono"
 import { deleteCookie, setCookie } from "hono/cookie"
 import { HTTPException } from "hono/http-exception"
 import { z } from "zod"
 import type { Db } from "../db"
-import { companies, invites, memberships, users } from "../db/schema"
+import { companies, invites, memberships, passwordResets, users } from "../db/schema"
 import { SESSION_COOKIE, createSessionToken, hashPassword, verifyPassword } from "../auth"
 import { audit } from "../audit"
 import { j, privateProcedure, publicProcedure } from "../jstack"
+import { appUrl, sendEmail } from "../email"
+import { passwordResetEmail, welcomeEmail } from "../email/templates"
+import { rateLimit } from "../rate-limit"
+
+const RESET_MINUTES = 30
+const sha256 = (v: string) => createHash("sha256").update(v).digest("hex")
 import { slugify } from "@/lib/utils"
 
 const cookieOpts = {
@@ -78,8 +85,56 @@ export const authRouter = j.router({
     const company = await createCompany(ctx.db, input, user!.id)
     await audit(ctx.db, { userId: user!.id, companyId: company.id }, { action: "create", entity: "empresa", entityId: company.id, summary: `Conta criada para ${company.name}` })
     startSession(c, user!.id, company.id)
+    await sendEmail({ to: user!.email, ...welcomeEmail({ name: user!.name, company: company.name, link: `${appUrl(c.req.url)}/app` }) })
     return c.superjson({ ok: true })
   }),
+
+  /** Sempre responde igual, exista ou não a conta (não revela quais e-mails estão cadastrados). */
+  requestPasswordReset: publicProcedure
+    .input(z.object({ email: z.string().trim().toLowerCase().email("E-mail inválido") }))
+    .mutation(async ({ c, ctx, input }) => {
+      rateLimit(`reset:${input.email}`, 5, 15 * 60_000)
+      const user = await ctx.db.query.users.findFirst({ where: eq(users.email, input.email) })
+      if (user) {
+        const token = randomBytes(32).toString("base64url")
+        await ctx.db.insert(passwordResets).values({
+          userId: user.id,
+          tokenHash: sha256(token),
+          expiresAt: new Date(Date.now() + RESET_MINUTES * 60_000),
+        })
+        await sendEmail({
+          to: user.email,
+          ...passwordResetEmail({ name: user.name, minutes: RESET_MINUTES, link: `${appUrl(c.req.url)}/redefinir-senha/${token}` }),
+        })
+      }
+      return c.superjson({ ok: true })
+    }),
+
+  checkResetToken: publicProcedure.input(z.object({ token: z.string().min(20) })).query(async ({ c, ctx, input }) => {
+    const row = await ctx.db.query.passwordResets.findFirst({
+      where: and(eq(passwordResets.tokenHash, sha256(input.token)), isNull(passwordResets.usedAt), gt(passwordResets.expiresAt, new Date())),
+    })
+    return c.superjson({ valid: !!row })
+  }),
+
+  resetPassword: publicProcedure
+    .input(z.object({ token: z.string().min(20), password }))
+    .mutation(async ({ c, ctx, input }) => {
+      rateLimit(`reset-token:${input.token.slice(0, 12)}`, 10, 15 * 60_000)
+      const row = await ctx.db.query.passwordResets.findFirst({
+        where: and(eq(passwordResets.tokenHash, sha256(input.token)), isNull(passwordResets.usedAt), gt(passwordResets.expiresAt, new Date())),
+      })
+      if (!row) throw new HTTPException(400, { message: "Link inválido ou expirado. Peça um novo." })
+      await ctx.db.update(users).set({ passwordHash: hashPassword(input.password) }).where(eq(users.id, row.userId))
+      // Invalida este e qualquer outro link pendente do mesmo usuário.
+      await ctx.db.update(passwordResets).set({ usedAt: new Date() }).where(and(eq(passwordResets.userId, row.userId), isNull(passwordResets.usedAt)))
+      const first = await ctx.db.query.memberships.findFirst({ where: eq(memberships.userId, row.userId), orderBy: asc(memberships.createdAt) })
+      if (first) {
+        await audit(ctx.db, { userId: row.userId, companyId: first.companyId }, { action: "update", entity: "usuário", entityId: row.userId, summary: "Senha redefinida por e-mail" })
+        startSession(c, row.userId, first.companyId)
+      }
+      return c.superjson({ ok: true })
+    }),
 
   login: publicProcedure
     .input(z.object({ email: z.string().trim().toLowerCase().email("E-mail inválido"), password: z.string().min(1, "Informe a senha") }))

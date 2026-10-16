@@ -35,6 +35,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
       { id: "evo", group: "Navegar", label: "Evolução entre campanhas", run: go("/app/evolucao") },
       { id: "camp", group: "Navegar", label: "Campanhas", run: go("/app/campanhas") },
       { id: "set", group: "Navegar", label: "Setores", run: go("/app/setores") },
+      { id: "qst", group: "Navegar", label: "Questionário e perguntas da empresa", run: go("/app/questionario") },
       { id: "plan", group: "Navegar", label: "Plano de ação", run: go("/app/plano") },
       { id: "rep", group: "Navegar", label: "Relatório PGR", run: go("/app/relatorio") },
       { id: "can", group: "Navegar", label: "Canal de relato", run: go("/app/canal") },

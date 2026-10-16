@@ -167,6 +167,54 @@ export async function computeDimension(db: Db, companyId: string, campaignId: st
   return { campaign: base.campaign, enough: true as const, items: items.sort((a, b) => b.risk - a.risk), sectors: sectorScores, score }
 }
 
+/**
+ * Perguntas personalizadas: média (1–5), % favorável ("Frequentemente" + "Sempre") e
+ * distribuição. Não entram no score NR-1. Só com pelo menos K respostas na campanha.
+ */
+export async function computeCustomResults(db: Db, companyId: string, campaignId?: string) {
+  const campaign = campaignId
+    ? await db.query.campaigns.findFirst({ where: and(eq(campaigns.id, campaignId), eq(campaigns.companyId, companyId)) })
+    : await db.query.campaigns.findFirst({ where: eq(campaigns.companyId, companyId), orderBy: desc(campaigns.createdAt) })
+  if (!campaign) return null
+  const snapshot = campaign.customQuestions ?? []
+  const resp = await db.select({ id: responses.id }).from(responses).where(eq(responses.campaignId, campaign.id))
+  const enough = resp.length >= K_ANONYMITY
+  if (!snapshot.length || !enough) {
+    return { campaign: { id: campaign.id, name: campaign.name }, enough, responses: resp.length, items: [] as CustomResult[] }
+  }
+  const ans = await db
+    .select()
+    .from(answers)
+    .where(
+      and(
+        inArray(
+          answers.responseId,
+          resp.map((r) => r.id)
+        ),
+        inArray(
+          answers.questionId,
+          snapshot.map((q) => q.id)
+        )
+      )
+    )
+  const items: CustomResult[] = snapshot.map((q) => {
+    const values = ans.filter((a) => a.questionId === q.id).map((a) => a.value)
+    const distribution = [1, 2, 3, 4, 5].map((v) => values.filter((x) => x === v).length)
+    const n = values.length
+    return {
+      id: q.id,
+      text: q.text,
+      n,
+      average: n ? Math.round((values.reduce((s, v) => s + v, 0) / n) * 10) / 10 : 0,
+      favorable: n ? Math.round(((distribution[3]! + distribution[4]!) / n) * 100) : 0,
+      distribution,
+    }
+  })
+  return { campaign: { id: campaign.id, name: campaign.name }, enough, responses: resp.length, items }
+}
+
+export type CustomResult = { id: string; text: string; n: number; average: number; favorable: number; distribution: number[] }
+
 /** Resumo de todas as empresas do usuário, para a carteira de contadores e SST. */
 export async function computePortfolio(db: Db, userId: string) {
   const list = await db

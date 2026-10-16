@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { AnimatePresence, motion } from "motion/react"
-import { use, useCallback, useEffect, useRef, useState } from "react"
+import { use, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Button, Logo, Spinner } from "@/components/ui/primitives"
 import { client } from "@/lib/client"
 import { DIMENSIONS, QUESTIONS, SCALE } from "@/lib/methodology"
@@ -26,6 +26,17 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
     retry: false,
   })
 
+  // 28 perguntas da metodologia + perguntas da empresa (cópia salva na campanha).
+  const list = useMemo(
+    () => [
+      ...QUESTIONS.map((q) => ({ id: q.id, text: q.text, label: DIMENSIONS.find((d) => d.id === q.dimension)!.name })),
+      ...(info.data?.customQuestions ?? []).map((q) => ({ id: q.id, text: q.text, label: "Perguntas da empresa" })),
+    ],
+    [info.data]
+  )
+  const listRef = useRef(list)
+  listRef.current = list
+
   // Rascunho local: se a pessoa fechar a aba, continua de onde parou (fica só no aparelho dela).
   useEffect(() => {
     try {
@@ -34,7 +45,7 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
         const d = JSON.parse(raw) as { sectorId: string; answers: Record<string, number>; index: number }
         setSectorId(d.sectorId)
         setAnswers(d.answers)
-        setIndex(Math.min(d.index, QUESTIONS.length - 1))
+        setIndex(Math.max(0, d.index))
       }
     } catch {}
   }, [storageKey])
@@ -54,7 +65,7 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
         await client.survey.submit.$post({
           token,
           sectorId: sectorId!,
-          answers: QUESTIONS.map((q) => ({ questionId: q.id, value: final[q.id]! })),
+          answers: listRef.current.map((q) => ({ questionId: q.id, value: final[q.id]! })),
         })
       ).json(),
     onSuccess: () => {
@@ -73,7 +84,7 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
   answersRef.current = answers
 
   const goTo = useCallback((i: number, dir: number) => {
-    const clamped = Math.min(Math.max(i, 0), QUESTIONS.length - 1)
+    const clamped = Math.min(Math.max(i, 0), listRef.current.length - 1)
     indexRef.current = clamped
     setDirection(dir)
     setIndex(clamped)
@@ -86,13 +97,13 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
       if (advancing.current || submit.isPending) return
       advancing.current = true
       const current = indexRef.current
-      const q = QUESTIONS[current]!
+      const q = listRef.current[current]!
       const next = { ...answersRef.current, [q.id]: value }
       answersRef.current = next
       setAnswers(next)
       setTimeout(() => {
-        const missing = QUESTIONS.findIndex((x) => !next[x.id])
-        if (current < QUESTIONS.length - 1) {
+        const missing = listRef.current.findIndex((x) => !next[x.id])
+        if (current < listRef.current.length - 1) {
           goTo(current + 1, 1)
         } else if (missing >= 0) {
           // Nunca envia incompleto: volta para a primeira pergunta sem resposta.
@@ -150,9 +161,8 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
   }
 
   // Índice sempre dentro da lista (protege também contra rascunhos antigos no aparelho).
-  const q = QUESTIONS[Math.min(Math.max(index, 0), QUESTIONS.length - 1)]!
-  const dim = DIMENSIONS.find((d) => d.id === q.dimension)!
-  const progress = ((index + (answers[q.id] ? 1 : 0)) / QUESTIONS.length) * 100
+  const q = list[Math.min(Math.max(index, 0), list.length - 1)]!
+  const progress = ((index + (answers[q.id] ? 1 : 0)) / list.length) * 100
 
   return (
     <Shell company={data.companyName}>
@@ -163,7 +173,7 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
               <span className="font-mono text-xs text-brand-fg">{data.campaign.name}</span>
               <h1 className="text-[32px] font-semibold leading-[1.1] tracking-[-0.03em]">Como está o seu dia a dia no trabalho?</h1>
               <p className="text-[15px] leading-relaxed text-muted">
-                São {QUESTIONS.length} perguntas rápidas, cerca de 6 minutos. Suas respostas ajudam a empresa a melhorar as condições de trabalho.
+                São {list.length} perguntas rápidas, cerca de {Math.max(6, Math.round(list.length / 4.5))} minutos. Suas respostas ajudam a empresa a melhorar as condições de trabalho.
               </p>
             </motion.div>
             <motion.ul
@@ -210,9 +220,9 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
           <motion.div key="questions" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-1 flex-col">
             <div className="flex flex-col gap-2.5">
               <div className="flex justify-between text-[13px] text-subtle">
-                <span>{dim.name}</span>
+                <span>{q.label}</span>
                 <span className="font-mono">
-                  {index + 1}/{QUESTIONS.length}
+                  {index + 1}/{list.length}
                 </span>
               </div>
               <div className="h-1.5 overflow-hidden rounded-full bg-tint/[0.07]" role="progressbar" aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={100}>

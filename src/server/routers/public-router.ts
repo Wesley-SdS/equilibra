@@ -5,20 +5,8 @@ import { z } from "zod"
 import { answers, campaigns, channelReports, companies, responses, sectors } from "../db/schema"
 import { protocolCode, today } from "../auth"
 import { j, publicProcedure } from "../jstack"
+import { rateLimit } from "../rate-limit"
 import { QUESTIONS } from "@/lib/methodology"
-
-// Limite simples em memória para endpoints públicos (por instância).
-const hits = new Map<string, { n: number; at: number }>()
-function rateLimit(key: string, max: number, windowMs: number) {
-  const now = Date.now()
-  const cur = hits.get(key)
-  if (!cur || now - cur.at > windowMs) {
-    hits.set(key, { n: 1, at: now })
-    return
-  }
-  cur.n += 1
-  if (cur.n > max) throw new HTTPException(429, { message: "Muitas tentativas. Aguarde um instante." })
-}
 
 const questionIds = new Set(QUESTIONS.map((q) => q.id))
 
@@ -38,6 +26,7 @@ export const surveyRouter = j.router({
       companyName: company?.name ?? "",
       sectors: sectorList,
       alreadyAnswered: getCookie(c, `eq_r_${campaign.id}`) === "1",
+      customQuestions: campaign.customQuestions ?? [],
     })
   }),
 
@@ -48,7 +37,8 @@ export const surveyRouter = j.router({
         sectorId: z.string(),
         answers: z
           .array(z.object({ questionId: z.string(), value: z.number().int().min(1).max(5) }))
-          .length(QUESTIONS.length),
+          .min(QUESTIONS.length)
+          .max(QUESTIONS.length + 20),
       })
     )
     .mutation(async ({ c, ctx, input }) => {
@@ -63,9 +53,11 @@ export const surveyRouter = j.router({
         where: and(eq(sectors.id, input.sectorId), eq(sectors.companyId, campaign.companyId)),
       })
       if (!sector) throw new HTTPException(400, { message: "Setor inválido" })
+      // Exige exatamente as 28 perguntas padrão + as perguntas da empresa desta campanha.
+      const expected = new Set([...questionIds, ...(campaign.customQuestions ?? []).map((q) => q.id)])
       const ids = new Set(input.answers.map((a) => a.questionId))
-      if (ids.size !== QUESTIONS.length || [...ids].some((id) => !questionIds.has(id))) {
-        throw new HTTPException(400, { message: "Respostas incompletas" })
+      if (ids.size !== input.answers.length || ids.size !== expected.size || [...ids].some((id) => !expected.has(id))) {
+        throw new HTTPException(422, { message: "Respostas incompletas" })
       }
 
       await ctx.db.transaction(async (tx) => {

@@ -1,4 +1,4 @@
-import { integer, pgTable, primaryKey, text, timestamp } from "drizzle-orm/pg-core"
+import { boolean, integer, jsonb, pgTable, primaryKey, text, timestamp } from "drizzle-orm/pg-core"
 
 const id = () =>
   text("id")
@@ -88,6 +88,37 @@ export const campaigns = pgTable("campaigns", {
     .default("active"),
   startsAt: text("starts_at").notNull(),
   endsAt: text("ends_at").notNull(),
+  // Cópia das perguntas da empresa no momento da criação: editar as perguntas depois
+  // não altera campanhas já lançadas (nem invalida respostas antigas).
+  customQuestions: jsonb("custom_questions").$type<CustomQuestionSnapshot[]>().notNull().default([]),
+  // Último lembrete enviado à equipe (evita e-mails repetidos pelo cron).
+  lastReminderAt: timestamp("last_reminder_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+})
+
+export type CustomQuestionSnapshot = { id: string; text: string }
+
+/** Perguntas adicionais da empresa (escala Nunca → Sempre), relatadas fora do score NR-1. */
+export const customQuestions = pgTable("custom_questions", {
+  id: id(),
+  companyId: text("company_id")
+    .notNull()
+    .references(() => companies.id, { onDelete: "cascade" }),
+  text: text("text").notNull(),
+  active: boolean("active").notNull().default(true),
+  position: integer("position").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+})
+
+/** Tokens de redefinição de senha: só o hash é guardado, com validade curta e uso único. */
+export const passwordResets = pgTable("password_resets", {
+  id: id(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  tokenHash: text("token_hash").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 })
 

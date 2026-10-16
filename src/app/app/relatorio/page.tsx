@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useSearchParams } from "next/navigation"
 import { Suspense, useEffect } from "react"
 import { PageHeader } from "@/components/app/page-header"
-import { Button, EmptyState, ButtonLink, Spinner } from "@/components/ui/primitives"
+import { Button, EmptyState, ButtonLink, Spinner, buttonClass } from "@/components/ui/primitives"
 import { client } from "@/lib/client"
 import { DIMENSIONS, K_ANONYMITY, QUESTIONS, RISK_LEVELS, dimensionMeta, inventoryRating, riskLevel } from "@/lib/methodology"
 import { formatCnpj, formatDate } from "@/lib/utils"
@@ -43,7 +43,16 @@ function ReportContent() {
       <PageHeader
         title="Relatório PGR"
         description="Inventário de riscos psicossociais e plano de ação, prontos para anexar ao Programa de Gerenciamento de Riscos."
-        actions={<Button onClick={() => window.print()}>Imprimir / salvar PDF</Button>}
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => window.print()}>
+              Imprimir
+            </Button>
+            <a href="/api/relatorio/pdf" className={buttonClass("primary")} download>
+              Baixar PDF
+            </a>
+          </>
+        }
       />
       <article className="print-sheet flex flex-col gap-10 rounded-3xl border border-line bg-surface p-6 text-[15px] leading-relaxed sm:p-10">
         <header className="flex flex-col gap-2 border-b border-line pb-8">

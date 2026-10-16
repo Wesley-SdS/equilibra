@@ -8,30 +8,35 @@
 <body>
 <x-dc>
 <helmet>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&amp;family=Figtree:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
 <style>
-body{margin:0}
-a{color:#1F6B5C}a:hover{color:#134A3F}
+body{margin:0;background:#07090A}
+a{color:#C6F56F}a:hover{color:#E2FFAE}
 </style>
 </helmet>
-<div style="width: 390px; height: 844px; box-sizing: border-box; font-family: Figtree, system-ui, sans-serif; color: #10231F; background: #F6F5F1; padding: 24px 20px; display: flex; flex-direction: column; gap: 24px">
-<div style="display: flex; flex-direction: column; gap: 10px">
-<div style="display: flex; justify-content: space-between; font-size: 13px; color: #5B6B66"><span>Demandas do trabalho</span><span>{{num}} de 28</span></div>
-<div style="height: 6px; border-radius: 99px; background: #E3E5E0"><div style="height: 6px; border-radius: 99px; background: #1F6B5C; width: {{pct}}"></div></div>
+<div style="position: relative; width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; font-family: Geist, system-ui, sans-serif; color: #EDEFEE; background: #07090A; padding: 24px 20px; display: flex; flex-direction: column; gap: 22px">
+<div aria-hidden="true" style="position: absolute; left: 50%; top: -220px; width: 620px; height: 440px; transform: translateX(-50%); background: radial-gradient(closest-side, rgba(150,230,90,0.14), transparent)"></div>
+<div style="position: relative; display: flex; justify-content: space-between; align-items: center">
+<div style="display: flex; align-items: center; gap: 8px"><span style="width: 26px; height: 26px; border-radius: 7px; background: #C6F56F; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#07090A" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M3 13c3-6 6-6 9 0s6 6 9 0"></path></svg></span><span style="font-weight: 600; letter-spacing: -0.02em">equilibra</span></div>
+<span style="font-size: 12px; color: #8A9692">Padaria Pão Dourado</span>
 </div>
-<div style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 10px; background: #E4F1EB; font-size: 13px; color: #1E4D42">
-<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1E4D42" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
-Anônimo: não coletamos nome, e-mail nem IP.
+<div style="position: relative; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; font-size: 13px; color: #8A9692"><span>{{label}}</span><span style="font-family: 'Geist Mono', monospace">{{num}}/31</span></div>
+<div style="height: 6px; border-radius: 99px; background: rgba(255,255,255,0.07)"><div style="height: 6px; border-radius: 99px; background: #C6F56F; width: {{pct}}"></div></div>
 </div>
-<h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 28px; line-height: 1.2; font-weight: 700">{{question}}</h1>
-<div style="display: flex; flex-direction: column; gap: 10px">
+<h1 style="position: relative; margin: 18px 0 0; font-size: 26px; line-height: 1.2; font-weight: 600; letter-spacing: -0.02em">{{question}}</h1>
+<div style="position: relative; display: flex; flex-direction: column; gap: 10px">
 <sc-for list="{{options}}" as="o" hint-placeholder-count="5">
-<button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button>
+<button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}<span style="font-family: 'Geist Mono', monospace; font-size: 12px; opacity: 0.6">{{o.key}}</span></button>
 </sc-for>
 </div>
-<div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center">
-<button onClick="{{back}}" style="min-height: 48px; padding: 0 16px; border: 0; background: transparent; font: inherit; font-weight: 600; color: #3B4F4A">Voltar</button>
-<span style="font-size: 13px; color: #5B6B66">~6 minutos no total</span>
+<div style="position: relative; margin-top: auto; display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; background: rgba(198,245,111,0.06); border: 1px solid rgba(198,245,111,0.2); font-size: 12px; color: #C9D1CE">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C6F56F" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+Anônimo: sem nome, e-mail nem IP.
+</div>
+<div style="position: relative; display: flex; justify-content: space-between; align-items: center">
+<button onClick="{{back}}" style="min-height: 44px; padding: 0 12px; border: 0; background: transparent; font: inherit; font-weight: 500; color: #A3ADA9">← Voltar</button>
+<span style="font-size: 12px; color: #8A9692">~7 minutos</span>
 </div>
 </div>
 </x-dc>
@@ -39,23 +44,31 @@ Anônimo: não coletamos nome, e-mail nem IP.
 class Component extends DCLogic {
 constructor(p){ super(p); this.state = { i: 0, picked: null }; }
 renderVals() {
-var qs = ['Com que frequência você precisa trabalhar muito rápido?','Você tem tempo suficiente para concluir suas tarefas?','As metas do seu setor são realistas?','Você consegue fazer pausas quando precisa?'];
+var qs = [
+  { label: 'Demandas do trabalho', text: 'Preciso trabalhar muito rápido para dar conta das tarefas.' },
+  { label: 'Apoio da liderança', text: 'Posso falar com a minha liderança sobre algo que me preocupa.' },
+  { label: 'Relacionamentos e assédio', text: 'Sinto medo de represália se eu relatar um problema.' },
+  { label: 'Perguntas da empresa', text: 'Tenho os equipamentos e uniformes de que preciso para trabalhar.' }
+];
 var labels = ['Nunca','Raramente','Às vezes','Frequentemente','Sempre'];
 var self = this;
 var i = this.state.i % qs.length;
+var nums = [1, 13, 20, 29];
 return {
-num: i + 1,
-pct: Math.round(((i + 1) / 28) * 100) + '%',
-question: qs[i],
-back: function(){ self.setState({ i: Math.max(0, self.state.i - 1), picked: null }); },
-options: labels.map(function(l, k){
-var on = self.state.picked === k;
-return {
-label: l,
-style: 'min-height: 56px; padding: 0 18px; border-radius: 14px; text-align: left; font: inherit; font-size: 17px; font-weight: 500; cursor: pointer; ' + (on ? 'background: #1F6B5C; color: #FFFFFF; border: 1.5px solid #1F6B5C' : 'background: #FFFFFF; color: #10231F; border: 1.5px solid #D5DAD4'),
-pick: function(){ self.setState({ picked: k }); setTimeout(function(){ self.setState({ i: self.state.i + 1, picked: null }); }, 280); }
-};
-})
+  num: nums[i],
+  label: qs[i].label,
+  pct: Math.round((nums[i] / 31) * 100) + '%',
+  question: qs[i].text,
+  back: function(){ self.setState({ i: Math.max(0, self.state.i - 1), picked: null }); },
+  options: labels.map(function(l, k){
+    var on = self.state.picked === k;
+    return {
+      label: l,
+      key: String(k + 1),
+      style: 'display: flex; justify-content: space-between; align-items: center; min-height: 54px; padding: 0 16px; border-radius: 14px; text-align: left; font: inherit; font-size: 16px; font-weight: 500; cursor: pointer; ' + (on ? 'background: #C6F56F; color: #07090A; border: 1px solid #C6F56F' : 'background: rgba(255,255,255,0.02); color: #EDEFEE; border: 1px solid rgba(255,255,255,0.14)'),
+      pick: function(){ self.setState({ picked: k }); setTimeout(function(){ self.setState({ i: self.state.i + 1, picked: null }); }, 260); }
+    };
+  })
 };
 }
 }

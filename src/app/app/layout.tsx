@@ -21,6 +21,7 @@ const NAV = [
       { href: "/app/evolucao", label: "Evolução", icon: "M3 17l6-6 4 4 8-8M15 7h6v6" },
       { href: "/app/campanhas", label: "Campanhas", icon: "M4 6h16M4 12h16M4 18h10" },
       { href: "/app/setores", label: "Setores", icon: "M4 20V10l8-6 8 6v10M9 20v-6h6v6" },
+      { href: "/app/questionario", label: "Questionário", icon: "M9 9a3 3 0 1 1 4 2.8c-.6.3-1 .9-1 1.6V14M12 17.5v.01M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z" },
     ],
   },
   {

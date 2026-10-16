@@ -2,11 +2,15 @@ import { and, desc, eq, sql } from "drizzle-orm"
 import { HTTPException } from "hono/http-exception"
 import { z } from "zod"
 import type { Db } from "../db"
-import { actions, campaigns, channelReports, companies, responses, sectors } from "../db/schema"
+import { actions, campaigns, channelReports, companies, customQuestions, responses, sectors } from "../db/schema"
 import { publicToken } from "../auth"
 import { audit } from "../audit"
 import { computeDimension, computeHistory, computeInsights, computePortfolio } from "../insights"
 import { editorProcedure, j, privateProcedure } from "../jstack"
+import { appUrl } from "../email"
+import { sendCampaignReminder } from "../reminders"
+import { buildReport } from "../report"
+import { rateLimit } from "../rate-limit"
 import { ACTION_LIBRARY, DIMENSIONS, type DimensionId } from "@/lib/methodology"
 
 const dimensionEnum = z.enum(DIMENSIONS.map((d) => d.id) as [DimensionId, ...DimensionId[]])
@@ -70,6 +74,7 @@ const campaignSelect = {
   endsAt: campaigns.endsAt,
   createdAt: campaigns.createdAt,
   responses: sql<number>`(select count(*)::int from ${responses} where ${responses.campaignId} = ${campaigns.id})`,
+  customCount: sql<number>`jsonb_array_length(${campaigns.customQuestions})::int`,
 }
 
 export const campaignsRouter = j.router({
@@ -105,13 +110,34 @@ export const campaignsRouter = j.router({
         where: eq(sectors.companyId, ctx.session.companyId),
       })
       if (!hasSectors) throw new HTTPException(400, { message: "Cadastre ao menos um setor antes" })
+      const extra = await ctx.db
+        .select({ id: customQuestions.id, text: customQuestions.text })
+        .from(customQuestions)
+        .where(and(eq(customQuestions.companyId, ctx.session.companyId), eq(customQuestions.active, true)))
+        .orderBy(customQuestions.position, customQuestions.createdAt)
       const [row] = await ctx.db
         .insert(campaigns)
-        .values({ ...input, companyId: ctx.session.companyId, token: publicToken() })
+        .values({
+          ...input,
+          companyId: ctx.session.companyId,
+          token: publicToken(),
+          customQuestions: extra.map((q) => ({ id: `c:${q.id}`, text: q.text })),
+        })
         .returning()
       await audit(ctx.db, ctx.session, { action: "create", entity: "campanha", entityId: row!.id, summary: `Campanha “${row!.name}” criada` })
       return c.superjson(row!)
     }),
+  /** Envia agora o lembrete com a taxa de resposta para donos e admins. */
+  remind: editorProcedure.input(z.object({ id: z.string() })).mutation(async ({ c, ctx, input }) => {
+    rateLimit(`remind:${input.id}`, 3, 60 * 60_000)
+    const campaign = await ctx.db.query.campaigns.findFirst({
+      where: and(eq(campaigns.id, input.id), eq(campaigns.companyId, ctx.session.companyId)),
+    })
+    if (!campaign) throw new HTTPException(404, { message: "Campanha não encontrada" })
+    const sent = await sendCampaignReminder(ctx.db, campaign.id, appUrl(c.req.url))
+    await audit(ctx.db, ctx.session, { action: "status", entity: "campanha", entityId: campaign.id, summary: `Lembrete da campanha “${campaign.name}” enviado (${sent} e-mails)` })
+    return c.superjson({ sent })
+  }),
   setStatus: editorProcedure
     .input(z.object({ id: z.string(), status: z.enum(["active", "closed"]) }))
     .mutation(async ({ c, ctx, input }) => {
@@ -248,13 +274,7 @@ export const reportRouter = j.router({
   get: privateProcedure
     .input(z.object({ campaignId: z.string().optional() }).optional())
     .query(async ({ c, ctx, input }) => {
-      const company = await ctx.db.query.companies.findFirst({ where: eq(companies.id, ctx.session.companyId) })
-      const campaignId = input?.campaignId ?? (await latestCampaignId(ctx.db, ctx.session.companyId))
-      const insights = campaignId ? await computeInsights(ctx.db, ctx.session.companyId, campaignId) : null
-      const plan = await ctx.db.select().from(actions).where(eq(actions.companyId, ctx.session.companyId))
-      const sectorList = await ctx.db.select().from(sectors).where(eq(sectors.companyId, ctx.session.companyId))
-      const history = await computeHistory(ctx.db, ctx.session.companyId)
-      return c.superjson({ company: company!, insights, plan, sectors: sectorList, history })
+      return c.superjson(await buildReport(ctx.db, ctx.session.companyId, input?.campaignId))
     }),
 })
 

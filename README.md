@@ -43,7 +43,11 @@ Para entrar no painel de demonstração, use o botão **“Ver painel de demonst
 - **Relatório PGR** imprimível em A4 (metodologia, participação, inventário, plano, evolução)
 - **Canal de relato anônimo** com protocolo de acompanhamento
 - **Trilha de auditoria** de todas as alterações
-- **Paleta de comandos** (Ctrl/⌘ K)
+- **Paleta de comandos** (Ctrl/⌘ K) e **modo claro/escuro**
+- **E-mails transacionais** (Resend): convite, boas-vindas, redefinição de senha e lembretes de campanha (cron diário)
+- **Recuperação de senha** com link de uso único
+- **Relatório PDF** gerado no servidor
+- **Perguntas personalizadas** da empresa (até 10), relatadas fora do score NR-1
 
 > O PGlite permite **um processo por vez** no banco. Pare o `npm run dev` antes de rodar `npm run db:seed`.
 
@@ -91,6 +95,10 @@ design/                   artboards do Claude Design (fonte do visual)
 - **Score:** cada item vira um risco de 0 a 4 (itens de proteção são invertidos). A média da dimensão × 25 dá o score de 0 a 100: baixo < 25, moderado 25–49, alto 50–74, crítico ≥ 75.
 - **Multi-tenant:** toda procedure privada filtra por `session.companyId`, que vem do cookie assinado com HMAC.
 - **Erros:** o jStack 1.1 não repassa o `onError` aos sub-routers, por isso `src/server/index.ts` registra o handler em cada um (validação do Zod → 422 com mensagem em pt-BR).
+
+## Deploy
+
+Veja [docs/deploy.md](docs/deploy.md) (Vercel + Neon).
 
 ## Próximos passos (roadmap do PRD)
 

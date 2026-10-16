@@ -133,6 +133,7 @@ function TeamTab() {
   const [email, setEmail] = useState("")
   const [role, setRole] = useState<"admin" | "viewer">("viewer")
   const [lastLink, setLastLink] = useState<string | null>(null)
+  const [lastSent, setLastSent] = useState(false)
   const team = useQuery({ queryKey: ["team"], queryFn: async () => (await client.team.list.$get()).json() })
   const refresh = () => qc.invalidateQueries({ queryKey: ["team"] })
 
@@ -141,10 +142,11 @@ function TeamTab() {
     onSuccess: (r) => {
       const link = `${window.location.origin}/convite/${r.token}`
       setLastLink(link)
+      setLastSent(r.emailSent)
       navigator.clipboard?.writeText(link).catch(() => {})
       setEmail("")
       refresh()
-      toast("Convite criado. Link copiado.")
+      toast(r.emailSent ? "Convite enviado por e-mail" : "Convite criado. Link copiado.")
     },
   })
   const setMemberRole = useMutation({
@@ -196,7 +198,8 @@ function TeamTab() {
           {invite.error && <p className="mt-3 text-sm text-risk-crit-fg">{invite.error.message}</p>}
           {lastLink && (
             <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mt-4 rounded-xl border border-brand/25 bg-brand/[0.06] p-3 text-sm">
-              Envie este link para a pessoa (já copiado): <code className="break-all font-mono text-xs text-brand-fg">{lastLink}</code>
+              {lastSent ? "Enviamos o convite por e-mail. Se preferir, mande também este link (já copiado): " : "Envie este link para a pessoa (já copiado): "}
+              <code className="break-all font-mono text-xs text-brand-fg">{lastLink}</code>
             </motion.div>
           )}
         </Card>

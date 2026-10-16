@@ -4,6 +4,7 @@ import { j } from "./jstack"
 import { authRouter } from "./routers/auth-router"
 import { channelRouter, surveyRouter } from "./routers/public-router"
 import { companyRouter, teamRouter } from "./routers/team-router"
+import { questionsRouter } from "./routers/questions-router"
 import {
   actionsRouter,
   campaignsRouter,
@@ -44,6 +45,7 @@ const appRouter = j.mergeRouters(api, {
   channelAdmin: withErrors(channelAdminRouter),
   team: withErrors(teamRouter),
   company: withErrors(companyRouter),
+  questions: withErrors(questionsRouter),
 })
 
 export type AppRouter = typeof appRouter

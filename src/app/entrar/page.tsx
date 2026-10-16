@@ -48,6 +48,9 @@ function LoginForm() {
             onChange={(e) => setPassword(e.target.value)}
           />
         </Field>
+        <Link href="/esqueci-senha" className="-mt-1 self-end text-sm text-muted hover:text-fg">
+          Esqueci minha senha
+        </Link>
         {login.error && <p className="rounded-xl bg-risk-crit/10 px-3 py-2 text-sm text-risk-crit-fg">{login.error.message}</p>}
         <Button type="submit" loading={login.isPending} className="mt-2">
           Entrar

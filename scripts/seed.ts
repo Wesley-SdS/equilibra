@@ -6,7 +6,7 @@
  */
 import { eq, inArray } from "drizzle-orm"
 import { getDb, type Db } from "../src/server/db"
-import { actions, answers, auditLog, campaigns, channelReports, companies, memberships, responses, sectors, users } from "../src/server/db/schema"
+import { actions, answers, auditLog, campaigns, channelReports, companies, customQuestions, memberships, responses, sectors, users, type CustomQuestionSnapshot } from "../src/server/db/schema"
 import { hashPassword } from "../src/server/auth"
 import { QUESTIONS, type DimensionId } from "../src/lib/methodology"
 
@@ -27,9 +27,14 @@ async function addCampaign(
   c: { name: string; token: string; startsAt: string; endsAt: string; status: "active" | "closed" },
   profile: Profile,
   /** Multiplicador sobre o risco de base (ex.: 1.15 = campanha anterior, pior). */
-  factor = 1
+  factor = 1,
+  /** Perguntas da empresa copiadas para a campanha, com a resposta média esperada (1–5). */
+  extra: (CustomQuestionSnapshot & { mean: number })[] = []
 ) {
-  const [campaign] = await db.insert(campaigns).values({ companyId, ...c }).returning()
+  const [campaign] = await db
+    .insert(campaigns)
+    .values({ companyId, ...c, customQuestions: extra.map(({ id, text }) => ({ id, text })) })
+    .returning()
   for (const [name, p] of Object.entries(profile)) {
     const answered = Math.round(p.answered * (factor > 1 ? 0.85 : 1))
     for (let i = 0; i < answered; i++) {
@@ -44,6 +49,11 @@ async function addCampaign(
           return { responseId: r!.id, questionId: q.id, value: q.risk ? riskVal + 1 : 5 - riskVal }
         })
       )
+      if (extra.length) {
+        await db.insert(answers).values(
+          extra.map((q) => ({ responseId: r!.id, questionId: q.id, value: Math.max(1, Math.min(5, Math.round(q.mean + (rand() - 0.5) * 2.4))) }))
+        )
+      }
     }
   }
   return campaign!
@@ -87,7 +97,17 @@ async function main() {
   const p = await addCompany(db, carla!.id, { name: "Padaria Pão Dourado Ltda.", cnpj: "12345678000190", slug: "pao-dourado" }, padaria)
   await db.insert(memberships).values({ userId: rafael!.id, companyId: p.company.id, role: "viewer" })
   await addCampaign(db, p.company.id, p.sectorIds, { name: "Diagnóstico inicial · abr/2026", token: "demo-pao-dourado-abr26", startsAt: "2026-04-06", endsAt: "2026-04-24", status: "closed" }, padaria, 1.18)
-  const atual = await addCampaign(db, p.company.id, p.sectorIds, { name: "Avaliação psicossocial · out/2026", token: "demo-pao-dourado-out26", startsAt: "2026-10-01", endsAt: "2026-10-31", status: "active" }, padaria)
+  const extraTexts = [
+    { text: "Tenho os equipamentos e uniformes de que preciso para trabalhar.", mean: 3.9 },
+    { text: "A temperatura do meu local de trabalho é confortável.", mean: 2.3 },
+    { text: "Recebo treinamento suficiente para a minha função.", mean: 3.1 },
+  ]
+  const extra: (CustomQuestionSnapshot & { mean: number })[] = []
+  for (const [position, q] of extraTexts.entries()) {
+    const [row] = await db.insert(customQuestions).values({ companyId: p.company.id, text: q.text, position }).returning()
+    extra.push({ id: `c:${row!.id}`, text: q.text, mean: q.mean })
+  }
+  const atual = await addCampaign(db, p.company.id, p.sectorIds, { name: "Avaliação psicossocial · out/2026", token: "demo-pao-dourado-out26", startsAt: "2026-10-01", endsAt: "2026-10-31", status: "active" }, padaria, 1, extra)
 
   await db.insert(actions).values([
     { companyId: p.company.id, campaignId: atual.id, dimension: "relacoes", what: "Divulgar o canal de relato anônimo e o fluxo de apuração", how: "Cartazes, QR code e comunicado da direção garantindo a não retaliação.", who: "RH · Rafael", due: "2026-11-15", status: "doing" },

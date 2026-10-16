@@ -15,8 +15,9 @@ async function initPostgres(url: string): Promise<Db> {
   const { default: postgres } = await import("postgres")
   const { drizzle } = await import("drizzle-orm/postgres-js")
   const { migrate } = await import("drizzle-orm/postgres-js/migrator")
-  const db = drizzle(postgres(url, { max: 10, prepare: false }), { schema })
-  await migrate(db, { migrationsFolder })
+  const db = drizzle(postgres(url, { max: 5, prepare: false }), { schema })
+  // Em produção as migrations rodam no build (scripts/migrate.ts); localmente, aqui.
+  if (process.env.NODE_ENV !== "production") await migrate(db, { migrationsFolder })
   // Os dois drivers expõem a mesma API de query builder do Drizzle.
   return db as unknown as Db
 }
@@ -32,6 +33,10 @@ async function initPglite(dataDir?: string): Promise<Db> {
 }
 
 export function getDb(): Promise<Db> {
+  if (process.env.VERCEL && !process.env.DATABASE_URL) {
+    // Na Vercel o disco é efêmero: sem Postgres os dados sumiriam a cada deploy.
+    throw new Error("Configure DATABASE_URL (Postgres) nas variáveis de ambiente da Vercel.")
+  }
   g.__eqDb ??= process.env.DATABASE_URL
     ? initPostgres(process.env.DATABASE_URL)
     : initPglite(process.env.PGLITE_DIR ?? path.join(process.cwd(), ".data", "pglite"))

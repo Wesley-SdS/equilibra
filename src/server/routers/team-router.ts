@@ -5,6 +5,8 @@ import { auditLog, companies, invites, memberships, ROLES, users } from "../db/s
 import { publicToken } from "../auth"
 import { audit } from "../audit"
 import { j, ownerProcedure, privateProcedure } from "../jstack"
+import { appUrl, sendEmail } from "../email"
+import { inviteEmail } from "../email/templates"
 
 const ROLE_LABEL = { owner: "Dono", admin: "Admin", viewer: "Leitor" } as const
 
@@ -38,7 +40,20 @@ export const teamRouter = j.router({
         .values({ companyId: ctx.session.companyId, email: input.email, role: input.role, token: publicToken(), invitedBy: ctx.session.userId })
         .returning()
       await audit(ctx.db, ctx.session, { action: "invite", entity: "equipe", entityId: invite!.id, summary: `Convite enviado para ${input.email} (${ROLE_LABEL[input.role]})` })
-      return c.superjson({ token: invite!.token })
+      const [inviter, company] = await Promise.all([
+        ctx.db.query.users.findFirst({ where: eq(users.id, ctx.session.userId) }),
+        ctx.db.query.companies.findFirst({ where: eq(companies.id, ctx.session.companyId) }),
+      ])
+      const emailSent = await sendEmail({
+        to: input.email,
+        ...inviteEmail({
+          inviter: inviter?.name ?? "Alguém da equipe",
+          company: company?.name ?? "",
+          role: ROLE_LABEL[input.role],
+          link: `${appUrl(c.req.url)}/convite/${invite!.token}`,
+        }),
+      })
+      return c.superjson({ token: invite!.token, emailSent })
     }),
 
   revokeInvite: ownerProcedure.input(z.object({ id: z.string() })).mutation(async ({ c, ctx, input }) => {

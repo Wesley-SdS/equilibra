@@ -39,6 +39,11 @@ function CampaignsContent() {
       toast("Campanha criada. Link anônimo copiado.")
     },
   })
+  const remind = useMutation({
+    mutationFn: async (id: string) => (await client.campaigns.remind.$post({ id })).json(),
+    onSuccess: (r) => toast(r.sent ? `Lembrete enviado para ${r.sent} pessoa(s) da equipe` : "Ninguém para receber o lembrete"),
+    onError: (e) => toast(e.message, "error"),
+  })
   const setStatus = useMutation({
     mutationFn: async (v: { id: string; status: "active" | "closed" }) => (await client.campaigns.setStatus.$post(v)).json(),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["campaigns"] }),
@@ -109,6 +114,7 @@ function CampaignsContent() {
                     </div>
                     <p className="text-sm text-subtle">
                       {formatDate(c.startsAt)} – {formatDate(c.endsAt)} · {c.responses} respostas
+                      {c.customCount > 0 && ` · +${c.customCount} perguntas da empresa`}
                     </p>
                     <code className="mt-1 truncate font-mono text-xs text-muted">{link}</code>
                   </div>
@@ -129,6 +135,11 @@ function CampaignsContent() {
                     <ButtonLink href={`/r/${c.token}`} variant="secondary" size="sm">
                       Abrir questionário
                     </ButtonLink>
+                    {can.edit && c.status === "active" && (
+                      <Button variant="ghost" size="sm" loading={remind.isPending && remind.variables === c.id} onClick={() => remind.mutate(c.id)}>
+                        Lembrar equipe
+                      </Button>
+                    )}
                     {can.edit && (
                     <Button
                       variant="ghost"
