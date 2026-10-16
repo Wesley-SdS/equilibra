@@ -80,3 +80,11 @@ describe("regras de reserva", () => {
     expect(triagePriority(t)).toBeGreaterThanOrEqual(90)
   })
 })
+
+describe("regras de reserva: agressão física e retaliação", () => {
+  it("classifica empurrão e ameaça de demissão como críticos", () => {
+    const t = triageByRules("O supervisor disse que vai me demitir se eu reclamar e me empurrou contra a parede.", "outro")
+    expect(t.severity).toBe(3)
+    expect(t.urgent).toBeGreaterThanOrEqual(0.8)
+  })
+})

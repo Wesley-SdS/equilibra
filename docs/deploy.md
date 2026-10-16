@@ -1,5 +1,19 @@
 # Deploy (Vercel + Neon)
 
+## Estado atual (16/10/2026)
+
+- **Produção:** https://equilibra-wesleysds-projects.vercel.app (Vercel, projeto `equilibra`, funções em `gru1`/São Paulo)
+- **Banco:** Neon, projeto `Equilibra` (`wild-butterfly-39501280`), região `aws-sa-east-1`, Postgres 17, banco `equilibra`
+- **Variáveis na Vercel:** `DATABASE_URL`, `SESSION_SECRET`, `CRON_SECRET` (production + preview) e `APP_URL` (production)
+- **Jev:** autentica no AI Gateway pelo token OIDC do projeto (sem chave). Para usar localmente, defina `AI_GATEWAY_API_KEY`
+- **Proteção:** login da Vercel só nos previews; a produção é pública (questionário e canal precisam ser)
+- **Pendente (Jev):** o AI Gateway exige um cartão de crédito cadastrado no time da Vercel para liberar o uso (inclusive os créditos gratuitos). Até lá, as decisões caem nas regras locais
+- **Pendente:** `RESEND_API_KEY` + `EMAIL_FROM` (domínio verificado) para enviar e-mails de verdade
+- Os segredos locais ficam em `.env.neon` (ignorado pelo git)
+
+> Plano Hobby: a Vercel só faz deploy de commits cujo autor é o dono da conta. Neste repositório o
+> `git config user.email` local usa o e-mail pessoal vinculado à conta.
+
 ## 1. Banco (Neon, plano gratuito)
 
 1. Crie um projeto no Neon (região `aws-sa-east-1`, São Paulo, para menor latência).

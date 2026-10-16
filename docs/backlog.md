@@ -8,7 +8,7 @@ Legenda: ✅ feito · 🟡 parcial · sem marca = a fazer
 
 | # | Item | Por quê |
 |---|---|---|
-| 1 | 🟡 **Deploy em produção** (Vercel + Neon) e domínio | Código pronto: migrations no build, cron e guia em `docs/deploy.md`. Falta criar o banco no Neon e preencher as variáveis na Vercel |
+| 1 | 🟡 **Deploy em produção** (Vercel + Neon) e domínio | No ar na Vercel com Neon em São Paulo (ver `docs/deploy.md`). Falta domínio próprio e a chave do Resend |
 | 2 | ✅ **Envio de e-mail** (Resend): convites, boas-vindas, lembretes de campanha (cron diário + botão manual) | Feito. Falta só a `RESEND_API_KEY` e um domínio verificado |
 | 3 | ✅ **Recuperação de senha** (link de uso único, 30 min, sem revelar e-mails) | Feito |
 | 4 | **Cobrança recorrente** (Stripe ou Asaas/Pagar.me para Pix e boleto) com planos e limites | Planos aparecem na landing, mas não há checkout nem limite por plano |
@@ -39,6 +39,7 @@ Legenda: ✅ feito · 🟡 parcial · sem marca = a fazer
 | 19 | **Benchmarks por CNAE** (comparar com empresas do mesmo setor, anonimizado) |
 | 20 | **Integração eSocial** (S-2240) e com softwares de SST/folha |
 | 21 | Trilhas de **capacitação de lideranças** (microlearning) ligadas às dimensões em risco |
+| 26 | ✅ **Decisões com o Jev** (TypeSafe via Vercel AI Gateway): triagem do canal, escolha de ações e classificação de perguntas |
 | 22 | 🟡 Perguntas personalizadas da empresa (até 10, fora do score) ✅ — falta banco de perguntas validado por especialistas |
 | 23 | API pública e webhooks para parceiros |
 | 24 | SSO corporativo (SAML) e multiunidades/filiais com consolidação |

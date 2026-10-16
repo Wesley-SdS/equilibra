@@ -59,8 +59,8 @@ export function triageByRules(body: string, declaredCategory: string): Triage {
     .replace(/[̀-ͯ]/g, "")
     .toLowerCase()
   const has = (...words: string[]) => words.some((w) => t.includes(w))
-  const critical = has("ameac", "agred", "bate", "soco", "violen", "estupr", "suicid", "me matar", "assedio sexual", "passou a mao", "toque")
-  const high = has("grit", "humilh", "xing", "persegu", "discrimin", "racis", "homofob", "machis", "desconta", "ameaca")
+  const critical = has("ameac", "agred", "bate", "soco", "empurr", "machuc", "violen", "estupr", "suicid", "me matar", "assedio sexual", "passou a mao", "toque")
+  const high = has("grit", "humilh", "xing", "persegu", "discrimin", "racis", "homofob", "machis", "desconta", "demit", "retalia", "puni")
   const medium = has("sobrecarg", "hora extra", "sem pausa", "exaust", "cansad", "meta", "pressao")
   const severity = critical ? 3 : high ? 2 : medium ? 1 : 0.5
   return {
