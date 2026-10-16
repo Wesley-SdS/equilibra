@@ -7,6 +7,7 @@ import { Suspense, useEffect, useState } from "react"
 import { PageHeader } from "@/components/app/page-header"
 import { Button, Field, Input, Select, Spinner, Textarea } from "@/components/ui/primitives"
 import { useToast } from "@/components/ui/toast"
+import { JevBadge } from "@/components/app/jev-badge"
 import { client } from "@/lib/client"
 import { useCan } from "@/lib/hooks"
 import { DIMENSIONS, dimensionMeta, type DimensionId } from "@/lib/methodology"
@@ -129,9 +130,10 @@ function PlanContent() {
                       transition={{ type: "spring", stiffness: 420, damping: 34 }}
                       className="flex flex-col gap-3 rounded-xl border border-line bg-surface-2 p-4"
                     >
-                      <span className="self-start rounded-full bg-tint/[0.06] px-2 py-0.5 text-[11px] text-muted">
-                        {dimensionMeta(a.dimension)?.name}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="rounded-full bg-tint/[0.06] px-2 py-0.5 text-[11px] text-muted">{dimensionMeta(a.dimension)?.name}</span>
+                        {a.decision?.engine === "jev" && <JevBadge decision={a.decision} label="Escolhida pelo Jev" />}
+                      </div>
                       <button type="button" disabled={!can.edit} onClick={() => setEditing({ ...a, status: a.status as Status, dimension: a.dimension as DimensionId })} className="text-left text-[15px] font-medium leading-snug hover:text-brand-fg">
                         {a.what}
                       </button>

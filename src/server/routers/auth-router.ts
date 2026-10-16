@@ -12,6 +12,7 @@ import { j, privateProcedure, publicProcedure } from "../jstack"
 import { appUrl, sendEmail } from "../email"
 import { passwordResetEmail, welcomeEmail } from "../email/templates"
 import { rateLimit } from "../rate-limit"
+import { jevEnabled } from "../jev"
 
 const RESET_MINUTES = 30
 const sha256 = (v: string) => createHash("sha256").update(v).digest("hex")
@@ -72,6 +73,7 @@ export const authRouter = j.router({
       role: ctx.session.role,
       company,
       companies: all,
+      jev: jevEnabled(),
     })
   }),
 

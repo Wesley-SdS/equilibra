@@ -1,7 +1,18 @@
 import { clsx, type ClassValue } from "clsx"
+import { extendTailwindMerge } from "tailwind-merge"
 
+// Conhece as cores do tema, para que `text-brand-fg` não seja tratado como tamanho de fonte.
+const twMerge = extendTailwindMerge({
+  extend: {
+    theme: {
+      color: ["bg", "surface", "surface-2", "line", "line-strong", "fg", "muted", "subtle", "tint", "brand", "brand-strong", "brand-ink", "brand-fg", "risk-low", "risk-low-fg", "risk-mod", "risk-mod-fg", "risk-high", "risk-high-fg", "risk-crit", "risk-crit-fg"],
+    },
+  },
+})
+
+/** Junta classes e resolve conflitos do Tailwind (a última vence: `w-full` + `w-40` → `w-40`). */
 export function cn(...inputs: ClassValue[]) {
-  return clsx(inputs)
+  return twMerge(clsx(inputs))
 }
 
 export function slugify(value: string) {

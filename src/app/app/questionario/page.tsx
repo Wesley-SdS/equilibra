@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/app/page-header"
 import { LikertBar, LikertLegend } from "@/components/app/trend"
 import { Button, Card, Field, Input, Spinner } from "@/components/ui/primitives"
 import { useToast } from "@/components/ui/toast"
+import { JevBadge } from "@/components/app/jev-badge"
 import { client } from "@/lib/client"
 import { useCan } from "@/lib/hooks"
 import { DIMENSIONS, K_ANONYMITY, QUESTIONS, SCALE } from "@/lib/methodology"
@@ -131,7 +132,15 @@ export default function QuestionnairePage() {
                           </Button>
                         </form>
                       ) : (
-                        <p className={cn("text-[15px] leading-snug", !q.active && "text-subtle line-through")}>{q.text}</p>
+                        <>
+                          <p className={cn("text-[15px] leading-snug", !q.active && "text-subtle line-through")}>{q.text}</p>
+                          {q.dimension && (
+                            <span className="mt-1 inline-flex items-center gap-1.5 text-xs text-subtle">
+                              Relacionada a {DIMENSIONS.find((d) => d.id === q.dimension)?.name}
+                              <JevBadge decision={{ engine: "jev", confidence: (q.dimensionConfidence ?? 0) / 100 }} />
+                            </span>
+                          )}
+                        </>
                       )}
                     </div>
                     {can.edit && editing?.id !== q.id && (

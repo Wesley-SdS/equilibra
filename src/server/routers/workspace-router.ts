@@ -10,8 +10,9 @@ import { editorProcedure, j, privateProcedure } from "../jstack"
 import { appUrl } from "../email"
 import { sendCampaignReminder } from "../reminders"
 import { buildReport } from "../report"
+import { chooseActions, triagePriority } from "../decisions"
 import { rateLimit } from "../rate-limit"
-import { ACTION_LIBRARY, DIMENSIONS, type DimensionId } from "@/lib/methodology"
+import { DIMENSIONS, type DimensionId } from "@/lib/methodology"
 
 const dimensionEnum = z.enum(DIMENSIONS.map((d) => d.id) as [DimensionId, ...DimensionId[]])
 const STATUS_LABEL = { todo: "A fazer", doing: "Em andamento", done: "Concluída" } as const
@@ -243,25 +244,36 @@ export const actionsRouter = j.router({
       .where(eq(actions.companyId, ctx.session.companyId))
     const known = new Set(existing.map((e) => e.what))
 
-    const toInsert = data.ranking
-      .filter((r) => r.score >= 50)
-      .flatMap((r) => {
-        const worst = data.heatmap
+    // Para cada dimensão em alerta, o Jev escolhe as medidas da biblioteca que melhor
+    // se encaixam no contexto (setores e itens mais críticos). Sem Jev: ordem da biblioteca.
+    const alerts = data.ranking.filter((r) => r.score >= 50)
+    const perDimension = await Promise.all(
+      alerts.map(async (r) => {
+        const sectorsByRisk = data.heatmap
           .filter((h) => !h.grouped)
-          .sort((x, y) => (y.scores[r.id] ?? 0) - (x.scores[r.id] ?? 0))[0]
-        return ACTION_LIBRARY[r.id]
-          .filter((a) => !known.has(a.what))
-          .slice(0, 2)
-          .map((a) => ({
-            companyId: ctx.session.companyId,
-            campaignId: input.campaignId,
-            dimension: r.id,
-            what: a.what,
-            how: a.how,
-            why: `${r.name} com risco ${r.level === "critico" ? "crítico" : "alto"} (${r.score}/100).`,
-            sectorId: worst?.key ?? null,
-          }))
+          .map((h) => ({ key: h.key, label: h.label, score: h.scores[r.id] ?? 0 }))
+          .sort((x, y) => y.score - x.score)
+        const detail = await computeDimension(ctx.db, ctx.session.companyId, input.campaignId, r.id)
+        const chosen = await chooseActions({
+          dimension: r.id,
+          score: r.score,
+          worstSectors: sectorsByRisk.slice(0, 3).map(({ label, score }) => ({ label, score })),
+          worstItems: (detail?.items ?? []).filter((i) => i.risk >= 50).map((i) => i.text),
+          existing: [...known],
+        })
+        return chosen.map((a) => ({
+          companyId: ctx.session.companyId,
+          campaignId: input.campaignId,
+          dimension: r.id,
+          what: a.what,
+          how: a.how,
+          why: `${r.name} com risco ${r.level === "critico" ? "crítico" : "alto"} (${r.score}/100).`,
+          sectorId: sectorsByRisk[0]?.key ?? null,
+          decision: a.decision,
+        }))
       })
+    )
+    const toInsert = perDimension.flat()
     if (toInsert.length) {
       await ctx.db.insert(actions).values(toInsert)
       await audit(ctx.db, ctx.session, { action: "create", entity: "ação", summary: `${toInsert.length} ações sugeridas adicionadas ao plano` })
@@ -285,7 +297,10 @@ export const channelAdminRouter = j.router({
       .from(channelReports)
       .where(eq(channelReports.companyId, ctx.session.companyId))
       .orderBy(desc(channelReports.createdDay))
-    return c.superjson(rows)
+    // Fila do RH: abertos primeiro, depois por prioridade da triagem (gravidade + urgência).
+    const withPriority = rows.map((r) => ({ ...r, priority: triagePriority(r.triage) }))
+    withPriority.sort((a, b) => Number(a.status === "resolved") - Number(b.status === "resolved") || b.priority - a.priority)
+    return c.superjson(withPriority)
   }),
   setStatus: editorProcedure
     .input(z.object({ id: z.string(), status: z.enum(["received", "analyzing", "resolved"]) }))

@@ -8,6 +8,7 @@ import { eq, inArray } from "drizzle-orm"
 import { getDb, type Db } from "../src/server/db"
 import { actions, answers, auditLog, campaigns, channelReports, companies, customQuestions, memberships, responses, sectors, users, type CustomQuestionSnapshot } from "../src/server/db/schema"
 import { hashPassword } from "../src/server/auth"
+import { triageReport } from "../src/server/decisions"
 import { QUESTIONS, type DimensionId } from "../src/lib/methodology"
 
 const PASSWORD = "equilibra-demo"
@@ -113,10 +114,15 @@ async function main() {
     { companyId: p.company.id, campaignId: atual.id, dimension: "relacoes", what: "Divulgar o canal de relato anônimo e o fluxo de apuração", how: "Cartazes, QR code e comunicado da direção garantindo a não retaliação.", who: "RH · Rafael", due: "2026-11-15", status: "doing" },
     { companyId: p.company.id, campaignId: atual.id, dimension: "lideranca", what: "Capacitar lideranças em feedback e comunicação não violenta", how: "Trilha de 4 encontros de 1h30.", who: "Diretoria", due: "2026-08-30", status: "done", sectorId: p.sectorIds["Entregas"] },
   ])
-  await db.insert(channelReports).values([
-    { companyId: p.company.id, protocol: "EQ-7F3K-92QD", category: "sobrecarga", body: "No turno da madrugada da produção estamos fazendo a mesma quantidade de pães com duas pessoas a menos desde setembro. Ninguém consegue tirar a pausa.", status: "analyzing", createdDay: "2026-10-08" },
-    { companyId: p.company.id, protocol: "EQ-M4TR-6HXA", category: "assedio_moral", body: "Um encarregado das entregas grita com a equipe na frente dos clientes quando há atraso, e ameaça descontar do salário.", status: "received", createdDay: "2026-10-12" },
-  ])
+  // Triagem pelo Jev (via AI Gateway) quando houver credencial; senão, regras locais.
+  const reports = [
+    { protocol: "EQ-7F3K-92QD", category: "sobrecarga", body: "No turno da madrugada da produção estamos fazendo a mesma quantidade de pães com duas pessoas a menos desde setembro. Ninguém consegue tirar a pausa.", status: "analyzing" as const, createdDay: "2026-10-08" },
+    { protocol: "EQ-M4TR-6HXA", category: "conflito", body: "Um encarregado das entregas grita com a equipe na frente dos clientes quando há atraso, e ameaça descontar do salário.", status: "received" as const, createdDay: "2026-10-12" },
+    { protocol: "EQ-Q8WN-3JTB", category: "outro", body: "O ar-condicionado da área do forno está quebrado há duas semanas e a temperatura passa de 40 graus à tarde. Uma colega passou mal ontem.", status: "received" as const, createdDay: "2026-10-14" },
+  ]
+  for (const r of reports) {
+    await db.insert(channelReports).values({ companyId: p.company.id, ...r, triage: await triageReport(r.body, r.category) })
+  }
   await db.insert(auditLog).values([
     { companyId: p.company.id, userId: carla!.id, action: "create", entity: "campanha", entityId: atual.id, summary: `Campanha “${atual.name}” criada`, at: new Date("2026-09-30T14:02:00Z") },
     { companyId: p.company.id, userId: carla!.id, action: "invite", entity: "equipe", summary: "Convite enviado para rh@equilibra.app (Leitor)", at: new Date("2026-09-30T14:10:00Z") },

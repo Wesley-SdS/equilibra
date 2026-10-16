@@ -6,6 +6,7 @@ import { answers, campaigns, channelReports, companies, responses, sectors } fro
 import { protocolCode, today } from "../auth"
 import { j, publicProcedure } from "../jstack"
 import { rateLimit } from "../rate-limit"
+import { triageReport } from "../decisions"
 import { QUESTIONS } from "@/lib/methodology"
 
 const questionIds = new Set(QUESTIONS.map((q) => q.id))
@@ -97,12 +98,15 @@ export const channelRouter = j.router({
       const company = await ctx.db.query.companies.findFirst({ where: eq(companies.slug, input.slug) })
       if (!company) throw new HTTPException(404, { message: "Canal não encontrado" })
       const protocol = protocolCode()
+      // Triagem automática (Jev): gravidade, urgência e se o texto identifica pessoas.
+      const triage = await triageReport(input.body, input.category)
       await ctx.db.insert(channelReports).values({
         companyId: company.id,
         protocol,
         category: input.category,
         body: input.body,
         createdDay: today(),
+        triage,
       })
       return c.superjson({ protocol })
     }),

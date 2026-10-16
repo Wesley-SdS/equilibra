@@ -5,6 +5,7 @@ import { customQuestions } from "../db/schema"
 import { audit } from "../audit"
 import { computeCustomResults } from "../insights"
 import { editorProcedure, j, privateProcedure } from "../jstack"
+import { classifyQuestion } from "../decisions"
 
 export const MAX_CUSTOM_QUESTIONS = 10
 const text = z.string().trim().min(8, "Escreva a pergunta com pelo menos 8 caracteres").max(200, "Máximo de 200 caracteres")
@@ -30,9 +31,10 @@ export const questionsRouter = j.router({
     if (active >= MAX_CUSTOM_QUESTIONS) {
       throw new HTTPException(400, { message: `Limite de ${MAX_CUSTOM_QUESTIONS} perguntas ativas. Desative uma para criar outra.` })
     }
+    const cls = await classifyQuestion(input.text)
     const [row] = await ctx.db
       .insert(customQuestions)
-      .values({ companyId: ctx.session.companyId, text: input.text, position: maxPos + 1 })
+      .values({ companyId: ctx.session.companyId, text: input.text, position: maxPos + 1, dimension: cls.dimension, dimensionConfidence: cls.confidence })
       .returning()
     await audit(ctx.db, ctx.session, { action: "create", entity: "pergunta", entityId: row!.id, summary: `Pergunta personalizada criada: ${row!.text}` })
     return c.superjson(row!)
@@ -49,9 +51,10 @@ export const questionsRouter = j.router({
           .where(and(eq(customQuestions.companyId, ctx.session.companyId), eq(customQuestions.active, true)))) as [{ active: number }]
         if (active >= MAX_CUSTOM_QUESTIONS) throw new HTTPException(400, { message: `Limite de ${MAX_CUSTOM_QUESTIONS} perguntas ativas.` })
       }
+      const cls = data.text ? await classifyQuestion(data.text) : null
       const [row] = await ctx.db
         .update(customQuestions)
-        .set(data)
+        .set(cls ? { ...data, dimension: cls.dimension, dimensionConfidence: cls.confidence } : data)
         .where(and(eq(customQuestions.id, id), eq(customQuestions.companyId, ctx.session.companyId)))
         .returning()
       if (row) {

@@ -98,6 +98,20 @@ export const campaigns = pgTable("campaigns", {
 
 export type CustomQuestionSnapshot = { id: string; text: string }
 
+/** Registro de uma decisão automática: qual motor decidiu e com que confiança (auditável). */
+export type Decision = { engine: "jev" | "regras"; model?: string; confidence?: number }
+
+export type Triage = Decision & {
+  category: string
+  categoryConfidence?: number
+  /** 0 (baixa) … 3 (crítica), média ponderada pelas probabilidades do Jev */
+  severity: number
+  /** Probabilidade de risco imediato à integridade de alguém */
+  urgent: number
+  /** Probabilidade de o texto identificar pessoas (nomes, cargos únicos) */
+  identifiesPeople: number
+}
+
 /** Perguntas adicionais da empresa (escala Nunca → Sempre), relatadas fora do score NR-1. */
 export const customQuestions = pgTable("custom_questions", {
   id: id(),
@@ -105,6 +119,9 @@ export const customQuestions = pgTable("custom_questions", {
     .notNull()
     .references(() => companies.id, { onDelete: "cascade" }),
   text: text("text").notNull(),
+  // Dimensão psicossocial mais relacionada (classificada pelo Jev); só informativa.
+  dimension: text("dimension"),
+  dimensionConfidence: integer("dimension_confidence"),
   active: boolean("active").notNull().default(true),
   position: integer("position").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -163,6 +180,8 @@ export const actions = pgTable("actions", {
   status: text("status", { enum: ["todo", "doing", "done"] })
     .notNull()
     .default("todo"),
+  // Quando a ação foi sugerida automaticamente: motor e confiança da escolha.
+  decision: jsonb("decision").$type<Decision>(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 })
 
@@ -178,4 +197,5 @@ export const channelReports = pgTable("channel_reports", {
     .notNull()
     .default("received"),
   createdDay: text("created_day").notNull(),
+  triage: jsonb("triage").$type<Triage>(),
 })

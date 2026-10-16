@@ -7,6 +7,7 @@ import { Suspense, useEffect, useState } from "react"
 import { PageHeader } from "@/components/app/page-header"
 import { Button, Card, Field, Input, Select, Spinner } from "@/components/ui/primitives"
 import { useToast } from "@/components/ui/toast"
+import { JevBadge } from "@/components/app/jev-badge"
 import { client } from "@/lib/client"
 import { ROLE_LABEL, useCan, useMe } from "@/lib/hooks"
 import { cn, formatCnpj } from "@/lib/utils"
@@ -108,7 +109,19 @@ function CompanyTab() {
           )}
         </form>
       </Card>
-      <Card className="flex flex-col gap-3 self-start">
+      <div className="flex flex-col gap-4 self-start">
+      <Card className="flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold">Decisões automáticas</h2>
+          <JevBadge decision={{ engine: me.data?.jev ? "jev" : "regras" }} label={me.data?.jev ? "Jev ativo" : "Regras locais"} />
+        </div>
+        <p className="text-sm text-muted">
+          Triagem do canal de relato, escolha das ações do plano e classificação das perguntas da empresa usam o <strong className="text-fg">Jev</strong>, modelo de decisão da
+          TypeSafe, pelo Vercel AI Gateway. O score de risco da NR-1 não usa IA: é calculado pela metodologia, de forma auditável.
+        </p>
+        {!me.data?.jev && <p className="text-xs text-subtle">Configure AI_GATEWAY_API_KEY (ou faça o deploy na Vercel) para ativar.</p>}
+      </Card>
+      <Card className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Links públicos</h2>
         <p className="text-sm text-muted">O canal de relato fica disponível o tempo todo, independente de campanha.</p>
         <code className="break-all rounded-lg bg-tint/[0.04] px-3 py-2 font-mono text-xs text-muted">{channelUrl}</code>
@@ -122,6 +135,7 @@ function CompanyTab() {
           Copiar link do canal
         </Button>
       </Card>
+      </div>
     </div>
   )
 }

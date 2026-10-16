@@ -15,6 +15,13 @@
       "when": 1792116069970,
       "tag": "0001_fancy_loners",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792117437672,
+      "tag": "0002_broken_iron_fist",
+      "breakpoints": true
     }
   ]
 }
