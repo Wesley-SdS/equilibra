@@ -1,6 +1,7 @@
 import { HTTPException } from "hono/http-exception"
 import { ZodError } from "zod"
 import { j } from "./jstack"
+import { log } from "./log"
 import { authRouter } from "./routers/auth-router"
 import { channelRouter, surveyRouter } from "./routers/public-router"
 import { companyRouter, teamRouter } from "./routers/team-router"
@@ -22,7 +23,7 @@ function handleError(err: Error) {
     return new Response(err.issues[0]?.message ?? "Dados inválidos", { status: 422 })
   }
   if (err instanceof HTTPException) return err.getResponse()
-  console.error("[API Error]", err)
+  log.error("api.erro_inesperado", { err })
   return new Response("Erro inesperado. Tente novamente.", { status: 500 })
 }
 

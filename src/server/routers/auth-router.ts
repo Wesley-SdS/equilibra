@@ -11,7 +11,7 @@ import { audit } from "../audit"
 import { j, privateProcedure, publicProcedure } from "../jstack"
 import { appUrl, sendEmail } from "../email"
 import { passwordResetEmail, welcomeEmail } from "../email/templates"
-import { rateLimit } from "../rate-limit"
+import { clientIp, rateLimit } from "../rate-limit"
 import { jevEnabled } from "../jev"
 import { trialDefaults } from "../billing"
 import { LEGAL_VERSION } from "@/lib/legal"
@@ -101,7 +101,7 @@ export const authRouter = j.router({
   requestPasswordReset: publicProcedure
     .input(z.object({ email: z.string().trim().toLowerCase().email("E-mail inválido") }))
     .mutation(async ({ c, ctx, input }) => {
-      rateLimit(`reset:${input.email}`, 5, 15 * 60_000)
+      await rateLimit(`reset:${input.email}`, 5, 15 * 60_000)
       const user = await ctx.db.query.users.findFirst({ where: eq(users.email, input.email) })
       if (user) {
         const token = randomBytes(32).toString("base64url")
@@ -128,7 +128,7 @@ export const authRouter = j.router({
   resetPassword: publicProcedure
     .input(z.object({ token: z.string().min(20), password }))
     .mutation(async ({ c, ctx, input }) => {
-      rateLimit(`reset-token:${input.token.slice(0, 12)}`, 10, 15 * 60_000)
+      await rateLimit(`reset-token:${input.token.slice(0, 12)}`, 10, 15 * 60_000)
       const row = await ctx.db.query.passwordResets.findFirst({
         where: and(eq(passwordResets.tokenHash, sha256(input.token)), isNull(passwordResets.usedAt), gt(passwordResets.expiresAt, new Date())),
       })
@@ -147,6 +147,9 @@ export const authRouter = j.router({
   login: publicProcedure
     .input(z.object({ email: z.string().trim().toLowerCase().email("E-mail inválido"), password: z.string().min(1, "Informe a senha") }))
     .mutation(async ({ c, ctx, input }) => {
+      // Força bruta: 10 tentativas por e-mail e 30 por IP a cada 15 minutos.
+      await rateLimit(`login:email:${input.email}`, 10, 15 * 60_000)
+      await rateLimit(`login:ip:${clientIp(c.req.raw.headers)}`, 30, 15 * 60_000)
       const user = await ctx.db.query.users.findFirst({ where: eq(users.email, input.email) })
       if (!user || !verifyPassword(input.password, user.passwordHash)) {
         throw new HTTPException(401, { message: "E-mail ou senha incorretos" })

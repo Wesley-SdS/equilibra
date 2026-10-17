@@ -9,6 +9,9 @@
 - **Proteção:** login da Vercel só nos previews; a produção é pública (questionário e canal precisam ser)
 - **Pendente (Jev):** o AI Gateway exige um cartão de crédito cadastrado no time da Vercel para liberar o uso (inclusive os créditos gratuitos). Até lá, as decisões caem nas regras locais
 - **Pendente:** `RESEND_API_KEY` + `EMAIL_FROM` (domínio verificado) para enviar e-mails de verdade
+- **Pendente (rate limit):** criar o Upstash Redis pela Vercel (Storage → Create Database → Upstash for Redis → conectar ao projeto `equilibra`). As variáveis `KV_REST_API_URL`/`KV_REST_API_TOKEN` entram sozinhas; até lá o limite é em memória
+- **Pendente (Sentry):** criar o projeto Next.js no Sentry e definir `NEXT_PUBLIC_SENTRY_DSN` e `SENTRY_DSN` (Production e Preview). `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` e `SENTRY_PROJECT` são opcionais (sourcemaps)
+- **Logs:** uma linha JSON por evento (`event`, `level`, campos sem dados pessoais); filtre por `event` nos Runtime Logs da Vercel
 - Os segredos locais ficam em `.env.neon` (ignorado pelo git)
 
 > Plano Hobby: a Vercel só faz deploy de commits cujo autor é o dono da conta. Neste repositório o

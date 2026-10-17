@@ -44,7 +44,7 @@ export const surveyRouter = j.router({
       })
     )
     .mutation(async ({ c, ctx, input }) => {
-      rateLimit(`survey:${input.token}`, 600, 60_000)
+      await rateLimit(`survey:${input.token}`, 600, 60_000)
       const campaign = await ctx.db.query.campaigns.findFirst({ where: eq(campaigns.token, input.token) })
       if (!campaign) throw new HTTPException(404, { message: "Link de avaliação inválido" })
       if (campaign.status !== "active") throw new HTTPException(410, { message: "Esta avaliação foi encerrada" })
@@ -95,7 +95,7 @@ export const channelRouter = j.router({
       })
     )
     .mutation(async ({ c, ctx, input }) => {
-      rateLimit(`channel:${input.slug}`, 30, 60_000)
+      await rateLimit(`channel:${input.slug}`, 30, 60_000)
       const company = await ctx.db.query.companies.findFirst({ where: eq(companies.slug, input.slug) })
       if (!company) throw new HTTPException(404, { message: "Canal não encontrado" })
       if (!entitlements(company).limits.channel) throw new HTTPException(403, { message: "O canal de relato não está ativo para esta empresa." })

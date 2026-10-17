@@ -1,53 +1,55 @@
 # Prompts para desenvolver as aplicações 2, 3 e 4
 
-Abra uma sessão nova do Claude Code para cada aplicação, com a pasta `C:\Users\wesley.santos\Documents\github` como diretório, e cole o prompt correspondente. A aplicação 1 (NR-1 psicossocial) é o **Equilibra**, já desenvolvido em `C:\Users\wesley.santos\Documents\github\equilibra`. Ele serve de referência técnica para as outras.
+Cada aplicação é um **produto independente**: repositório, banco, deploy, marca e código próprios. Abra uma sessão nova do Claude Code para cada uma, com a pasta `C:\Users\wesley.santos\Documents\github` como diretório, e cole o prompt correspondente. Os prompts são autossuficientes e não dependem do Equilibra (aplicação 1).
 
 ---
 
 ## Prompt 2: Tributo Claro (copiloto da Reforma Tributária para o caixa da PME)
 
 ```text
-Quero desenvolver do zero, completo e pronto para produção, a aplicação "Tributo Claro": um copiloto da Reforma Tributária (CBS/IBS e split payment) para o caixa de PMEs brasileiras. Ela vai para uma apresentação a investidores, então precisa ser um produto completo, moderno e funcional, não um MVP simples.
+Quero desenvolver do zero um produto novo e independente, completo e pronto para produção: "Tributo Claro", um copiloto da Reforma Tributária (CBS/IBS e split payment) para o caixa de PMEs brasileiras. Ele vai para uma apresentação a investidores, então precisa ser um produto completo, moderno e funcional, não um MVP simples. É um produto separado: não reaproveite código de outros projetos meus.
 
-## Contexto e PRD
-- Já existe um PRD em C:\Users\wesley.santos\Documents\github\equilibra\docs\prd\02-tributo-caixa-reforma.md. Leia inteiro antes de tudo.
-- O PRD é de 15/10/2026 e as regras da reforma mudam rápido. Antes de codar, pesquise na web o estado atual (LC 214/2025, alíquotas de teste de 2026, cronograma do split payment em 2027, regras do Simples Híbrido, campos de IBS/CBS na NF-e/NFS-e, notas técnicas da Receita e do Comitê Gestor). Atualize o PRD em docs/prd/ no novo repositório com o que mudou, citando as fontes, e marque o que for estimativa.
-- Posicionamento recomendado no PRD: nicho em prestadores de serviço B2B. Confirme ou ajuste com base na pesquisa.
+## PRD
+- Existe um PRD inicial em C:\Users\wesley.santos\Documents\github\equilibra\docs\prd\02-tributo-caixa-reforma.md. Use-o só como ponto de partida: copie para docs/prd/ do novo repositório e não leia nada além desse arquivo naquela pasta.
+- O PRD é de 15/10/2026 e as regras da reforma mudam rápido. Antes de codar, pesquise na web e atualize o PRD com fontes: LC 214/2025 e regulamentações, alíquotas de teste de 2026, cronograma do split payment em 2027, regras do Simples Híbrido, campos de IBS/CBS na NF-e e NFS-e, notas técnicas da Receita e do Comitê Gestor, concorrentes (Omie, Conta Azul, TOTVS, consultorias) e tamanho de mercado. Marque o que for estimativa.
+- Posicionamento sugerido no PRD: nicho em prestadores de serviço B2B. Confirme ou ajuste com base na pesquisa.
 
-## Repositório
-- Crie um repositório novo em C:\Users\wesley.santos\Documents\github\tributo-claro (git init, branch main) e, no fim, um repositório privado no GitHub (gh já está logado como Wesley-SdS) com push.
-- Antes do primeiro commit, rode neste repositório: git config user.email "wesleysantos.0095@gmail.com" e git config user.name "Wesley Santos". A Vercel Hobby só faz deploy de commits do dono da conta.
+## Repositório e git
+- Crie o repositório em C:\Users\wesley.santos\Documents\github\tributo-claro (git init, branch main) e, no fim, um repositório privado no GitHub (gh já está logado como Wesley-SdS) com push.
+- Antes do primeiro commit: git config user.email "wesleysantos.0095@gmail.com" e git config user.name "Wesley Santos". A Vercel Hobby só faz deploy de commits do dono da conta.
 
-## Stack obrigatória (a mesma do Equilibra)
-Next.js 15 (App Router) + jStack (Hono RPC type-safe de ponta a ponta) + Drizzle ORM + Postgres (PGlite local, Neon em produção) + Zod 4 + TanStack Query + Tailwind CSS 4 + Motion + Vitest.
+## Stack
+Next.js 15 (App Router) + jStack (Hono RPC type-safe de ponta a ponta) + Drizzle ORM + Postgres (PGlite embutido em desenvolvimento, Neon em produção via DATABASE_URL, migrations aplicadas no build) + Zod 4 + TanStack Query + Tailwind CSS 4 + Motion + Vitest.
+Requisitos de base:
+- Autenticação própria com sessão em cookie httpOnly assinado (HMAC), senha com hash scrypt, convites por link, recuperação de senha com token de uso único.
+- Multiempresa: o escritório contábil acessa várias empresas clientes, com papéis (dono, admin, leitor) validados no servidor a cada requisição.
+- Isolamento entre empresas em todas as queries, validação Zod em 100% das entradas e trilha de auditoria.
+- E-mail transacional com Resend, com fallback local sem chave.
+- Planos, limites e teste grátis, com o provedor de pagamento plugável por interface.
+- Rate limit (Upstash Redis) e Sentry com DSN opcional, sem enviar dados pessoais.
+- LGPD: Termos, Política de Privacidade e DPA, aceite versionado, exportação e exclusão de dados.
+- No jStack 1.1, o onError do router raiz não é repassado aos sub-routers: registre o handler de erro em cada sub-router (ZodError → 422 com a mensagem em pt-BR).
 
-Reaproveite padrões e código do Equilibra (leia antes de escrever o equivalente):
-- src/server/jstack.ts, src/server/index.ts: procedures pública, privada, editor e dono; e o handler de erro registrado em cada sub-router, porque o jStack 1.1 não repassa o onError.
-- src/server/db/index.ts: PGlite local × Postgres via DATABASE_URL, migrations no build (scripts/migrate.ts) e cache global.
-- src/server/auth.ts e src/server/routers/auth-router.ts: sessão HMAC, multiempresa, convites, recuperação de senha.
-- src/server/email/: Resend com fallback local.
-- src/server/billing/ e src/lib/plans.ts: planos, limites, teste grátis e provedor plugável.
-- src/server/jev.ts e src/server/decisions.ts: Jev via Vercel AI Gateway com fallback por regras.
-- src/app/globals.css (tokens claro/escuro), src/components/theme.tsx, src/components/ui/primitives.tsx, src/lib/utils.ts (cn com tailwind-merge).
-- tests/*.test.ts: testes com o router real e Postgres em memória, simulando só o HTTP externo.
-- vercel.json, docs/deploy.md, .env.example.
+## Jev (modelo de decisão da TypeSafe) via Vercel AI Gateway
+- O Jev não gera texto: recebe um estado (texto ou JSON) e perguntas tipadas e devolve, em uma chamada, choice (escolha entre opções com probabilidades), score (nota numa rubrica ordenada) e noul (probabilidade sim/não), com confiança.
+- Chame SEMPRE pelo Vercel AI Gateway: POST https://ai-gateway.vercel.sh/typesafe/v1/systemone, modelo "typesafe-ai/jev", corpo { model, state, questions }, header Authorization: Bearer <token>. O token é AI_GATEWAY_API_KEY e, em deploy na Vercel, o token OIDC do projeto via @vercel/oidc (getVercelOidcToken). Confira a doc atual: https://vercel.com/docs/ai-gateway/sdks-and-apis/typesafe
+- Crie um cliente tipado com timeout de 4s. Toda decisão tem fallback por regras locais e registra o motor ("jev" ou "regras") e a confiança, para ser auditável e funcionar sem credencial.
+- Onde usar neste produto: classificar itens e serviços em NBS/NCM quando o XML for ambíguo; sinalizar contratos com risco de perda de margem; priorizar alertas para o contador. O cálculo tributário em si é determinístico e auditável: nunca IA.
+- Nos testes, simule apenas a resposta HTTP do Gateway.
 
 ## Escopo funcional mínimo (detalhe no PRD)
-Upload em lote de XML (NF-e/NFS-e) com processamento assíncrono e progresso em tempo real; classificação e cálculo da carga atual; motor de regras CBS/IBS declarativo e versionado por vigência (2026–2033); simulador de regimes (atual × Simples Híbrido × Presumido × Real); calculadora de repasse de preço; projeção de caixa com split payment; relatório PDF para o contador; painel multicliente para escritórios contábeis; trilha de auditoria; planos e limites; landing de conversão; modo claro e escuro.
-- Use o Jev (TypeSafe, via Vercel AI Gateway, modelo typesafe-ai/jev, endpoint https://ai-gateway.vercel.sh/typesafe/v1/systemone, credencial AI_GATEWAY_API_KEY ou OIDC da Vercel) para decisões: classificar itens e serviços em NBS/NCM quando o XML for ambíguo, sinalizar contratos com risco de margem e priorizar alertas. O cálculo tributário em si deve ser determinístico e auditável (nunca IA).
-- Deixe claro na interface que é simulação e não substitui o contador.
+Upload em lote de XML (NF-e e NFS-e) com processamento assíncrono e progresso em tempo real; classificação e cálculo da carga atual; motor de regras CBS/IBS declarativo e versionado por vigência (2026–2033); simulador de regimes (atual × Simples Híbrido × Presumido × Real); calculadora de repasse de preço; projeção de caixa com split payment; relatório PDF para o contador; painel multicliente do escritório contábil; landing de conversão com preços; modo claro e escuro. Deixe claro na interface que é simulação e não substitui o contador.
 
 ## Design e UX
-- Use o Claude Design (Artifact do tipo Design) para desenhar landing, painel e telas-chave antes de codar. Visual moderno no estilo Linear/Vercel: dark por padrão, com modo claro.
-- Padrões de mercado de UI/UX: acessibilidade WCAG AA, estados vazio, de carregamento e de erro, responsivo no celular e microinterações com Motion.
-- Textos da interface em pt-BR.
+- Crie uma identidade visual própria (nome, logo, paleta, tipografia), diferente de outros projetos meus.
+- Use o Claude Design (Artifact do tipo Design) para desenhar landing, painel e telas-chave antes de codar. Visual moderno e premium.
+- WCAG AA, estados vazio, de carregamento e de erro, responsivo e microinterações com Motion. Interface em pt-BR.
 
 ## Qualidade e entrega
-- Testes Vitest cobrindo o motor de regras (casos com valores conferidos à mão), isolamento entre empresas, permissões e limites.
+- Testes Vitest: motor de regras (casos com valores conferidos à mão), isolamento entre empresas, permissões, limites e fallback do Jev.
 - Typecheck, lint e build limpos a cada etapa; teste no navegador antes de dizer que algo funciona.
-- Deploy: banco no Neon (região aws-sa-east-1), projeto na Vercel com funções em gru1 e variáveis configuradas. Os conectores Neon e Vercel estão disponíveis.
-- README, docs/deploy.md e docs/backlog.md (o que ficou de fora, priorizado).
-- Commits pequenos e descritivos em pt-BR.
+- Deploy: banco no Neon (aws-sa-east-1) e Vercel com funções em gru1, variáveis configuradas. Os conectores Neon e Vercel estão disponíveis nesta conta.
+- README, docs/deploy.md e docs/backlog.md (o que ficou de fora, priorizado). Commits pequenos e descritivos em pt-BR.
 ```
 
 ---
@@ -55,45 +57,46 @@ Upload em lote de XML (NF-e/NFS-e) com processamento assíncrono e progresso em 
 ## Prompt 3: Agenda Cheia (anti-falta com preenchimento automático para clínicas)
 
 ```text
-Quero desenvolver do zero, completo e pronto para produção, a aplicação "Agenda Cheia": anti-falta para clínicas e consultórios pequenos, com confirmação por WhatsApp e preenchimento automático da vaga cancelada a partir de uma lista de espera. Ela vai para uma apresentação a investidores, então precisa ser um produto completo, moderno e funcional, não um MVP simples.
+Quero desenvolver do zero um produto novo e independente, completo e pronto para produção: "Agenda Cheia", anti-falta para clínicas e consultórios pequenos, com confirmação por WhatsApp e preenchimento automático da vaga cancelada a partir de uma lista de espera. Ele vai para uma apresentação a investidores, então precisa ser um produto completo, moderno e funcional, não um MVP simples. É um produto separado: não reaproveite código de outros projetos meus.
 
-## Contexto e PRD
-- Já existe um PRD em C:\Users\wesley.santos\Documents\github\equilibra\docs\prd\03-agenda-cheia-no-show.md. Leia inteiro antes de tudo.
-- Antes de codar, pesquise na web para validar e atualizar o PRD: taxas de no-show em clínicas privadas no Brasil (as do PRD vêm de fontes comerciais), concorrentes atuais (iClinic, Feegow, Clinicorp, Simples Dental, disparadores de WhatsApp), regras e preços da WhatsApp Business Cloud API (templates, janela de 24h, opt-in) e PSPs com API Pix e cobrança de sinal. Atualize o PRD em docs/prd/ no novo repositório citando as fontes.
+## PRD
+- Existe um PRD inicial em C:\Users\wesley.santos\Documents\github\equilibra\docs\prd\03-agenda-cheia-no-show.md. Use-o só como ponto de partida: copie para docs/prd/ do novo repositório e não leia nada além desse arquivo naquela pasta.
+- Antes de codar, pesquise na web e atualize o PRD com fontes: taxas de no-show em clínicas privadas no Brasil (as do PRD vêm de fontes comerciais); concorrentes (iClinic, Feegow, Clinicorp, Simples Dental, disparadores de WhatsApp); regras e preços da WhatsApp Business Cloud API (templates, janela de 24h, opt-in); PSPs com API Pix para cobrança de sinal; LGPD para dados de saúde (art. 11).
 
-## Repositório
-- Crie um repositório novo em C:\Users\wesley.santos\Documents\github\agenda-cheia (git init, branch main) e, no fim, um repositório privado no GitHub (gh já está logado como Wesley-SdS) com push.
-- Antes do primeiro commit, rode neste repositório: git config user.email "wesleysantos.0095@gmail.com" e git config user.name "Wesley Santos". A Vercel Hobby só faz deploy de commits do dono da conta.
+## Repositório e git
+- Crie o repositório em C:\Users\wesley.santos\Documents\github\agenda-cheia (git init, branch main) e, no fim, um repositório privado no GitHub (gh já está logado como Wesley-SdS) com push.
+- Antes do primeiro commit: git config user.email "wesleysantos.0095@gmail.com" e git config user.name "Wesley Santos". A Vercel Hobby só faz deploy de commits do dono da conta.
 
-## Stack obrigatória (a mesma do Equilibra)
-Next.js 15 (App Router) + jStack (Hono RPC type-safe, com WebSockets e Redis/Upstash) + Drizzle ORM + Postgres (PGlite local, Neon em produção) + Zod 4 + TanStack Query + Tailwind CSS 4 + Motion + Vitest.
+## Stack
+Next.js 15 (App Router) + jStack (Hono RPC type-safe, com WebSockets) + Upstash Redis (locks e pub/sub) + Drizzle ORM + Postgres (PGlite em desenvolvimento, Neon em produção via DATABASE_URL, migrations no build) + Zod 4 + TanStack Query + Tailwind CSS 4 + Motion + Vitest.
+Requisitos de base:
+- Autenticação própria (cookie httpOnly assinado, scrypt, convites, recuperação de senha).
+- Multi-clínica com papéis (dono, recepção, profissional) validados no servidor; isolamento entre clínicas em todas as queries; validação Zod em 100% das entradas; trilha de auditoria.
+- E-mail com Resend (fallback local).
+- Planos, limites e teste grátis, com provedor de pagamento plugável.
+- Rate limit (Upstash) e Sentry com DSN opcional, sem dados pessoais nem de saúde.
+- LGPD: Termos, Privacidade e DPA, aceite versionado, exportação e exclusão; dados de saúde mínimos e sem prontuário.
+- No jStack 1.1, registre o handler de erro em cada sub-router.
 
-Reaproveite padrões e código do Equilibra em C:\Users\wesley.santos\Documents\github\equilibra (leia antes de escrever o equivalente):
-- src/server/jstack.ts e src/server/index.ts (procedures e erro por sub-router);
-- src/server/db/index.ts e scripts/migrate.ts;
-- src/server/auth.ts e src/server/routers/auth-router.ts (sessão, multiempresa, convites, senha);
-- src/server/email/;
-- src/server/billing/ e src/lib/plans.ts;
-- src/server/jev.ts e src/server/decisions.ts;
-- src/app/globals.css, src/components/theme.tsx, src/components/ui/primitives.tsx e src/lib/utils.ts;
-- tests/*.test.ts, vercel.json, docs/deploy.md e .env.example.
+## Jev (modelo de decisão da TypeSafe) via Vercel AI Gateway
+- O Jev não gera texto: recebe um estado e perguntas tipadas e devolve choice, score e noul com confiança, numa única chamada.
+- Chame SEMPRE pelo Vercel AI Gateway: POST https://ai-gateway.vercel.sh/typesafe/v1/systemone, modelo "typesafe-ai/jev", corpo { model, state, questions }, Authorization: Bearer <AI_GATEWAY_API_KEY ou token OIDC da Vercel via @vercel/oidc>. Doc: https://vercel.com/docs/ai-gateway/sdks-and-apis/typesafe
+- Cliente tipado com timeout de 4s, fallback por regras e registro do motor e da confiança em cada decisão.
+- Onde usar neste produto: probabilidade de falta por consulta (noul) para decidir quem recebe confirmação reforçada; quem da lista de espera recebe a vaga primeiro (choice); se deve pedir sinal Pix (noul). Nos testes, simule só o HTTP do Gateway.
 
 ## Escopo funcional mínimo (detalhe no PRD)
-Agenda própria (profissionais, procedimentos, duração) e sincronização com Google Calendar; confirmação por WhatsApp em D-2/D-1 com botões (confirmar, remarcar, cancelar); lista de espera com preferências; preenchimento automático em cascata com lock no Redis (SET NX com TTL), para que dois pacientes nunca fiquem com o mesmo horário; painel da recepção em tempo real via WebSocket do jStack; sinal via Pix para pacientes reincidentes; score de risco de falta; painel de ROI (faltas evitadas, vagas preenchidas, R$ recuperado); página pública de agendamento e remarcação; planos e limites; landing de conversão; modo claro e escuro.
-- Use o Jev (TypeSafe, via Vercel AI Gateway, modelo typesafe-ai/jev, endpoint https://ai-gateway.vercel.sh/typesafe/v1/systemone, credencial AI_GATEWAY_API_KEY ou OIDC da Vercel) para decisões calibradas: probabilidade de falta por consulta (noul), quem da lista de espera recebe a vaga primeiro (choice) e se deve pedir sinal Pix. Mantenha sempre fallback por regras.
-- Integrações externas (WhatsApp, Pix, Google) atrás de interfaces, com modo de simulação local, para o app funcionar sem credenciais. LGPD: dados de saúde mínimos, sem prontuário, e opt-in do WhatsApp registrado.
+Agenda própria (profissionais, procedimentos, duração) e sincronização com Google Calendar; confirmação por WhatsApp em D-2 e D-1 com botões (confirmar, remarcar, cancelar); lista de espera com preferências; preenchimento automático em cascata com lock no Redis (SET NX com TTL), para que dois pacientes nunca fiquem com o mesmo horário; painel da recepção em tempo real via WebSocket; sinal via Pix para reincidentes; painel de ROI (faltas evitadas, vagas preenchidas, R$ recuperado); página pública de agendamento e remarcação; landing de conversão com preços; modo claro e escuro. Integrações externas (WhatsApp, Pix, Google) atrás de interfaces, com modo de simulação local para funcionar sem credenciais.
 
 ## Design e UX
-- Use o Claude Design (Artifact do tipo Design) para desenhar landing, agenda, painel da recepção e fluxo do paciente no celular antes de codar. Visual moderno no estilo Linear/Vercel: dark por padrão, com modo claro.
-- WCAG AA, estados vazio, de carregamento e de erro, mobile-first nas telas do paciente e microinterações com Motion.
-- Textos da interface em pt-BR.
+- Crie uma identidade visual própria (nome, logo, paleta, tipografia), diferente de outros projetos meus.
+- Use o Claude Design (Artifact do tipo Design) para desenhar landing, agenda, painel da recepção e o fluxo do paciente no celular antes de codar. Visual moderno e premium.
+- WCAG AA, estados vazio, de carregamento e de erro, mobile-first nas telas do paciente e microinterações com Motion. Interface em pt-BR.
 
 ## Qualidade e entrega
-- Testes Vitest, incluindo concorrência no aceite de vaga (dois aceites simultâneos), isolamento entre clínicas, permissões e limites.
+- Testes Vitest: concorrência no aceite de vaga (dois aceites simultâneos), isolamento entre clínicas, permissões, limites e fallback do Jev.
 - Typecheck, lint e build limpos; teste no navegador antes de dizer que algo funciona.
-- Deploy: Neon (aws-sa-east-1), Vercel com funções em gru1 e Upstash Redis. Os conectores Neon e Vercel estão disponíveis.
-- README, docs/deploy.md e docs/backlog.md.
-- Commits pequenos e descritivos em pt-BR.
+- Deploy: Neon (aws-sa-east-1), Vercel com funções em gru1 e Upstash Redis. Os conectores Neon e Vercel estão disponíveis nesta conta.
+- README, docs/deploy.md e docs/backlog.md. Commits pequenos e descritivos em pt-BR.
 ```
 
 ---
@@ -101,43 +104,44 @@ Agenda própria (profissionais, procedimentos, duração) e sincronização com 
 ## Prompt 4: Meu Balcão (back-office de bolso para MEI de serviços)
 
 ```text
-Quero desenvolver do zero, completo e pronto para produção, a aplicação "Meu Balcão": o back-office de bolso do MEI de serviços (agenda, cobrança por Pix, emissão de NFS-e e alerta do limite de faturamento do MEI) em um único app. Ela vai para uma apresentação a investidores, então precisa ser um produto completo, moderno e funcional, não um MVP simples.
+Quero desenvolver do zero um produto novo e independente, completo e pronto para produção: "Meu Balcão", o back-office de bolso do MEI de serviços (agenda, cobrança por Pix, emissão de NFS-e e alerta do limite de faturamento do MEI) em um único app. Ele vai para uma apresentação a investidores, então precisa ser um produto completo, moderno e funcional, não um MVP simples. É um produto separado: não reaproveite código de outros projetos meus.
 
-## Contexto e PRD
-- Já existe um PRD em C:\Users\wesley.santos\Documents\github\equilibra\docs\prd\04-mei-backoffice.md. Leia inteiro antes de tudo.
-- Antes de codar, pesquise na web para validar e atualizar o PRD: limite anual vigente do MEI e propostas de mudança, calendário do DAS e da DASN-SIMEI, situação da NFS-e padrão nacional (API, obrigatoriedade para MEI), PSPs com API Pix (cobrança imediata, webhook, taxas), concorrentes (bancos digitais, InfinitePay, Cora, apps de agenda) e números de MEIs ativos. O PRD aponta risco competitivo alto: proponha e documente um nicho de entrada (por exemplo, beleza). Atualize o PRD em docs/prd/ no novo repositório citando as fontes.
+## PRD
+- Existe um PRD inicial em C:\Users\wesley.santos\Documents\github\equilibra\docs\prd\04-mei-backoffice.md. Use-o só como ponto de partida: copie para docs/prd/ do novo repositório e não leia nada além desse arquivo naquela pasta.
+- Antes de codar, pesquise na web e atualize o PRD com fontes: limite anual vigente do MEI e propostas de mudança; calendário do DAS e da DASN-SIMEI; situação da NFS-e padrão nacional (API, obrigatoriedade para MEI); PSPs com API Pix (cobrança imediata, webhook, taxas); concorrentes (bancos digitais, InfinitePay, Cora, apps de agenda); número de MEIs ativos. O PRD aponta risco competitivo alto: proponha e documente um nicho de entrada (por exemplo, beleza).
 
-## Repositório
-- Crie um repositório novo em C:\Users\wesley.santos\Documents\github\meu-balcao (git init, branch main) e, no fim, um repositório privado no GitHub (gh já está logado como Wesley-SdS) com push.
-- Antes do primeiro commit, rode neste repositório: git config user.email "wesleysantos.0095@gmail.com" e git config user.name "Wesley Santos". A Vercel Hobby só faz deploy de commits do dono da conta.
+## Repositório e git
+- Crie o repositório em C:\Users\wesley.santos\Documents\github\meu-balcao (git init, branch main) e, no fim, um repositório privado no GitHub (gh já está logado como Wesley-SdS) com push.
+- Antes do primeiro commit: git config user.email "wesleysantos.0095@gmail.com" e git config user.name "Wesley Santos". A Vercel Hobby só faz deploy de commits do dono da conta.
 
-## Stack obrigatória (a mesma do Equilibra)
-Next.js 15 (App Router, como PWA instalável e offline-first para agenda e caixa) + jStack (Hono RPC type-safe, com WebSockets para confirmar o Pix em tempo real) + Drizzle ORM + Postgres (PGlite local, Neon em produção) + Zod 4 + TanStack Query + Tailwind CSS 4 + Motion + Vitest.
+## Stack
+Next.js 15 (App Router, PWA instalável e offline-first para agenda e caixa) + jStack (Hono RPC type-safe, com WebSockets para confirmar o Pix em tempo real) + Drizzle ORM + Postgres (PGlite em desenvolvimento, Neon em produção via DATABASE_URL, migrations no build) + Zod 4 + TanStack Query + Tailwind CSS 4 + Motion + Vitest.
+Requisitos de base:
+- Autenticação própria (cookie httpOnly assinado, scrypt, recuperação de senha).
+- Isolamento por conta em todas as queries, validação Zod em 100% das entradas e trilha de auditoria.
+- E-mail com Resend (fallback local).
+- Plano grátis e Pro com limites, e provedor de pagamento plugável.
+- Rate limit (Upstash) e Sentry com DSN opcional, sem dados pessoais.
+- LGPD: Termos e Privacidade, aceite versionado, exportação e exclusão.
+- No jStack 1.1, registre o handler de erro em cada sub-router.
 
-Reaproveite padrões e código do Equilibra em C:\Users\wesley.santos\Documents\github\equilibra (leia antes de escrever o equivalente):
-- src/server/jstack.ts e src/server/index.ts;
-- src/server/db/index.ts e scripts/migrate.ts;
-- src/server/auth.ts e src/server/routers/auth-router.ts;
-- src/server/email/;
-- src/server/billing/ e src/lib/plans.ts (aqui com plano grátis e Pro);
-- src/server/jev.ts e src/server/decisions.ts;
-- src/app/globals.css, src/components/theme.tsx, src/components/ui/primitives.tsx e src/lib/utils.ts;
-- tests/*.test.ts, vercel.json, docs/deploy.md e .env.example.
+## Jev (modelo de decisão da TypeSafe) via Vercel AI Gateway
+- O Jev não gera texto: recebe um estado e perguntas tipadas e devolve choice, score e noul com confiança, numa única chamada.
+- Chame SEMPRE pelo Vercel AI Gateway: POST https://ai-gateway.vercel.sh/typesafe/v1/systemone, modelo "typesafe-ai/jev", corpo { model, state, questions }, Authorization: Bearer <AI_GATEWAY_API_KEY ou token OIDC da Vercel via @vercel/oidc>. Doc: https://vercel.com/docs/ai-gateway/sdks-and-apis/typesafe
+- Cliente tipado com timeout de 4s, fallback por regras e registro do motor e da confiança em cada decisão.
+- Onde usar neste produto: categorizar lançamentos do caixa (choice); separar pessoal × negócio (noul); estimar o risco de ultrapassar o limite do MEI no ano (score). O cálculo do limite e dos valores é determinístico. Nos testes, simule só o HTTP do Gateway.
 
 ## Escopo funcional mínimo (detalhe no PRD)
-Onboarding em menos de 3 minutos (busca de dados pelo CNPJ); serviços e preços; agenda com link público de agendamento; cobrança Pix com QR Code e link, webhook do PSP e confirmação em tempo real; recibo; NFS-e em 2 toques a partir de uma cobrança paga; termômetro do limite MEI (acumulado, projeção, alertas em 70%, 90% e 100%), com o limite em configuração versionada; lembrete do DAS e da DASN-SIMEI; fluxo de caixa com separação pessoal × negócio; cobrança recorrente; landing de conversão; modo claro e escuro.
-- Use o Jev (TypeSafe, via Vercel AI Gateway, modelo typesafe-ai/jev, endpoint https://ai-gateway.vercel.sh/typesafe/v1/systemone, credencial AI_GATEWAY_API_KEY ou OIDC da Vercel) para decisões: categorizar lançamentos do caixa (choice), separar pessoal × negócio (noul) e estimar o risco de ultrapassar o limite no ano. O cálculo do limite e dos valores deve ser determinístico.
-- Integrações (PSP Pix, NFS-e nacional, consulta de CNPJ) atrás de interfaces, com modo de simulação local para funcionar sem credenciais.
+Onboarding em menos de 3 minutos (dados pelo CNPJ); serviços e preços; agenda com link público de agendamento; cobrança Pix com QR Code e link, webhook do PSP e confirmação em tempo real; recibo; NFS-e em 2 toques a partir de uma cobrança paga; termômetro do limite MEI (acumulado, projeção, alertas em 70%, 90% e 100%), com o limite em configuração versionada; lembretes do DAS e da DASN-SIMEI; fluxo de caixa; cobrança recorrente; landing de conversão com preços; modo claro e escuro. Integrações (PSP Pix, NFS-e nacional, consulta de CNPJ) atrás de interfaces, com modo de simulação local para funcionar sem credenciais.
 
 ## Design e UX
-- Use o Claude Design (Artifact do tipo Design) para desenhar landing e as telas principais do app no celular (início, agenda, cobrança, caixa, termômetro do limite) antes de codar. Visual moderno, dark por padrão, com modo claro, pensado para uso com uma mão.
-- WCAG AA, estados vazio, de carregamento e de erro e microinterações com Motion.
-- Textos da interface em pt-BR, linguagem simples para o MEI.
+- Crie uma identidade visual própria (nome, logo, paleta, tipografia), diferente de outros projetos meus.
+- Use o Claude Design (Artifact do tipo Design) para desenhar landing e as telas principais do app no celular (início, agenda, cobrança, caixa, termômetro do limite) antes de codar. Visual moderno, pensado para uso com uma mão.
+- WCAG AA, estados vazio, de carregamento e de erro e microinterações com Motion. Interface em pt-BR, com linguagem simples para o MEI.
 
 ## Qualidade e entrega
-- Testes Vitest: termômetro do limite, idempotência do webhook Pix, emissão de NFS-e a partir de cobrança paga, isolamento entre contas e limites do plano.
+- Testes Vitest: termômetro do limite, idempotência do webhook Pix, emissão de NFS-e a partir de cobrança paga, isolamento entre contas, limites do plano e fallback do Jev.
 - Typecheck, lint e build limpos; teste no navegador (incluindo viewport mobile) antes de dizer que algo funciona.
-- Deploy: Neon (aws-sa-east-1) e Vercel com funções em gru1. Os conectores Neon e Vercel estão disponíveis.
-- README, docs/deploy.md e docs/backlog.md.
-- Commits pequenos e descritivos em pt-BR.
+- Deploy: Neon (aws-sa-east-1) e Vercel com funções em gru1. Os conectores Neon e Vercel estão disponíveis nesta conta.
+- README, docs/deploy.md e docs/backlog.md. Commits pequenos e descritivos em pt-BR.
 ```

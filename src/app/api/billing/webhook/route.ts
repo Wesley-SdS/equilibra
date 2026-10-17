@@ -1,6 +1,7 @@
 import { getDb } from "@/server/db"
 import { applyBillingEvent } from "@/server/billing"
 import { getBillingProvider } from "@/server/billing/provider"
+import { log } from "@/server/log"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -13,7 +14,7 @@ export async function POST(req: Request) {
   try {
     event = await provider.parseWebhook(req)
   } catch (err) {
-    console.error("[billing] webhook inválido", err)
+    log.warn("billing.webhook_invalido", { err })
     return new Response("Assinatura do webhook inválida", { status: 400 })
   }
   if (event) await applyBillingEvent(await getDb(), event, provider.id)

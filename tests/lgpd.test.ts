@@ -150,3 +150,15 @@ describe("documentos", () => {
     expect(md).toContain("Pendências de preenchimento")
   })
 })
+
+describe("proteção contra força bruta", () => {
+  it("bloqueia o login após 10 tentativas para o mesmo e-mail", async () => {
+    const s = await signup()
+    for (let i = 0; i < 10; i++) {
+      const r = await call("auth/login", { body: { email: s.email, password: "senha-errada" } })
+      expect(r.status).toBe(401)
+    }
+    const blocked = await call("auth/login", { body: { email: s.email, password: "senha-segura-1" } })
+    expect(blocked.status).toBe(429)
+  })
+})

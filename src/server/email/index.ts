@@ -1,5 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs"
 import path from "node:path"
+import { log } from "../log"
 
 export type Email = { to: string | string[]; subject: string; html: string; text: string }
 
@@ -26,7 +27,7 @@ export async function sendEmail(email: Email): Promise<boolean> {
       writeFileSync(file, email.html)
       console.info(`[email] (dev, sem RESEND_API_KEY) “${email.subject}” → ${[email.to].flat().join(", ")}\n        ${file}`)
     } catch (err) {
-      console.error("[email] falha ao salvar e-mail de desenvolvimento", err)
+      log.warn("email.dev_falha_ao_salvar", { err })
     }
     return true
   }
@@ -35,12 +36,12 @@ export async function sendEmail(email: Email): Promise<boolean> {
     const resend = new Resend(key)
     const { error } = await resend.emails.send({ from: FROM, to: email.to, subject: email.subject, html: email.html, text: email.text })
     if (error) {
-      console.error("[email] Resend recusou o envio", error)
+      log.error("email.resend_recusou", { err: error.message, name: error.name })
       return false
     }
     return true
   } catch (err) {
-    console.error("[email] falha no envio", err)
+    log.error("email.falha_envio", { err })
     return false
   }
 }

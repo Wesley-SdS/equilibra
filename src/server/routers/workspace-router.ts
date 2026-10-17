@@ -135,7 +135,7 @@ export const campaignsRouter = j.router({
     }),
   /** Envia agora o lembrete com a taxa de resposta para donos e admins. */
   remind: editorProcedure.input(z.object({ id: z.string() })).mutation(async ({ c, ctx, input }) => {
-    rateLimit(`remind:${input.id}`, 3, 60 * 60_000)
+    await rateLimit(`remind:${input.id}`, 3, 60 * 60_000)
     const campaign = await ctx.db.query.campaigns.findFirst({
       where: and(eq(campaigns.id, input.id), eq(campaigns.companyId, ctx.session.companyId)),
     })

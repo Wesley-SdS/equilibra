@@ -1,3 +1,5 @@
+import { log } from "./log"
+
 // Cliente do Jev, o modelo de decisão ("System One") da TypeSafe AI, chamado pelo
 // Vercel AI Gateway: https://vercel.com/docs/ai-gateway/sdks-and-apis/typesafe
 // O Jev não gera texto: recebe um estado + perguntas tipadas e devolve, em uma única
@@ -18,7 +20,7 @@ async function gatewayToken(): Promise<string | null> {
     const { getVercelOidcToken } = await import("@vercel/oidc")
     return await getVercelOidcToken()
   } catch (err) {
-    console.error("[jev] token OIDC indisponível", err instanceof Error ? err.message : err)
+    log.warn("jev.oidc_indisponivel", { err })
     return null
   }
 }
@@ -66,12 +68,12 @@ export async function jevDecide<T extends Record<string, Question>>(state: strin
       signal: controller.signal,
     })
     if (!res.ok) {
-      console.error(`[jev] HTTP ${res.status}: ${(await res.text()).slice(0, 300)}`)
+      log.error("jev.http_erro", { status: res.status, body: (await res.text()).slice(0, 300) })
       return null
     }
     return (await res.json()) as JevResult<T>
   } catch (err) {
-    console.error("[jev] falha na chamada", err instanceof Error ? err.message : err)
+    log.error("jev.falha", { err })
     return null
   } finally {
     clearTimeout(timer)
