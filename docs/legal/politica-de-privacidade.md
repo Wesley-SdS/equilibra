@@ -42,7 +42,10 @@ Mesmo sem identificação direta, em setores muito pequenos as respostas poderia
 
 Para evitar respostas duplicadas, o navegador guarda um cookie que indica apenas que aquele dispositivo já respondeu àquela campanha. Um rascunho das respostas fica **somente no próprio aparelho** (armazenamento local do navegador) até o envio.
 
-### 3.3 Canal de relato
+### 3.3 Lista de envio da campanha
+Para facilitar a divulgação, o RH da empresa cliente pode colar **telefones e e-mails** de trabalhadores, e o {{nomeFantasia}} envia a todos o **mesmo link anônimo** por WhatsApp e e-mail (convite e lembrete). Esses contatos são fornecidos pela empresa, que é a controladora e declara, a cada inclusão, ter fundamento legal para contatá-los. **A lista não é ligada às respostas**: o link é o mesmo para todos e não há como saber quem respondeu. Guardamos apenas os contatos (e, no histórico de envios, somente as quantidades) e **apagamos a lista quando a campanha é encerrada ou vence**.
+
+### 3.4 Canal de relato
 - Categoria escolhida e **texto livre** escrito pela pessoa;
 - data (dia) do envio e protocolo gerado;
 - resultado da triagem automática (seção 6).
@@ -59,6 +62,7 @@ Não pedimos identificação. Porém, o texto pode conter, por escolha de quem e
 | Manter a trilha de auditoria e a segurança da plataforma | Registros de alterações | Art. 7º, IX (legítimo interesse: segurança e prestação de contas) |
 | Comprovar o aceite dos documentos | Data e versão do aceite | Art. 7º, VI (exercício regular de direitos) |
 | Aplicar a avaliação psicossocial e gerar o inventário de riscos do PGR | Respostas e setor | Definida pela **empresa controladora**; tipicamente art. 7º, II e art. 11, II, "a" (cumprimento de obrigação legal: NR-1, Portaria MTE nº 1.419/2024) |
+| Enviar o link anônimo por WhatsApp e e-mail aos trabalhadores | Telefone ou e-mail informado pela empresa | Definida pela **empresa controladora**; o {{nomeFantasia}} atua como operador |
 | Receber e encaminhar relatos do canal | Texto e categoria | Definida pela **empresa controladora**; tipicamente art. 7º, II e art. 11, II, "a" (por exemplo, Lei nº 14.457/2022 sobre prevenção ao assédio) |
 
 Não usamos os dados para publicidade, não os vendemos e **não os usamos para treinar modelos de inteligência artificial**.

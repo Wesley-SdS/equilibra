@@ -1,6 +1,7 @@
 import { getDb } from "@/server/db"
 import { appUrl } from "@/server/email"
 import { runDailyReminders } from "@/server/reminders"
+import { runContactReminders } from "@/server/dispatch"
 import { runRetention } from "@/server/retention"
 import { log } from "@/server/log"
 
@@ -18,7 +19,8 @@ export async function GET(req: Request) {
   }
   const db = await getDb()
   const reminders = await runDailyReminders(db, appUrl(req.url))
+  const contactReminders = await runContactReminders(db, appUrl(req.url))
   const retention = await runRetention(db)
-  log.info("cron.diario", { reminders, retention })
-  return Response.json({ reminders, retention })
+  log.info("cron.diario", { reminders, contactReminders, retention })
+  return Response.json({ reminders, contactReminders, retention })
 }

@@ -70,7 +70,7 @@ Lei brasileira. Foro da comarca de {{foro}}.
 |---|---|
 | **Finalidades** | Aplicar a avaliação de riscos psicossociais; calcular indicadores agregados; apoiar o plano de ação e o relatório do PGR; receber, triar e encaminhar relatos do canal |
 | **Titulares** | Trabalhadores do Cliente (respondentes e autores de relatos); terceiros eventualmente mencionados nos relatos |
-| **Dados** | Setor, respostas (escala de frequência) e data das respostas; texto, categoria, data e protocolo dos relatos; resultado da triagem automática |
+| **Dados** | Telefones e e-mails informados pelo Cliente para envio do link anônimo (lista de envio); setor, respostas (escala de frequência) e data das respostas; texto, categoria, data e protocolo dos relatos; resultado da triagem automática |
 | **Dados sensíveis** | As respostas podem revelar informações sobre saúde mental quando reidentificáveis; os relatos podem conter dados sensíveis inseridos pelo autor (por exemplo, vida sexual ou saúde) |
 | **Operações** | Coleta, armazenamento, cálculo agregado, exibição ao Cliente, triagem automatizada, exportação e eliminação |
 | **Duração** | Durante o contrato, observados os prazos abaixo |
@@ -88,6 +88,7 @@ Lei brasileira. Foro da comarca de {{foro}}.
 - **Controle de acesso:** isolamento entre clientes em todas as consultas; vínculo e papel (dono, admin ou leitor) verificados no servidor a cada requisição; remoção de acesso com efeito imediato.
 - **Rastreabilidade:** trilha de auditoria das alterações feitas no painel.
 - **Validação de entrada** em 100% dos endpoints e limitação de requisições nos endpoints públicos.
+- **Lista de envio:** contatos não são ligados às respostas (link único para todos), são apagados quando a campanha termina e, nos logs e no histórico, aparecem apenas quantidades; o número de telefone nunca é registrado em logs.
 - **Minimização:** sub-operadores recebem apenas os dados necessários à sua função.
 - **Continuidade:** backups gerenciados pelo provedor do banco de dados.
 

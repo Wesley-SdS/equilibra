@@ -5,6 +5,7 @@ import Link from "next/link"
 import QRCode from "qrcode"
 import { use, useEffect, useState } from "react"
 import { PageHeader } from "@/components/app/page-header"
+import { DispatchCard } from "@/components/app/dispatch-card"
 import { Button, Card, Logo, Spinner } from "@/components/ui/primitives"
 import { useToast } from "@/components/ui/toast"
 import { client } from "@/lib/client"
@@ -97,6 +98,7 @@ export default function CampaignKitPage({ params }: { params: Promise<{ id: stri
             </div>
             <p className="whitespace-pre-line rounded-xl bg-tint/[0.03] p-4 text-sm leading-relaxed text-muted">{email}</p>
           </Card>
+          <DispatchCard campaignId={id} active={c.status === "active"} />
           <Card className="flex flex-col gap-2">
             <h2 className="font-semibold">Dicas para aumentar a adesão</h2>
             <ul className="flex list-disc flex-col gap-1.5 pl-5 text-sm text-muted">

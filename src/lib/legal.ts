@@ -3,7 +3,15 @@
 // Ao mudar o conteúdo dos documentos, atualize LEGAL_VERSION: novos aceites passam a
 // registrar a nova versão.
 
-export const LEGAL_VERSION = "2026-10-17"
+// Formato AAAA-MM-DD ou AAAA-MM-DD.N (N = revisão no mesmo dia).
+export const LEGAL_VERSION = "2026-10-17.2"
+
+/** Versão para exibição: 17/10/2026 (rev. 2). */
+export function formatLegalVersion(v: string = LEGAL_VERSION) {
+  const [date, rev] = v.split(".")
+  const label = date!.split("-").reverse().join("/")
+  return rev ? `${label} (rev. ${rev})` : label
+}
 
 export const CONTROLLER = {
   razaoSocial: "[RAZAO_SOCIAL]",
@@ -49,6 +57,12 @@ export const SUBPROCESSORS = [
     pais: "EUA",
   },
   {
+    nome: "Meta Platforms, Inc. (WhatsApp Business Cloud API)",
+    finalidade: "Envio, a pedido da empresa cliente, do link anônimo da avaliação por WhatsApp",
+    dados: "Número de telefone do destinatário e o texto da mensagem (empresa, campanha, link e data)",
+    pais: "EUA",
+  },
+  {
     nome: "[PROVEDOR_DE_PAGAMENTO]",
     finalidade: "Cobrança das assinaturas (quando ativado)",
     dados: "Nome, e-mail e dados de pagamento do responsável pela assinatura",
@@ -65,5 +79,6 @@ export const RETENTION = [
   { categoria: "Trilha de auditoria", prazo: "Durante o contrato; eliminada com os dados da empresa" },
   { categoria: "Tokens de redefinição de senha", prazo: "Expiram em 30 minutos; apagados em até 24 horas" },
   { categoria: "Convites não aceitos", prazo: "Apagados após 30 dias" },
+  { categoria: "Lista de envio da campanha (telefones e e-mails informados pelo RH)", prazo: "Apagada quando a campanha é encerrada ou vence, e pelo cliente a qualquer momento" },
   { categoria: "Registros de aceite dos termos", prazo: "Enquanto a conta existir" },
 ] as const

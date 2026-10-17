@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs"
 import path from "node:path"
 import { Marked } from "marked"
-import { CONTROLLER, LEGAL_VERSION, PENDING_FIELDS, RETENTION, SUBPROCESSORS } from "./legal"
+import { CONTROLLER, PENDING_FIELDS, RETENTION, SUBPROCESSORS, formatLegalVersion } from "./legal"
 import { slugify } from "./utils"
 
 export type LegalDoc = "termos-de-uso" | "politica-de-privacidade" | "dpa"
@@ -24,7 +24,7 @@ function table(head: string[], rows: string[][]) {
 export function fillTokens(md: string) {
   const tokens: Record<string, string> = {
     ...CONTROLLER,
-    versao: LEGAL_VERSION.split("-").reverse().join("/"),
+    versao: formatLegalVersion(),
     pendencias: PENDING_FIELDS.length
       ? `> **Pendências de preenchimento:** ${PENDING_FIELDS.map((f) => PENDING_LABEL[f] ?? f).join(", ")}. Este documento ainda não deve ser usado com clientes.`
       : "",

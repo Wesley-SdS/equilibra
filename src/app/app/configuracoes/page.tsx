@@ -11,7 +11,7 @@ import { JevBadge } from "@/components/app/jev-badge"
 import { client } from "@/lib/client"
 import { ROLE_LABEL, useCan, useMe } from "@/lib/hooks"
 import { cn, formatCnpj } from "@/lib/utils"
-import { LEGAL_VERSION } from "@/lib/legal"
+import { formatLegalVersion } from "@/lib/legal"
 import Link from "next/link"
 
 const TABS = [
@@ -436,7 +436,7 @@ function PrivacyTab() {
       <Card className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Seus documentos</h2>
         <p className="text-sm text-muted">
-          Versão aceita: <span className="font-mono">{LEGAL_VERSION.split("-").reverse().join("/")}</span>. Releia quando quiser:
+          Versão aceita: <span className="font-mono">{formatLegalVersion()}</span>. Releia quando quiser:
         </p>
         <div className="flex flex-wrap gap-2 text-sm">
           <Link href="/termos" target="_blank" className="rounded-lg border border-line px-3 py-1.5 hover:border-line-strong">Termos de Uso</Link>

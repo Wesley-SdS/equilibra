@@ -1,4 +1,4 @@
-import { boolean, integer, jsonb, pgTable, primaryKey, text, timestamp } from "drizzle-orm/pg-core"
+import { boolean, integer, jsonb, pgTable, primaryKey, text, timestamp, unique } from "drizzle-orm/pg-core"
 
 const id = () =>
   text("id")
@@ -151,6 +151,38 @@ export const passwordResets = pgTable("password_resets", {
   expiresAt: timestamp("expires_at").notNull(),
   usedAt: timestamp("used_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+})
+
+/**
+ * Lista de distribuição da campanha (telefones/e-mails colados pelo RH). Serve só para enviar o
+ * MESMO link anônimo a todos: não há vínculo com respostas. Apagada quando a campanha termina.
+ */
+export const campaignContacts = pgTable(
+  "campaign_contacts",
+  {
+    id: id(),
+    campaignId: text("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" }),
+    channel: text("channel", { enum: ["whatsapp", "email"] }).notNull(),
+    address: text("address").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [unique("campaign_contact_unique").on(t.campaignId, t.channel, t.address)]
+)
+
+/** Histórico de disparos (só contagens; nenhum contato individual é registrado aqui). */
+export const campaignDispatches = pgTable("campaign_dispatches", {
+  id: id(),
+  campaignId: text("campaign_id")
+    .notNull()
+    .references(() => campaigns.id, { onDelete: "cascade" }),
+  kind: text("kind", { enum: ["invite", "reminder"] }).notNull(),
+  trigger: text("trigger", { enum: ["manual", "auto"] }).notNull().default("manual"),
+  whatsappSent: integer("whatsapp_sent").notNull().default(0),
+  emailSent: integer("email_sent").notNull().default(0),
+  failed: integer("failed").notNull().default(0),
+  at: timestamp("at").notNull().defaultNow(),
 })
 
 // Respostas anônimas: nenhuma coluna identifica a pessoa. A data é truncada ao dia.

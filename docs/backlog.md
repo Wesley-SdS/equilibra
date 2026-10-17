@@ -21,7 +21,7 @@ Legenda: ✅ feito · 🟡 parcial · sem marca = a fazer
 
 | # | Item |
 |---|---|
-| 9 | Lembretes automáticos por **WhatsApp** (Cloud API) e e-mail no meio da campanha |
+| 9 | 🟡 Lembretes automáticos por **WhatsApp** (Cloud API) e e-mail | Pronto: lista de envio, convite e lembrete automático 2 dias antes do fim, lista apagada ao encerrar, simulação local. Falta criar o app na Meta e aprovar os templates |
 | 10 | **Assinatura digital** do relatório PGR pelo responsável técnico |
 | 11 | **White-label** para parceiros (logo, cores e domínio do contador/SST) |
 | 12 | Editar e duplicar campanha; agendar abertura e encerramento automáticos |

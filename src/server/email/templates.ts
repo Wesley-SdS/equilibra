@@ -95,3 +95,24 @@ export function campaignReminderEmail(p: { company: string; campaign: string; en
     text: `${p.campaign} ${urgency}: ${p.rate}% de resposta (${p.responses}). Encerra em ${p.endsAt}.\nKit de divulgação: ${p.kitLink}`,
   }
 }
+
+/** Convite/lembrete enviado aos trabalhadores com o link ANÔNIMO da campanha (mesmo link para todos). */
+export function respondentEmail(p: { company: string; campaign: string; endsAt: string; link: string; reminder: boolean; minutes: number }) {
+  const subject = p.reminder ? `Lembrete: sua opinião ainda conta (até ${p.endsAt})` : `Sua opinião sobre o ambiente de trabalho (anônimo, ${p.minutes} min)`
+  return {
+    subject,
+    html: layout({
+      preheader: "Anônimo: não pedimos nome, e-mail nem telefone",
+      title: p.reminder ? "Ainda dá tempo de responder" : "Como está o seu dia a dia no trabalho?",
+      body: `<p style="margin:0">A <strong>${esc(p.company)}</strong> está realizando a avaliação de riscos psicossociais prevista na NR-1 (<em>${esc(p.campaign)}</em>).</p>
+<ul style="margin:12px 0 0;padding-left:20px">
+<li style="margin-bottom:6px">Cerca de ${p.minutes} minutos, pelo celular</li>
+<li style="margin-bottom:6px"><strong>Anônimo:</strong> não pedimos nome, e-mail nem telefone, e este link é o mesmo para toda a equipe</li>
+<li>Resultados só aparecem para grupos de 5 ou mais pessoas</li>
+</ul>
+<p style="margin:12px 0 0">Responda até <strong>${esc(p.endsAt)}</strong>.</p>`,
+      cta: { label: "Responder agora", href: p.link },
+    }),
+    text: `${p.company} · ${p.campaign}\n\n${subject}\n\nResponda até ${p.endsAt} (cerca de ${p.minutes} min, anônimo): ${p.link}`,
+  }
+}

@@ -36,6 +36,13 @@
       "when": 1792231012642,
       "tag": "0004_superb_tombstone",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792233596156,
+      "tag": "0005_medical_loa",
+      "breakpoints": true
     }
   ]
 }

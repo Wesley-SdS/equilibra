@@ -10,6 +10,7 @@ import { editorProcedure, j, privateProcedure } from "../jstack"
 import { appUrl } from "../email"
 import { sendCampaignReminder } from "../reminders"
 import { buildReport } from "../report"
+import { purgeFinishedContacts } from "../dispatch"
 import { chooseActions, triagePriority } from "../decisions"
 import { assertLimit, assertWritable } from "../billing"
 import { rateLimit } from "../rate-limit"
@@ -154,6 +155,7 @@ export const campaignsRouter = j.router({
         .where(and(eq(campaigns.id, input.id), eq(campaigns.companyId, ctx.session.companyId)))
         .returning()
       if (row) {
+        if (input.status === "closed") await purgeFinishedContacts(ctx.db, ctx.session.companyId)
         await audit(ctx.db, ctx.session, { action: "status", entity: "campanha", entityId: row.id, summary: `Campanha “${row.name}” ${input.status === "active" ? "reaberta" : "encerrada"}` })
       }
       return c.superjson({ ok: true })

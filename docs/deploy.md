@@ -12,6 +12,7 @@
 - **Pendente (rate limit):** criar o Upstash Redis pela Vercel (Storage → Create Database → Upstash for Redis → conectar ao projeto `equilibra`). As variáveis `KV_REST_API_URL`/`KV_REST_API_TOKEN` entram sozinhas; até lá o limite é em memória
 - **Pendente (Sentry):** criar o projeto Next.js no Sentry e definir `NEXT_PUBLIC_SENTRY_DSN` e `SENTRY_DSN` (Production e Preview). `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` e `SENTRY_PROJECT` são opcionais (sourcemaps)
 - **Logs:** uma linha JSON por evento (`event`, `level`, campos sem dados pessoais); filtre por `event` nos Runtime Logs da Vercel
+- **Pendente (WhatsApp):** criar o app na Meta (WhatsApp Business Cloud API), verificar a empresa, aprovar os dois templates `equilibra_convite_avaliacao` e `equilibra_lembrete_avaliacao` (utility, pt_BR, 4 variáveis: empresa, campanha, link, data) e definir `WHATSAPP_TOKEN` e `WHATSAPP_PHONE_NUMBER_ID`. Até lá o disparo roda em simulação
 - Os segredos locais ficam em `.env.neon` (ignorado pelo git)
 
 > Plano Hobby: a Vercel só faz deploy de commits cujo autor é o dono da conta. Neste repositório o
