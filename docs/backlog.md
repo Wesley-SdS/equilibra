@@ -26,7 +26,7 @@ Legenda: ✅ feito · 🟡 parcial · sem marca = a fazer
 | 11 | **White-label** para parceiros (logo, cores e domínio do contador/SST) |
 | 12 | ✅ Editar e duplicar campanha; abertura e encerramento automáticos | Feito: edição de nome e datas (agenda, adia, estende e reabre), duplicação com link novo, fase Agendada/Ativa/Vencida/Encerrada, janela de resposta validada no servidor e encerramento automático pelo cron diário |
 | 13 | ✅ Anexos e mensagens bidirecionais no **canal de relato** | Feito: o RH responde e o autor lê/responde pelo protocolo (só o dia é gravado), notas internas invisíveis ao autor, imagens (até 3 por mensagem) regravadas sem EXIF, não lidos no menu, nova mensagem reabre relato resolvido e reavalia a triagem |
-| 14 | Prazos e responsáveis do plano com **notificações** (ação vencendo/vencida) |
+| 14 | ✅ **Notificações** de prazo do plano de ação | Feito: resumo diário por e-mail a donos e admins (vencendo em até 3 dias e atrasadas, repetido a cada 7 dias), sem repetir no mesmo estágio, selo no menu e destaque nos cartões do plano |
 | 15 | Login social (Google/Microsoft) e **2FA** |
 | 16 | Questionário em **inglês e espanhol** (equipes com imigrantes) e modo de alto contraste |
 | 17 | Testes de ponta a ponta (Playwright) e CI no GitHub Actions |

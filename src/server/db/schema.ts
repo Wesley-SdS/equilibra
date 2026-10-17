@@ -234,6 +234,9 @@ export const actions = pgTable("actions", {
     .default("todo"),
   // Quando a ação foi sugerida automaticamente: motor e confiança da escolha.
   decision: jsonb("decision").$type<Decision>(),
+  // Controle dos avisos de prazo do cron: último estágio avisado ("soon" | "overdue") e quando.
+  notifiedStage: text("notified_stage").notNull().default(""),
+  notifiedAt: timestamp("notified_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 })
 

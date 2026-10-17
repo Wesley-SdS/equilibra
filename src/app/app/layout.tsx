@@ -59,6 +59,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (me.isError) router.replace("/entrar")
   }, [me.isError, router])
   useEffect(() => setMenuOpen(false), [pathname])
+  // Ações do plano atrasadas ou vencendo.
+  const deadlines = useQuery({
+    queryKey: ["deadlines"],
+    queryFn: async () => (await client.actions.deadlines.$get()).json(),
+    enabled: !!me.data,
+    refetchInterval: 5 * 60_000,
+  })
   // Mensagens novas de quem relatou pelo protocolo: indicador no menu, atualizado a cada minuto.
   const unread = useQuery({
     queryKey: ["channel-unread"],
@@ -150,6 +157,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <path d={item.icon} />
                       </svg>
                       <span className="relative">{item.label}</span>
+                      {item.href === "/app/plano" && !!deadlines.data && deadlines.data.overdue + deadlines.data.soon > 0 && (
+                        <span
+                          className={cn("relative ml-auto grid min-w-5 place-items-center rounded-full px-1.5 text-[11px] font-semibold", deadlines.data.overdue ? "bg-risk-crit text-white" : "bg-risk-mod-fg text-white")}
+                          aria-label={`${deadlines.data.overdue} ações atrasadas e ${deadlines.data.soon} vencendo`}
+                        >
+                          {deadlines.data.overdue + deadlines.data.soon}
+                        </span>
+                      )}
                       {item.href === "/app/canal" && !!unread.data?.n && (
                         <span className="relative ml-auto grid min-w-5 place-items-center rounded-full bg-brand px-1.5 text-[11px] font-semibold text-brand-ink" aria-label={`${unread.data.n} mensagens novas`}>
                           {unread.data.n}

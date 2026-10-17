@@ -50,6 +50,13 @@
       "when": 1792236024225,
       "tag": "0006_silky_chronomancer",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792247856586,
+      "tag": "0007_soft_daimon_hellstrom",
+      "breakpoints": true
     }
   ]
 }

@@ -39,7 +39,7 @@ Para entrar no painel de demonstração, use o botão **“Ver painel de demonst
 - **Visão geral**: mapa de calor setor × dimensão, ranking, participação, checklist de primeiros passos
 - **Detalhe por dimensão**: score por item, distribuição das respostas e medidas recomendadas
 - **Evolução** entre campanhas (linha do índice, antes/depois por dimensão, tabela)
-- **Plano de ação 5W2H** em quadro, com sugestões automáticas para dimensões em alerta
+- **Plano de ação 5W2H** em quadro, com sugestões automáticas para dimensões em alerta e **avisos de prazo** (e-mail diário + selo no menu)
 - **Relatório PGR** imprimível em A4 (metodologia, participação, inventário, plano, evolução)
 - **Canal de relato anônimo** com protocolo de acompanhamento, **conversa bidirecional** com o RH (notas internas, anexos de imagem sem metadados)
 - **Trilha de auditoria** de todas as alterações

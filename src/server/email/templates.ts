@@ -96,6 +96,29 @@ export function campaignReminderEmail(p: { company: string; campaign: string; en
   }
 }
 
+export type DeadlineItem = { what: string; who: string; due: string; daysLeft: number }
+
+/** Resumo diário de ações do plano com prazo vencendo ou vencido, enviado a donos e admins. */
+export function actionDeadlinesEmail(p: { company: string; overdue: DeadlineItem[]; soon: DeadlineItem[]; link: string }) {
+  const when = (d: number) => (d < 0 ? `venceu há ${-d} dia(s)` : d === 0 ? "vence hoje" : `vence em ${d} dia(s)`)
+  const line = (i: DeadlineItem) => `<li style="margin:0 0 8px">${esc(i.what)}${i.who ? ` <span style="color:#5f6c67">· ${esc(i.who)}</span>` : ""} <strong>· ${esc(when(i.daysLeft))}</strong></li>`
+  const block = (title: string, items: DeadlineItem[]) =>
+    items.length ? `<p style="margin:16px 0 8px"><strong>${title}</strong></p><ul style="margin:0;padding-left:20px">${items.map(line).join("")}</ul>` : ""
+  const txt = (title: string, items: DeadlineItem[]) => (items.length ? `\n${title}\n${items.map((i) => `- ${i.what}${i.who ? ` (${i.who})` : ""}: ${i.due}`).join("\n")}\n` : "")
+  const total = p.overdue.length + p.soon.length
+  return {
+    subject: p.overdue.length ? `${p.overdue.length} ação(ões) do plano atrasada(s) · ${p.company}` : `${total} ação(ões) do plano vencendo · ${p.company}`,
+    html: layout({
+      preheader: `${total} ação(ões) do plano de ação precisam de atenção`,
+      title: p.overdue.length ? "Há ações do plano com prazo vencido" : "Ações do plano vencendo em breve",
+      body: `<p style="margin:0">Na <strong>${esc(p.company)}</strong>, estas ações do plano de ação ainda não foram concluídas:</p>${block("Atrasadas", p.overdue)}${block("Vencendo nos próximos dias", p.soon)}
+<p style="margin:16px 0 0">Concluir as ações é a evidência de gestão que o PGR exige. Se o prazo mudou, atualize a data no plano.</p>`,
+      cta: { label: "Abrir plano de ação", href: p.link },
+    }),
+    text: `Ações do plano de ação (${p.company}) que precisam de atenção.\n${txt("Atrasadas", p.overdue)}${txt("Vencendo em breve", p.soon)}\nPlano de ação: ${p.link}`,
+  }
+}
+
 /** Convite/lembrete enviado aos trabalhadores com o link ANÔNIMO da campanha (mesmo link para todos). */
 export function respondentEmail(p: { company: string; campaign: string; endsAt: string; link: string; reminder: boolean; minutes: number }) {
   const subject = p.reminder ? `Lembrete: sua opinião ainda conta (até ${p.endsAt})` : `Sua opinião sobre o ambiente de trabalho (anônimo, ${p.minutes} min)`

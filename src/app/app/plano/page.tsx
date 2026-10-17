@@ -11,6 +11,7 @@ import { JevBadge } from "@/components/app/jev-badge"
 import { client } from "@/lib/client"
 import { useCan } from "@/lib/hooks"
 import { DIMENSIONS, dimensionMeta, type DimensionId } from "@/lib/methodology"
+import { stageOf } from "@/lib/deadline"
 import { cn, formatDate } from "@/lib/utils"
 
 type Status = "todo" | "doing" | "done"
@@ -140,7 +141,13 @@ function PlanContent() {
                       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-subtle">
                         {sectorName(a.sectorId) && <span>Onde: {sectorName(a.sectorId)}</span>}
                         {a.who && <span>Quem: {a.who}</span>}
-                        {a.due && <span>Prazo: {formatDate(a.due)}</span>}
+                        {a.due && (
+                          <span className={cn(stageOf(a) === "overdue" && "font-medium text-risk-crit-fg", stageOf(a) === "soon" && "font-medium text-risk-mod-fg")}>
+                            Prazo: {formatDate(a.due)}
+                            {stageOf(a) === "overdue" && " · atrasada"}
+                            {stageOf(a) === "soon" && " · vence em breve"}
+                          </span>
+                        )}
                       </div>
                       {can.edit && <div className="flex gap-1.5">
                         {COLUMNS.filter((c) => c.id !== col.id).map((c) => (

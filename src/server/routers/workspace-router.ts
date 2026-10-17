@@ -1,10 +1,11 @@
-import { and, desc, eq, getTableColumns, sql } from "drizzle-orm"
+import { and, desc, eq, getTableColumns, ne, sql } from "drizzle-orm"
 import { HTTPException } from "hono/http-exception"
 import { z } from "zod"
 import type { Db } from "../db"
 import { actions, campaigns, channelMessages, channelReports, companies, customQuestions, responses, sectors } from "../db/schema"
 import { publicToken, today } from "../auth"
 import { phaseOf } from "../campaigns"
+import { stageOf } from "@/lib/deadline"
 import { audit } from "../audit"
 import { computeDimension, computeHistory, computeInsights, computePortfolio } from "../insights"
 import { editorProcedure, j, privateProcedure } from "../jstack"
@@ -275,6 +276,15 @@ export const actionsRouter = j.router({
       .orderBy(desc(actions.createdAt))
     return c.superjson(rows)
   }),
+  /** Quantas ações abertas estão atrasadas ou vencendo (indicador do menu). */
+  deadlines: privateProcedure.query(async ({ c, ctx }) => {
+    const rows = await ctx.db
+      .select({ status: actions.status, due: actions.due })
+      .from(actions)
+      .where(and(eq(actions.companyId, ctx.session.companyId), ne(actions.status, "done")))
+    const stages = rows.map((r) => stageOf(r))
+    return c.superjson({ overdue: stages.filter((s) => s === "overdue").length, soon: stages.filter((s) => s === "soon").length })
+  }),
   create: editorProcedure.input(actionInput).mutation(async ({ c, ctx, input }) => {
     await assertWritable(ctx.db, ctx.session.companyId)
     const [row] = await ctx.db
@@ -290,7 +300,8 @@ export const actionsRouter = j.router({
       const { id, ...data } = input
       const [row] = await ctx.db
         .update(actions)
-        .set(data)
+        // Mudou o prazo ou o andamento: o próximo cron volta a avaliar a ação do zero.
+        .set(data.due !== undefined || data.status !== undefined ? { ...data, notifiedStage: "", notifiedAt: null } : data)
         .where(and(eq(actions.id, id), eq(actions.companyId, ctx.session.companyId)))
         .returning()
       if (row) {
