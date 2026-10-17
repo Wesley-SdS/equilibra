@@ -8,6 +8,7 @@ import { eq, inArray } from "drizzle-orm"
 import { getDb, type Db } from "../src/server/db"
 import { actions, answers, auditLog, campaigns, channelReports, companies, customQuestions, memberships, responses, sectors, users, type CustomQuestionSnapshot } from "../src/server/db/schema"
 import { hashPassword } from "../src/server/auth"
+import { LEGAL_VERSION } from "../src/lib/legal"
 import { triageReport } from "../src/server/decisions"
 import { QUESTIONS, type DimensionId } from "../src/lib/methodology"
 
@@ -86,8 +87,9 @@ async function main() {
   }
 
   const passwordHash = hashPassword(PASSWORD)
-  const [carla] = await db.insert(users).values({ name: "Carla Mendes", email: "demo@equilibra.app", passwordHash }).returning()
-  const [rafael] = await db.insert(users).values({ name: "Rafael Souza", email: "rh@equilibra.app", passwordHash }).returning()
+  const accepted = { termsAcceptedAt: new Date(), termsVersion: LEGAL_VERSION }
+  const [carla] = await db.insert(users).values({ name: "Carla Mendes", email: "demo@equilibra.app", passwordHash, ...accepted }).returning()
+  const [rafael] = await db.insert(users).values({ name: "Rafael Souza", email: "rh@equilibra.app", passwordHash, ...accepted }).returning()
 
   // 1) Padaria: duas campanhas para mostrar evolução.
   const padaria: Profile = {

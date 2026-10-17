@@ -9,6 +9,7 @@ import { CommandPalette } from "@/components/app/command-palette"
 import { CompanySwitcher } from "@/components/app/company-switcher"
 import { ThemeToggle } from "@/components/theme"
 import { BillingBanner } from "@/components/app/billing-banner"
+import { TermsGate } from "@/components/app/terms-gate"
 import { Logo, Spinner } from "@/components/ui/primitives"
 import { client } from "@/lib/client"
 import { ROLE_LABEL, useMe } from "@/lib/hooks"
@@ -193,6 +194,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </motion.div>
       </main>
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+      <TermsGate />
     </div>
   )
 }

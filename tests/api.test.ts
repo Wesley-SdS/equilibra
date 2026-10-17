@@ -49,7 +49,7 @@ let n = 0
 async function signup() {
   n += 1
   const r = await call("auth/signup", {
-    body: { companyName: `Empresa ${n}`, cnpj: "12345678000190", employees: 50, name: `Pessoa ${n}`, email: `p${n}@teste.com`, password: "senha-segura-1" },
+    body: { companyName: `Empresa ${n}`, cnpj: "12345678000190", employees: 50, name: `Pessoa ${n}`, email: `p${n}@teste.com`, password: "senha-segura-1", acceptTerms: true },
   })
   expect(r.status, r.text).toBe(200)
   return sessionFrom(r.setCookie)
@@ -85,7 +85,7 @@ describe("API", () => {
     const owner = await signup()
     const inv = await call("team/invite", { session: owner, body: { email: "leitor@teste.com", role: "viewer" } })
     expect(inv.status).toBe(200)
-    const accepted = await call("auth/acceptInvite", { body: { token: (inv.json as { token: string }).token, name: "Leitor", password: "senha-segura-2" } })
+    const accepted = await call("auth/acceptInvite", { body: { token: (inv.json as { token: string }).token, name: "Leitor", password: "senha-segura-2", acceptTerms: true } })
     expect(accepted.status).toBe(200)
     const viewer = sessionFrom(accepted.setCookie)
 

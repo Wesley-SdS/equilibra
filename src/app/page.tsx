@@ -7,6 +7,7 @@ import { ProductPreview } from "@/components/landing/product-preview"
 import { RoiCalculator } from "@/components/landing/roi-calculator"
 import { Counter, Reveal, SpotlightCard, SplitHeadline, TiltOnScroll } from "@/components/landing/motion-bits"
 import { ThemeToggle } from "@/components/theme"
+import { LegalLinks } from "@/components/legal-links"
 import { ButtonLink, Eyebrow, Logo } from "@/components/ui/primitives"
 import { PLANS as PLAN_LIST, TRIAL_DAYS, brl } from "@/lib/plans"
 import { cn } from "@/lib/utils"
@@ -314,7 +315,7 @@ export default function LandingPage() {
       <footer className="border-t border-line">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-8 text-sm text-subtle sm:px-6">
           <Logo />
-          <span>O Equilibra apoia a gestão de riscos. A responsabilidade técnica do PGR é da empresa.</span>
+          <LegalLinks />
           <span>© 2026 Equilibra</span>
         </div>
       </footer>

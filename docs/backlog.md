@@ -12,7 +12,7 @@ Legenda: ✅ feito · 🟡 parcial · sem marca = a fazer
 | 2 | ✅ **Envio de e-mail** (Resend): convites, boas-vindas, lembretes de campanha (cron diário + botão manual) | Feito. Falta só a `RESEND_API_KEY` e um domínio verificado |
 | 3 | ✅ **Recuperação de senha** (link de uso único, 30 min, sem revelar e-mails) | Feito |
 | 4 | 🟡 **Cobrança recorrente** | Estrutura pronta: planos e limites no servidor, teste grátis de 14 dias, modo leitura, carência de 7 dias, tela de assinatura, webhook genérico (`src/server/billing/`). Falta escolher e plugar o provedor (Stripe ou Asaas) em `provider.ts` |
-| 5 | **Termos de uso, política de privacidade e DPA** (LGPD) | Obrigatório para contratar e para o cliente confiar no anonimato |
+| 5 | 🟡 **Termos de uso, política de privacidade e DPA** (LGPD) | Documentos em `docs/legal/` e páginas `/termos`, `/privacidade`, `/dpa`; aceite registrado (data + versão) com re-aceite; exportação, exclusão de empresa/conta e expurgo automático. Falta preencher razão social, CNPJ, endereço, foro e DPO em `src/lib/legal.ts` e revisão por advogado |
 | 6 | **Rate limit distribuído** (Upstash Redis) | O limite atual é em memória, por instância |
 | 7 | **Monitoramento de erros** (Sentry) e logs estruturados | Hoje erro de produção não avisa ninguém |
 | 8 | ✅ **Relatório PDF gerado no servidor** (`/api/relatorio/pdf`, @react-pdf) | Feito. Pendente: número de página no rodapé |

@@ -11,12 +11,15 @@ import { JevBadge } from "@/components/app/jev-badge"
 import { client } from "@/lib/client"
 import { ROLE_LABEL, useCan, useMe } from "@/lib/hooks"
 import { cn, formatCnpj } from "@/lib/utils"
+import { LEGAL_VERSION } from "@/lib/legal"
+import Link from "next/link"
 
 const TABS = [
   { id: "empresa", label: "Empresa" },
   { id: "equipe", label: "Equipe" },
   { id: "seguranca", label: "Segurança" },
   { id: "auditoria", label: "Auditoria" },
+  { id: "privacidade", label: "Privacidade e dados" },
 ] as const
 type Tab = (typeof TABS)[number]["id"]
 
@@ -53,6 +56,7 @@ function SettingsContent() {
           {tab === "equipe" && <TeamTab />}
           {tab === "seguranca" && <SecurityTab />}
           {tab === "auditoria" && <AuditTab />}
+          {tab === "privacidade" && <PrivacyTab />}
         </motion.div>
       </AnimatePresence>
     </>
@@ -380,6 +384,131 @@ function AuditTab() {
         </ol>
       )}
     </Card>
+  )
+}
+
+function PrivacyTab() {
+  const me = useMe()
+  const can = useCan()
+  const toast = useToast()
+  const router = useRouter()
+  const qc = useQueryClient()
+  const [companyName, setCompanyName] = useState("")
+  const [confirmMe, setConfirmMe] = useState("")
+  const [exporting, setExporting] = useState(false)
+
+  async function exportData() {
+    setExporting(true)
+    try {
+      const data = await (await client.account.exportData.$get()).json()
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `equilibra-export-${new Date().toISOString().slice(0, 10)}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast("Exportação gerada")
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Falha ao exportar", "error")
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const deleteCompany = useMutation({
+    mutationFn: async () => (await client.account.deleteCompany.$post({ confirmName: companyName })).json(),
+    onSuccess: (r) => {
+      qc.clear()
+      router.push(r.hasOtherCompany ? "/app" : "/")
+    },
+  })
+  const deleteMe = useMutation({
+    mutationFn: async () => (await client.account.deleteMe.$post({ confirm: "EXCLUIR" })).json(),
+    onSuccess: () => {
+      qc.clear()
+      router.push("/")
+    },
+  })
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Card className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold">Seus documentos</h2>
+        <p className="text-sm text-muted">
+          Versão aceita: <span className="font-mono">{LEGAL_VERSION.split("-").reverse().join("/")}</span>. Releia quando quiser:
+        </p>
+        <div className="flex flex-wrap gap-2 text-sm">
+          <Link href="/termos" target="_blank" className="rounded-lg border border-line px-3 py-1.5 hover:border-line-strong">Termos de Uso</Link>
+          <Link href="/privacidade" target="_blank" className="rounded-lg border border-line px-3 py-1.5 hover:border-line-strong">Política de Privacidade</Link>
+          <Link href="/dpa" target="_blank" className="rounded-lg border border-line px-3 py-1.5 hover:border-line-strong">Acordo de Tratamento de Dados</Link>
+        </div>
+      </Card>
+
+      <Card className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold">Exportar dados da empresa</h2>
+        <p className="text-sm text-muted">
+          Baixe um arquivo JSON com setores, campanhas, respostas (anônimas), plano de ação, relatos do canal, equipe e trilha de auditoria. Direito de portabilidade (LGPD, art. 18, V).
+        </p>
+        {can.manage ? (
+          <Button variant="secondary" loading={exporting} onClick={exportData} className="self-start">
+            Exportar JSON
+          </Button>
+        ) : (
+          <p className="text-xs text-subtle">Apenas o dono da conta pode exportar.</p>
+        )}
+      </Card>
+
+      {can.manage && (
+        <Card className="flex flex-col gap-3 border-risk-crit/30">
+          <h2 className="text-lg font-semibold text-risk-crit-fg">Excluir a empresa</h2>
+          <p className="text-sm text-muted">
+            Apaga de forma definitiva <strong className="text-fg">{me.data?.company.name}</strong> e todos os dados dela: setores, campanhas, respostas, plano, relatos e auditoria. Exporte antes se precisar guardar o histórico do PGR.
+          </p>
+          <form
+            className="flex flex-col gap-3 sm:flex-row sm:items-end"
+            onSubmit={(e) => {
+              e.preventDefault()
+              if (confirm("Esta ação não pode ser desfeita. Excluir a empresa e todos os dados?")) deleteCompany.mutate()
+            }}
+          >
+            <div className="flex-1">
+              <Field label="Digite o nome da empresa para confirmar" htmlFor="delco">
+                <Input id="delco" value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder={me.data?.company.name} />
+              </Field>
+            </div>
+            <Button type="submit" variant="danger" disabled={companyName.trim() !== me.data?.company.name} loading={deleteCompany.isPending}>
+              Excluir empresa
+            </Button>
+          </form>
+          {deleteCompany.error && <p className="text-sm text-risk-crit-fg">{deleteCompany.error.message}</p>}
+        </Card>
+      )}
+
+      <Card className="flex flex-col gap-3 border-risk-crit/30">
+        <h2 className="text-lg font-semibold text-risk-crit-fg">Excluir minha conta</h2>
+        <p className="text-sm text-muted">
+          Remove seu usuário e seus acessos. Empresas em que você é a única pessoa também são excluídas. Se for o único dono de uma empresa com outras pessoas, torne alguém dono antes.
+        </p>
+        <form
+          className="flex flex-col gap-3 sm:flex-row sm:items-end"
+          onSubmit={(e) => {
+            e.preventDefault()
+            deleteMe.mutate()
+          }}
+        >
+          <div className="flex-1">
+            <Field label="Digite EXCLUIR para confirmar" htmlFor="delme">
+              <Input id="delme" value={confirmMe} onChange={(e) => setConfirmMe(e.target.value)} />
+            </Field>
+          </div>
+          <Button type="submit" variant="danger" disabled={confirmMe !== "EXCLUIR"} loading={deleteMe.isPending}>
+            Excluir conta
+          </Button>
+        </form>
+        {deleteMe.error && <p className="text-sm text-risk-crit-fg">{deleteMe.error.message}</p>}
+      </Card>
+    </div>
   )
 }
 

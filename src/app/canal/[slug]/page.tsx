@@ -97,7 +97,7 @@ export default function ChannelPage({ params }: { params: Promise<{ slug: string
                       ))}
                     </Select>
                   </Field>
-                  <Field label="O que aconteceu?" htmlFor="cbody" hint="Evite incluir nomes próprios se não for necessário.">
+                  <Field label="O que aconteceu?" htmlFor="cbody" hint="Evite nomes e detalhes pessoais desnecessários. O texto passa por triagem automática para priorizar o atendimento (veja a Política de Privacidade).">
                     <Textarea id="cbody" required minLength={20} className="min-h-40" value={body} onChange={(e) => setBody(e.target.value)} />
                   </Field>
                   {submit.error && <p className="text-sm text-risk-crit-fg">{submit.error.message}</p>}

@@ -14,6 +14,7 @@ import { passwordResetEmail, welcomeEmail } from "../email/templates"
 import { rateLimit } from "../rate-limit"
 import { jevEnabled } from "../jev"
 import { trialDefaults } from "../billing"
+import { LEGAL_VERSION } from "@/lib/legal"
 
 const RESET_MINUTES = 30
 const sha256 = (v: string) => createHash("sha256").update(v).digest("hex")
@@ -42,10 +43,13 @@ export const companyInput = z.object({
 
 const password = z.string().min(8, "A senha precisa ter ao menos 8 caracteres").max(200)
 
+const acceptTerms = z.literal(true, { error: "É preciso aceitar os Termos de Uso e a Política de Privacidade" })
+
 export const signupInput = companyInput.extend({
   name: z.string().trim().min(2, "Informe seu nome").max(120),
   email: z.string().trim().toLowerCase().email("E-mail inválido"),
   password,
+  acceptTerms,
 })
 
 async function createCompany(db: Db, data: z.infer<typeof companyInput>, ownerId: string) {
@@ -71,6 +75,7 @@ export const authRouter = j.router({
       .orderBy(asc(companies.name))
     return c.superjson({
       user: { id: user.id, name: user.name, email: user.email },
+      termsOutdated: user.termsVersion !== LEGAL_VERSION,
       role: ctx.session.role,
       company,
       companies: all,
@@ -83,7 +88,7 @@ export const authRouter = j.router({
     if (exists) throw new HTTPException(409, { message: "Já existe uma conta com este e-mail" })
     const [user] = await ctx.db
       .insert(users)
-      .values({ name: input.name, email: input.email, passwordHash: hashPassword(input.password) })
+      .values({ name: input.name, email: input.email, passwordHash: hashPassword(input.password), termsAcceptedAt: new Date(), termsVersion: LEGAL_VERSION })
       .returning()
     const company = await createCompany(ctx.db, input, user!.id)
     await audit(ctx.db, { userId: user!.id, companyId: company.id }, { action: "create", entity: "empresa", entityId: company.id, summary: `Conta criada para ${company.name}` })
@@ -178,6 +183,13 @@ export const authRouter = j.router({
     return c.superjson({ id: company.id })
   }),
 
+  /** Registra o aceite da versão vigente dos Termos e da Política (para quem aceitou uma versão anterior). */
+  acceptTerms: privateProcedure.mutation(async ({ c, ctx }) => {
+    await ctx.db.update(users).set({ termsAcceptedAt: new Date(), termsVersion: LEGAL_VERSION }).where(eq(users.id, ctx.session.userId))
+    await audit(ctx.db, ctx.session, { action: "update", entity: "usuário", entityId: ctx.session.userId, summary: `Termos e Política aceitos (versão ${LEGAL_VERSION})` })
+    return c.superjson({ ok: true })
+  }),
+
   changePassword: privateProcedure
     .input(z.object({ current: z.string().min(1, "Informe a senha atual"), next: password }))
     .mutation(async ({ c, ctx, input }) => {
@@ -200,7 +212,7 @@ export const authRouter = j.router({
 
   /** Aceita um convite: cria a conta (nome + senha) ou vincula uma conta existente (senha). */
   acceptInvite: publicProcedure
-    .input(z.object({ token: z.string().min(10), name: z.string().trim().max(120).optional(), password }))
+    .input(z.object({ token: z.string().min(10), name: z.string().trim().max(120).optional(), password, acceptTerms }))
     .mutation(async ({ c, ctx, input }) => {
       const invite = await ctx.db.query.invites.findFirst({ where: and(eq(invites.token, input.token), isNull(invites.acceptedAt)) })
       if (!invite) throw new HTTPException(404, { message: "Convite inválido ou já utilizado" })
@@ -208,11 +220,12 @@ export const authRouter = j.router({
       let user = await ctx.db.query.users.findFirst({ where: eq(users.email, invite.email) })
       if (user) {
         if (!verifyPassword(input.password, user.passwordHash)) throw new HTTPException(401, { message: "Senha incorreta" })
+        await ctx.db.update(users).set({ termsAcceptedAt: new Date(), termsVersion: LEGAL_VERSION }).where(eq(users.id, user.id))
       } else {
         if (!input.name || input.name.length < 2) throw new HTTPException(422, { message: "Informe seu nome" })
         ;[user] = await ctx.db
           .insert(users)
-          .values({ name: input.name, email: invite.email, passwordHash: hashPassword(input.password) })
+          .values({ name: input.name, email: invite.email, passwordHash: hashPassword(input.password), termsAcceptedAt: new Date(), termsVersion: LEGAL_VERSION })
           .returning()
       }
       await ctx.db

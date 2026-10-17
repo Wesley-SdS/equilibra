@@ -1,6 +1,7 @@
 import { getDb } from "@/server/db"
 import { appUrl } from "@/server/email"
 import { runDailyReminders } from "@/server/reminders"
+import { runRetention } from "@/server/retention"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -14,6 +15,8 @@ export async function GET(req: Request) {
   if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
     return new Response("Não autorizado", { status: 401 })
   }
-  const result = await runDailyReminders(await getDb(), appUrl(req.url))
-  return Response.json(result)
+  const db = await getDb()
+  const reminders = await runDailyReminders(db, appUrl(req.url))
+  const retention = await runRetention(db)
+  return Response.json({ reminders, retention })
 }

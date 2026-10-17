@@ -40,7 +40,7 @@ let n = 0
 async function signup() {
   n += 1
   const r = await call("auth/signup", {
-    body: { companyName: `Empresa B${n}`, cnpj: "12345678000190", employees: 30, name: `Pessoa ${n}`, email: `b${n}@teste.com`, password: "senha-segura-1" },
+    body: { companyName: `Empresa B${n}`, cnpj: "12345678000190", employees: 30, name: `Pessoa ${n}`, email: `b${n}@teste.com`, password: "senha-segura-1", acceptTerms: true },
   })
   expect(r.status, r.text).toBe(200)
   const me = await call("auth/me", { cookie: r.cookie })

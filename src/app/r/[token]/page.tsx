@@ -3,6 +3,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { AnimatePresence, motion } from "motion/react"
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { LegalLinks } from "@/components/legal-links"
 import { Button, Logo, Spinner } from "@/components/ui/primitives"
 import { client } from "@/lib/client"
 import { DIMENSIONS, QUESTIONS, SCALE } from "@/lib/methodology"
@@ -330,6 +331,7 @@ function Shell({ children, company }: { children: React.ReactNode; company?: str
           {company && <span className="max-w-[50%] truncate text-xs text-subtle">{company}</span>}
         </header>
         {children}
+        <LegalLinks className="mt-8 justify-center" />
       </div>
     </div>
   )

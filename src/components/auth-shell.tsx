@@ -3,6 +3,7 @@
 import { motion } from "motion/react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme"
+import { LegalLinks } from "@/components/legal-links"
 import { Logo } from "@/components/ui/primitives"
 
 export function AuthShell({
@@ -43,6 +44,7 @@ export function AuthShell({
           </motion.div>
         </div>
         {aside}
+        <LegalLinks className="justify-center" />
       </div>
     </div>
   )

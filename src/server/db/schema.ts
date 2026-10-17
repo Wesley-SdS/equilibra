@@ -33,6 +33,9 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
+  // Prova do aceite dos Termos e da Política (LGPD: o controlador deve comprovar)
+  termsAcceptedAt: timestamp("terms_accepted_at"),
+  termsVersion: text("terms_version"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 })
 
