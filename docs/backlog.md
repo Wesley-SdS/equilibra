@@ -25,7 +25,7 @@ Legenda: ✅ feito · 🟡 parcial · sem marca = a fazer
 | 10 | **Assinatura digital** do relatório PGR pelo responsável técnico |
 | 11 | **White-label** para parceiros (logo, cores e domínio do contador/SST) |
 | 12 | Editar e duplicar campanha; agendar abertura e encerramento automáticos |
-| 13 | Anexos e mensagens bidirecionais no **canal de relato** (quem relatou recebe resposta pelo protocolo) |
+| 13 | ✅ Anexos e mensagens bidirecionais no **canal de relato** | Feito: o RH responde e o autor lê/responde pelo protocolo (só o dia é gravado), notas internas invisíveis ao autor, imagens (até 3 por mensagem) regravadas sem EXIF, não lidos no menu, nova mensagem reabre relato resolvido e reavalia a triagem |
 | 14 | Prazos e responsáveis do plano com **notificações** (ação vencendo/vencida) |
 | 15 | Login social (Google/Microsoft) e **2FA** |
 | 16 | Questionário em **inglês e espanhol** (equipes com imigrantes) e modo de alto contraste |

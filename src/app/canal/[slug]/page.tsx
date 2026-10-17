@@ -1,8 +1,9 @@
 "use client"
 
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { AnimatePresence, motion } from "motion/react"
 import { use, useState } from "react"
+import { Composer, MessageList } from "@/components/channel/thread"
 import { Button, Field, Input, Logo, Select, Spinner, Textarea } from "@/components/ui/primitives"
 import { CHANNEL_CATEGORIES, CHANNEL_STATUS, type ChannelCategory } from "@/lib/channel"
 import { client } from "@/lib/client"
@@ -24,11 +25,18 @@ export default function ChannelPage({ params }: { params: Promise<{ slug: string
   const submit = useMutation({
     mutationFn: async () => (await client.channel.submit.$post({ slug, category, body })).json(),
   })
-  const status = useQuery({
-    queryKey: ["channel-status", lookup],
-    queryFn: async () => (await client.channel.status.$get({ protocol: lookup! })).json(),
+  const qc = useQueryClient()
+  // Conversa do autor: atualiza sozinha a cada 20 s enquanto a aba está aberta.
+  const thread = useQuery({
+    queryKey: ["channel-thread", lookup],
+    queryFn: async () => (await client.channel.thread.$get({ protocol: lookup! })).json(),
     enabled: !!lookup,
     retry: false,
+    refetchInterval: 20_000,
+  })
+  const reply = useMutation({
+    mutationFn: async (v: { body: string; attachments: { data: string }[] }) => (await client.channel.reply.$post({ protocol: lookup!, ...v })).json(),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["channel-thread", lookup] }),
   })
 
   return (
@@ -115,17 +123,31 @@ export default function ChannelPage({ params }: { params: Promise<{ slug: string
                     }}
                   >
                     <Input aria-label="Protocolo" placeholder="EQ-XXXX-XXXX" className="font-mono uppercase" value={protocol} onChange={(e) => setProtocol(e.target.value)} />
-                    <Button type="submit" loading={status.isFetching}>
+                    <Button type="submit" loading={thread.isFetching && !thread.data}>
                       Consultar
                     </Button>
                   </form>
-                  {status.data && (
-                    <div className="rounded-2xl border border-line p-4">
-                      <p className="text-sm text-subtle">Aberto em {formatDate(status.data.createdDay)}</p>
-                      <p className="mt-1 text-lg font-semibold">{CHANNEL_STATUS[status.data.status]}</p>
-                    </div>
+                  {thread.data && (
+                    <>
+                      <div className="rounded-2xl border border-line p-4">
+                        <p className="text-sm text-subtle">Aberto em {formatDate(thread.data.createdDay)}</p>
+                        <p className="mt-1 text-lg font-semibold">{CHANNEL_STATUS[thread.data.status]}</p>
+                      </div>
+                      <MessageList
+                        messages={thread.data.messages}
+                        viewer="reporter"
+                        protocol={thread.data.protocol}
+                        empty="Ainda não há mensagens. Quando o RH responder, a resposta aparece aqui. Volte e consulte com o seu protocolo."
+                      />
+                      <Composer
+                        sending={reply.isPending}
+                        placeholder="Quer acrescentar um detalhe ou responder ao RH?"
+                        hint="Não coloque informações que identifiquem você. Fotos têm os metadados (local, aparelho, data) removidos antes de serem guardadas. Quem tiver o protocolo lê esta conversa: guarde-o com cuidado."
+                        onSend={(v) => reply.mutateAsync({ body: v.body, attachments: v.attachments })}
+                      />
+                    </>
                   )}
-                  {status.isError && <p className="text-sm text-risk-crit-fg">Protocolo não encontrado.</p>}
+                  {thread.isError && <p className="text-sm text-risk-crit-fg">Protocolo não encontrado.</p>}
                 </motion.div>
               )}
             </AnimatePresence>

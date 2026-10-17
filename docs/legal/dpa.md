@@ -70,7 +70,7 @@ Lei brasileira. Foro da comarca de {{foro}}.
 |---|---|
 | **Finalidades** | Aplicar a avaliação de riscos psicossociais; calcular indicadores agregados; apoiar o plano de ação e o relatório do PGR; receber, triar e encaminhar relatos do canal |
 | **Titulares** | Trabalhadores do Cliente (respondentes e autores de relatos); terceiros eventualmente mencionados nos relatos |
-| **Dados** | Telefones e e-mails informados pelo Cliente para envio do link anônimo (lista de envio); setor, respostas (escala de frequência) e data das respostas; texto, categoria, data e protocolo dos relatos; resultado da triagem automática |
+| **Dados** | Telefones e e-mails informados pelo Cliente para envio do link anônimo (lista de envio); setor, respostas (escala de frequência) e data das respostas; texto, categoria, data e protocolo dos relatos; mensagens da conversa entre o autor e o RH (apenas o dia) e imagens anexadas, sem metadados; resultado da triagem automática |
 | **Dados sensíveis** | As respostas podem revelar informações sobre saúde mental quando reidentificáveis; os relatos podem conter dados sensíveis inseridos pelo autor (por exemplo, vida sexual ou saúde) |
 | **Operações** | Coleta, armazenamento, cálculo agregado, exibição ao Cliente, triagem automatizada, exportação e eliminação |
 | **Duração** | Durante o contrato, observados os prazos abaixo |
@@ -81,7 +81,7 @@ Lei brasileira. Foro da comarca de {{foro}}.
 
 ## Anexo II · Medidas de segurança
 
-- **Anonimato por desenho:** os questionários não coletam nome, contato, documento, IP, navegador nem horário exato; o canal de relato não exige identificação.
+- **Anonimato por desenho:** os questionários não coletam nome, contato, documento, IP, navegador nem horário exato; o canal de relato não exige identificação, as mensagens guardam apenas o dia e as imagens anexadas são regravadas no servidor, sem EXIF/localização.
 - **k-anonimato:** resultados de grupos com menos de 5 respostas nunca são exibidos isoladamente; o Cliente não acessa respostas individuais.
 - **Criptografia:** HTTPS em todo o tráfego; banco de dados criptografado em repouso pelo provedor.
 - **Credenciais:** senhas com hash scrypt e sal individual; tokens de redefinição guardados só como hash, com uso único e validade de 30 minutos; cookie de sessão httpOnly assinado com HMAC.

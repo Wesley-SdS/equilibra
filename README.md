@@ -41,7 +41,7 @@ Para entrar no painel de demonstração, use o botão **“Ver painel de demonst
 - **Evolução** entre campanhas (linha do índice, antes/depois por dimensão, tabela)
 - **Plano de ação 5W2H** em quadro, com sugestões automáticas para dimensões em alerta
 - **Relatório PGR** imprimível em A4 (metodologia, participação, inventário, plano, evolução)
-- **Canal de relato anônimo** com protocolo de acompanhamento
+- **Canal de relato anônimo** com protocolo de acompanhamento, **conversa bidirecional** com o RH (notas internas, anexos de imagem sem metadados)
 - **Trilha de auditoria** de todas as alterações
 - **Paleta de comandos** (Ctrl/⌘ K) e **modo claro/escuro**
 - **E-mails transacionais** (Resend): convite, boas-vindas, redefinição de senha e lembretes de campanha (cron diário)

@@ -5,7 +5,8 @@ import { z } from "zod"
 import { answers, campaigns, channelReports, companies, responses, sectors } from "../db/schema"
 import { protocolCode, today } from "../auth"
 import { j, publicProcedure } from "../jstack"
-import { rateLimit } from "../rate-limit"
+import { clientIp, rateLimit } from "../rate-limit"
+import { addMessage, attachmentInput, loadThread, messageBody, retriageAfterReply } from "../channel-thread"
 import { triageReport } from "../decisions"
 import { entitlements } from "../billing"
 import { QUESTIONS } from "@/lib/methodology"
@@ -119,4 +120,38 @@ export const channelRouter = j.router({
     if (!row) throw new HTTPException(404, { message: "Protocolo não encontrado" })
     return c.superjson({ status: row.status, createdDay: row.createdDay, category: row.category })
   }),
+
+  /**
+   * Conversa do autor do relato. O protocolo funciona como chave de acesso (cerca de 40 bits):
+   * por isso as consultas têm limite por IP e por protocolo. Notas internas do RH nunca aparecem.
+   */
+  thread: publicProcedure.input(z.object({ protocol: z.string().trim().min(6).max(20) })).query(async ({ c, ctx, input }) => {
+    await rateLimit(`thread:ip:${clientIp(c.req.raw.headers)}`, 60, 15 * 60_000)
+    const protocol = input.protocol.toUpperCase()
+    await rateLimit(`thread:${protocol}`, 120, 15 * 60_000)
+    const report = await ctx.db.query.channelReports.findFirst({ where: eq(channelReports.protocol, protocol) })
+    if (!report) throw new HTTPException(404, { message: "Protocolo não encontrado" })
+    return c.superjson({
+      protocol: report.protocol,
+      status: report.status,
+      createdDay: report.createdDay,
+      category: report.category,
+      messages: await loadThread(ctx.db, report.id, false),
+    })
+  }),
+
+  /** Mensagem de acompanhamento do autor (texto e até 3 imagens). Reabre relatos resolvidos. */
+  reply: publicProcedure
+    .input(z.object({ protocol: z.string().trim().min(6).max(20), body: messageBody, attachments: z.array(attachmentInput).max(3).default([]) }))
+    .mutation(async ({ c, ctx, input }) => {
+      await rateLimit(`reply:ip:${clientIp(c.req.raw.headers)}`, 20, 60 * 60_000)
+      const protocol = input.protocol.toUpperCase()
+      await rateLimit(`reply:${protocol}`, 15, 60 * 60_000)
+      const report = await ctx.db.query.channelReports.findFirst({ where: eq(channelReports.protocol, protocol) })
+      if (!report) throw new HTTPException(404, { message: "Protocolo não encontrado" })
+      await addMessage(ctx.db, report.id, "reporter", input.body, input.attachments)
+      if (report.status === "resolved") await ctx.db.update(channelReports).set({ status: "analyzing" }).where(eq(channelReports.id, report.id))
+      await retriageAfterReply(ctx.db, report, input.body)
+      return c.superjson({ ok: true })
+    }),
 })

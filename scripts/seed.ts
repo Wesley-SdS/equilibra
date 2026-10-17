@@ -6,7 +6,7 @@
  */
 import { eq, inArray } from "drizzle-orm"
 import { getDb, type Db } from "../src/server/db"
-import { actions, answers, auditLog, campaigns, channelReports, companies, customQuestions, memberships, responses, sectors, users, type CustomQuestionSnapshot } from "../src/server/db/schema"
+import { actions, answers, auditLog, campaigns, channelMessages, channelReports, companies, customQuestions, memberships, responses, sectors, users, type CustomQuestionSnapshot } from "../src/server/db/schema"
 import { hashPassword } from "../src/server/auth"
 import { LEGAL_VERSION } from "../src/lib/legal"
 import { triageReport } from "../src/server/decisions"
@@ -133,6 +133,13 @@ async function main() {
   for (const r of reports) {
     await db.insert(channelReports).values({ companyId: p.company.id, ...r, triage: await triageReport(r.body, r.category) })
   }
+  // Conversa de exemplo: RH respondeu ao autor, que acrescentou um detalhe (mensagem não lida).
+  const [sobrecarga] = await db.select({ id: channelReports.id }).from(channelReports).where(eq(channelReports.protocol, "EQ-7F3K-92QD"))
+  await db.insert(channelMessages).values([
+    { reportId: sobrecarga!.id, author: "hr", body: "Recebemos o seu relato e já estamos revendo a escala da madrugada. Obrigado por avisar.", createdDay: "2026-10-09" },
+    { reportId: sobrecarga!.id, author: "note", body: "Conversar com a gerência de produção e reavaliar o quadro do turno.", createdDay: "2026-10-09" },
+    { reportId: sobrecarga!.id, author: "reporter", body: "Obrigado. Hoje também ficamos sem a pausa, só que dessa vez com três pessoas a menos.", createdDay: "2026-10-15" },
+  ])
   await db.insert(auditLog).values([
     { companyId: p.company.id, userId: carla!.id, action: "create", entity: "campanha", entityId: atual.id, summary: `Campanha “${atual.name}” criada`, at: new Date("2026-09-30T14:02:00Z") },
     { companyId: p.company.id, userId: carla!.id, action: "invite", entity: "equipe", summary: "Convite enviado para rh@equilibra.app (Leitor)", at: new Date("2026-09-30T14:10:00Z") },

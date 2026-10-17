@@ -4,7 +4,7 @@
 // registrar a nova versão.
 
 // Formato AAAA-MM-DD ou AAAA-MM-DD.N (N = revisão no mesmo dia).
-export const LEGAL_VERSION = "2026-10-17.2"
+export const LEGAL_VERSION = "2026-10-17.3"
 
 /** Versão para exibição: 17/10/2026 (rev. 2). */
 export function formatLegalVersion(v: string = LEGAL_VERSION) {
@@ -75,7 +75,7 @@ export const RETENTION = [
   { categoria: "Conta de usuário do painel (nome, e-mail, hash da senha)", prazo: "Enquanto a conta existir; eliminada em até 30 dias após o pedido de exclusão" },
   { categoria: "Dados da empresa cliente (cadastro, setores, campanhas, plano de ação)", prazo: "Durante o contrato; eliminados em até 30 dias após o encerramento, salvo instrução diversa do cliente" },
   { categoria: "Respostas dos questionários", prazo: "Durante o contrato, para compor o histórico do PGR; eliminadas com os dados da empresa" },
-  { categoria: "Relatos do canal", prazo: "Durante o contrato; o cliente (controlador) pode excluir antes. Eliminados com os dados da empresa" },
+  { categoria: "Relatos do canal, mensagens da conversa e imagens anexadas", prazo: "Durante o contrato; o cliente (controlador) pode excluir antes. Eliminados com os dados da empresa" },
   { categoria: "Trilha de auditoria", prazo: "Durante o contrato; eliminada com os dados da empresa" },
   { categoria: "Tokens de redefinição de senha", prazo: "Expiram em 30 minutos; apagados em até 24 horas" },
   { categoria: "Convites não aceitos", prazo: "Apagados após 30 dias" },

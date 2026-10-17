@@ -1,8 +1,8 @@
-import { and, desc, eq, sql } from "drizzle-orm"
+import { and, desc, eq, getTableColumns, sql } from "drizzle-orm"
 import { HTTPException } from "hono/http-exception"
 import { z } from "zod"
 import type { Db } from "../db"
-import { actions, campaigns, channelReports, companies, customQuestions, responses, sectors } from "../db/schema"
+import { actions, campaigns, channelMessages, channelReports, companies, customQuestions, responses, sectors } from "../db/schema"
 import { publicToken } from "../auth"
 import { audit } from "../audit"
 import { computeDimension, computeHistory, computeInsights, computePortfolio } from "../insights"
@@ -11,6 +11,7 @@ import { appUrl } from "../email"
 import { sendCampaignReminder } from "../reminders"
 import { buildReport } from "../report"
 import { purgeFinishedContacts } from "../dispatch"
+import { addMessage, attachmentInput, loadThread, messageBody } from "../channel-thread"
 import { chooseActions, triagePriority } from "../decisions"
 import { assertLimit, assertWritable } from "../billing"
 import { rateLimit } from "../rate-limit"
@@ -303,15 +304,71 @@ export const reportRouter = j.router({
 export const channelAdminRouter = j.router({
   list: privateProcedure.query(async ({ c, ctx }) => {
     const rows = await ctx.db
-      .select()
+      .select({
+        ...getTableColumns(channelReports),
+        // Colunas qualificadas à mão: em select de uma tabela só o Drizzle omite o prefixo e o `id` viraria o da mensagem.
+        unread: sql<boolean>`exists (select 1 from ${channelMessages} m where m.report_id = channel_reports.id and m.author = 'reporter' and m.seq > channel_reports.hr_seen_seq)`,
+        messageCount: sql<number>`(select count(*)::int from ${channelMessages} m where m.report_id = channel_reports.id and m.author <> 'note')`,
+      })
       .from(channelReports)
       .where(eq(channelReports.companyId, ctx.session.companyId))
       .orderBy(desc(channelReports.createdDay))
     // Fila do RH: abertos primeiro, depois por prioridade da triagem (gravidade + urgência).
     const withPriority = rows.map((r) => ({ ...r, priority: triagePriority(r.triage) }))
-    withPriority.sort((a, b) => Number(a.status === "resolved") - Number(b.status === "resolved") || b.priority - a.priority)
+    withPriority.sort(
+      (a, b) => Number(a.status === "resolved") - Number(b.status === "resolved") || Number(b.unread) - Number(a.unread) || b.priority - a.priority
+    )
     return c.superjson(withPriority)
   }),
+  /** Relatos com mensagem nova do autor ainda não vista (para o indicador do menu). */
+  unreadCount: privateProcedure.query(async ({ c, ctx }) => {
+    const [row] = (await ctx.db
+      .select({
+        n: sql<number>`count(*)::int`,
+      })
+      .from(channelReports)
+      .where(
+        and(
+          eq(channelReports.companyId, ctx.session.companyId),
+          sql`exists (select 1 from ${channelMessages} m where m.report_id = ${channelReports.id} and m.author = 'reporter' and m.seq > ${channelReports.hrSeenSeq})`
+        )
+      )) as { n: number }[]
+    return c.superjson({ n: row?.n ?? 0 })
+  }),
+
+  /** Conversa completa (com notas internas). Abrir a conversa marca as mensagens do autor como vistas. */
+  thread: privateProcedure.input(z.object({ reportId: z.string() })).query(async ({ c, ctx, input }) => {
+    const report = await ctx.db.query.channelReports.findFirst({
+      where: and(eq(channelReports.id, input.reportId), eq(channelReports.companyId, ctx.session.companyId)),
+    })
+    if (!report) throw new HTTPException(404, { message: "Relato não encontrado" })
+    const messages = await loadThread(ctx.db, report.id, true)
+    const lastReporter = Math.max(0, ...messages.filter((m) => m.author === "reporter").map((m) => m.seq))
+    if (lastReporter > report.hrSeenSeq) await ctx.db.update(channelReports).set({ hrSeenSeq: lastReporter }).where(eq(channelReports.id, report.id))
+    return c.superjson({ protocol: report.protocol, status: report.status, messages })
+  }),
+
+  /** Resposta ao autor (visível a ele) ou nota interna (só RH). Responder move "Recebido" para "Em análise". */
+  reply: editorProcedure
+    .input(z.object({ reportId: z.string(), body: messageBody, internal: z.boolean().default(false), attachments: z.array(attachmentInput).max(3).default([]) }))
+    .mutation(async ({ c, ctx, input }) => {
+      await assertWritable(ctx.db, ctx.session.companyId)
+      const report = await ctx.db.query.channelReports.findFirst({
+        where: and(eq(channelReports.id, input.reportId), eq(channelReports.companyId, ctx.session.companyId)),
+      })
+      if (!report) throw new HTTPException(404, { message: "Relato não encontrado" })
+      await addMessage(ctx.db, report.id, input.internal ? "note" : "hr", input.body, input.attachments)
+      if (!input.internal && report.status === "received") await ctx.db.update(channelReports).set({ status: "analyzing" }).where(eq(channelReports.id, report.id))
+      // Auditoria sem o conteúdo da mensagem: ela pode conter dados sensíveis.
+      await audit(ctx.db, ctx.session, {
+        action: "create",
+        entity: "relato",
+        entityId: report.id,
+        summary: `${input.internal ? "Nota interna" : "Resposta ao autor"} no relato ${report.protocol}${input.attachments.length ? ` (${input.attachments.length} imagem(ns))` : ""}`,
+      })
+      return c.superjson({ ok: true })
+    }),
+
   setStatus: editorProcedure
     .input(z.object({ id: z.string(), status: z.enum(["received", "analyzing", "resolved"]) }))
     .mutation(async ({ c, ctx, input }) => {

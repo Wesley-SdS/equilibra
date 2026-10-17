@@ -1,4 +1,10 @@
-import { boolean, integer, jsonb, pgTable, primaryKey, text, timestamp, unique } from "drizzle-orm/pg-core"
+import { boolean, customType, integer, jsonb, pgTable, primaryKey, serial, text, timestamp, unique } from "drizzle-orm/pg-core"
+
+const bytea = customType<{ data: Buffer; driverData: Uint8Array }>({
+  dataType: () => "bytea",
+  toDriver: (v) => v,
+  fromDriver: (v) => Buffer.from(v),
+})
 
 const id = () =>
   text("id")
@@ -244,4 +250,35 @@ export const channelReports = pgTable("channel_reports", {
     .default("received"),
   createdDay: text("created_day").notNull(),
   triage: jsonb("triage").$type<Triage>(),
+  // Maior `seq` de mensagem do autor do relato já visto pelo RH (não lido = seq maior que este).
+  hrSeenSeq: integer("hr_seen_seq").notNull().default(0),
+})
+
+/**
+ * Conversa do canal de relato. O autor é anônimo e acessa pelo protocolo. Guardamos só o DIA
+ * (nunca o horário) e `seq` para ordenar; "note" é nota interna do RH, invisível ao autor.
+ */
+export const channelMessages = pgTable("channel_messages", {
+  id: id(),
+  reportId: text("report_id")
+    .notNull()
+    .references(() => channelReports.id, { onDelete: "cascade" }),
+  seq: serial("seq").notNull(),
+  author: text("author", { enum: ["reporter", "hr", "note"] }).notNull(),
+  body: text("body").notNull(),
+  createdDay: text("created_day").notNull(),
+})
+
+/** Imagens anexadas (reprocessadas no servidor: sem EXIF/GPS). */
+export const channelAttachments = pgTable("channel_attachments", {
+  id: id(),
+  messageId: text("message_id")
+    .notNull()
+    .references(() => channelMessages.id, { onDelete: "cascade" }),
+  reportId: text("report_id")
+    .notNull()
+    .references(() => channelReports.id, { onDelete: "cascade" }),
+  mime: text("mime").notNull(),
+  size: integer("size").notNull(),
+  data: bytea("data").notNull(),
 })

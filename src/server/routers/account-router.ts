@@ -7,6 +7,7 @@ import {
   answers,
   auditLog,
   campaigns,
+  channelMessages,
   channelReports,
   companies,
   customQuestions,
@@ -74,6 +75,13 @@ export const accountRouter = j.router({
         .select({ protocol: channelReports.protocol, category: channelReports.category, body: channelReports.body, status: channelReports.status, day: channelReports.createdDay })
         .from(channelReports)
         .where(eq(channelReports.companyId, companyId)),
+      // Conversas do canal (sem o conteúdo binário dos anexos, só a contagem).
+      channelMessages: await ctx.db
+        .select({ protocol: channelReports.protocol, author: channelMessages.author, body: channelMessages.body, day: channelMessages.createdDay })
+        .from(channelMessages)
+        .innerJoin(channelReports, eq(channelReports.id, channelMessages.reportId))
+        .where(eq(channelReports.companyId, companyId))
+        .orderBy(channelMessages.seq),
       auditLog: await ctx.db.select({ at: auditLog.at, action: auditLog.action, entity: auditLog.entity, summary: auditLog.summary }).from(auditLog).where(eq(auditLog.companyId, companyId)),
     })
   }),

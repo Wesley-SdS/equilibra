@@ -48,7 +48,10 @@ Para facilitar a divulgação, o RH da empresa cliente pode colar **telefones e 
 ### 3.4 Canal de relato
 - Categoria escolhida e **texto livre** escrito pela pessoa;
 - data (dia) do envio e protocolo gerado;
-- resultado da triagem automática (seção 6).
+- resultado da triagem automática (seção 6);
+- **mensagens trocadas** entre quem relatou e o RH da empresa pelo protocolo (só o dia, nunca o horário) e **imagens anexadas** (até 3 por mensagem). As imagens são reduzidas e regravadas no servidor, o que **remove metadados** como localização, aparelho e data da foto. As **notas internas** do RH nunca são exibidas a quem relatou.
+
+O **protocolo funciona como chave de acesso** à conversa: quem o possui pode ler e responder. Por isso, recomendamos guardá-lo com cuidado. Anexos só são entregues a quem tem o protocolo ou a usuários autorizados da própria empresa, e não ficam em cache.
 
 Não pedimos identificação. Porém, o texto pode conter, por escolha de quem escreve, nomes de terceiros ou **dados pessoais sensíveis** (por exemplo, relatos de assédio sexual ou de saúde). Orientamos a evitar informações desnecessárias. Esses dados são tratados com o mesmo sigilo dos demais e acessados apenas pelos usuários autorizados da empresa cliente.
 

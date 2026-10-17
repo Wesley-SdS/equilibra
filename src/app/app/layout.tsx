@@ -1,6 +1,6 @@
 "use client"
 
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { motion } from "motion/react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -59,6 +59,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (me.isError) router.replace("/entrar")
   }, [me.isError, router])
   useEffect(() => setMenuOpen(false), [pathname])
+  // Mensagens novas de quem relatou pelo protocolo: indicador no menu, atualizado a cada minuto.
+  const unread = useQuery({
+    queryKey: ["channel-unread"],
+    queryFn: async () => (await client.channelAdmin.unreadCount.$get()).json(),
+    enabled: !!me.data,
+    refetchInterval: 60_000,
+  })
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -143,6 +150,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <path d={item.icon} />
                       </svg>
                       <span className="relative">{item.label}</span>
+                      {item.href === "/app/canal" && !!unread.data?.n && (
+                        <span className="relative ml-auto grid min-w-5 place-items-center rounded-full bg-brand px-1.5 text-[11px] font-semibold text-brand-ink" aria-label={`${unread.data.n} mensagens novas`}>
+                          {unread.data.n}
+                        </span>
+                      )}
                     </Link>
                   )
                 })}
