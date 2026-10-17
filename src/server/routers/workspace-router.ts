@@ -3,7 +3,8 @@ import { HTTPException } from "hono/http-exception"
 import { z } from "zod"
 import type { Db } from "../db"
 import { actions, campaigns, channelMessages, channelReports, companies, customQuestions, responses, sectors } from "../db/schema"
-import { publicToken } from "../auth"
+import { publicToken, today } from "../auth"
+import { phaseOf } from "../campaigns"
 import { audit } from "../audit"
 import { computeDimension, computeHistory, computeInsights, computePortfolio } from "../insights"
 import { editorProcedure, j, privateProcedure } from "../jstack"
@@ -91,7 +92,7 @@ export const campaignsRouter = j.router({
       .from(campaigns)
       .where(eq(campaigns.companyId, ctx.session.companyId))
       .orderBy(desc(campaigns.createdAt))
-    return c.superjson(rows)
+    return c.superjson(rows.map((r) => ({ ...r, phase: phaseOf(r) })))
   }),
   get: privateProcedure.input(z.object({ id: z.string() })).query(async ({ c, ctx, input }) => {
     const [row] = await ctx.db
@@ -100,7 +101,7 @@ export const campaignsRouter = j.router({
       .where(and(eq(campaigns.id, input.id), eq(campaigns.companyId, ctx.session.companyId)))
     if (!row) throw new HTTPException(404, { message: "Campanha não encontrada" })
     const company = await ctx.db.query.companies.findFirst({ where: eq(companies.id, ctx.session.companyId) })
-    return c.superjson({ ...row, companyName: company!.name })
+    return c.superjson({ ...row, phase: phaseOf(row), companyName: company!.name })
   }),
   create: editorProcedure
     .input(
@@ -135,6 +136,69 @@ export const campaignsRouter = j.router({
       await audit(ctx.db, ctx.session, { action: "create", entity: "campanha", entityId: row!.id, summary: `Campanha “${row!.name}” criada` })
       return c.superjson(row!)
     }),
+  /** Edita nome e datas (agendar, adiar ou estender o prazo). O link e as respostas não mudam. */
+  update: editorProcedure
+    .input(
+      z
+        .object({
+          id: z.string(),
+          name: z.string().trim().min(2, "Dê um nome à campanha").max(80),
+          startsAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida"),
+          endsAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida"),
+        })
+        .refine((v) => v.endsAt >= v.startsAt, { message: "O fim deve ser depois do início", path: ["endsAt"] })
+    )
+    .mutation(async ({ c, ctx, input }) => {
+      const where = and(eq(campaigns.id, input.id), eq(campaigns.companyId, ctx.session.companyId))
+      const current = await ctx.db.query.campaigns.findFirst({ where })
+      if (!current) throw new HTTPException(404, { message: "Campanha não encontrada" })
+      // Campanha encerrada que ganha um prazo futuro volta a ser aberta/agendada: exige plano ativo.
+      const reopens = current.status === "closed" && input.endsAt >= today()
+      if (reopens) await assertWritable(ctx.db, ctx.session.companyId)
+      const [row] = await ctx.db
+        .update(campaigns)
+        .set({ name: input.name, startsAt: input.startsAt, endsAt: input.endsAt, ...(reopens ? { status: "active" as const } : {}), lastReminderAt: null })
+        .where(where)
+        .returning()
+      await audit(ctx.db, ctx.session, {
+        action: "update",
+        entity: "campanha",
+        entityId: row!.id,
+        summary: `Campanha “${row!.name}” editada (${current.startsAt} a ${current.endsAt} → ${row!.startsAt} a ${row!.endsAt})${reopens ? " e reaberta" : ""}`,
+      })
+      return c.superjson(row!)
+    }),
+  /** Nova campanha com o mesmo nome e duração, já com o link novo e as perguntas atuais da empresa. */
+  duplicate: editorProcedure
+    .input(z.object({ id: z.string(), startsAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() }))
+    .mutation(async ({ c, ctx, input }) => {
+      const source = await ctx.db.query.campaigns.findFirst({
+        where: and(eq(campaigns.id, input.id), eq(campaigns.companyId, ctx.session.companyId)),
+      })
+      if (!source) throw new HTTPException(404, { message: "Campanha não encontrada" })
+      await assertLimit(ctx.db, ctx.session.companyId, "campaignsPerYear", 1)
+      const extra = await ctx.db
+        .select({ id: customQuestions.id, text: customQuestions.text })
+        .from(customQuestions)
+        .where(and(eq(customQuestions.companyId, ctx.session.companyId), eq(customQuestions.active, true)))
+        .orderBy(customQuestions.position, customQuestions.createdAt)
+      const days = Math.max(0, Math.round((Date.parse(`${source.endsAt}T00:00:00Z`) - Date.parse(`${source.startsAt}T00:00:00Z`)) / 86_400_000))
+      const startsAt = input.startsAt ?? today()
+      const endsAt = new Date(Date.parse(`${startsAt}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10)
+      const [row] = await ctx.db
+        .insert(campaigns)
+        .values({
+          companyId: ctx.session.companyId,
+          name: `${source.name} (cópia)`.slice(0, 80),
+          token: publicToken(),
+          startsAt,
+          endsAt,
+          customQuestions: extra.map((q) => ({ id: `c:${q.id}`, text: q.text })),
+        })
+        .returning()
+      await audit(ctx.db, ctx.session, { action: "create", entity: "campanha", entityId: row!.id, summary: `Campanha “${row!.name}” criada a partir de “${source.name}”` })
+      return c.superjson({ ...row!, phase: phaseOf(row!) })
+    }),
   /** Envia agora o lembrete com a taxa de resposta para donos e admins. */
   remind: editorProcedure.input(z.object({ id: z.string() })).mutation(async ({ c, ctx, input }) => {
     await rateLimit(`remind:${input.id}`, 3, 60 * 60_000)
@@ -149,7 +213,11 @@ export const campaignsRouter = j.router({
   setStatus: editorProcedure
     .input(z.object({ id: z.string(), status: z.enum(["active", "closed"]) }))
     .mutation(async ({ c, ctx, input }) => {
-      if (input.status === "active") await assertWritable(ctx.db, ctx.session.companyId)
+      if (input.status === "active") {
+        await assertWritable(ctx.db, ctx.session.companyId)
+        const current = await ctx.db.query.campaigns.findFirst({ where: and(eq(campaigns.id, input.id), eq(campaigns.companyId, ctx.session.companyId)) })
+        if (current && current.endsAt < today()) throw new HTTPException(400, { message: "O prazo desta campanha já passou. Edite a data de encerramento para reabri-la." })
+      }
       const [row] = await ctx.db
         .update(campaigns)
         .set({ status: input.status })

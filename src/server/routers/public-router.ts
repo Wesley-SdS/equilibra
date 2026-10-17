@@ -25,7 +25,7 @@ export const surveyRouter = j.router({
       .orderBy(sectors.name)
     const isOpen = campaign.status === "active" && today() >= campaign.startsAt && today() <= campaign.endsAt
     return c.superjson({
-      campaign: { name: campaign.name, endsAt: campaign.endsAt, isOpen },
+      campaign: { name: campaign.name, startsAt: campaign.startsAt, endsAt: campaign.endsAt, isOpen },
       companyName: company?.name ?? "",
       sectors: sectorList,
       alreadyAnswered: getCookie(c, `eq_r_${campaign.id}`) === "1",
@@ -48,7 +48,8 @@ export const surveyRouter = j.router({
       await rateLimit(`survey:${input.token}`, 600, 60_000)
       const campaign = await ctx.db.query.campaigns.findFirst({ where: eq(campaigns.token, input.token) })
       if (!campaign) throw new HTTPException(404, { message: "Link de avaliação inválido" })
-      if (campaign.status !== "active") throw new HTTPException(410, { message: "Esta avaliação foi encerrada" })
+      if (campaign.status !== "active" || today() > campaign.endsAt) throw new HTTPException(410, { message: "Esta avaliação foi encerrada" })
+      if (today() < campaign.startsAt) throw new HTTPException(425, { message: "Esta avaliação ainda não começou" })
       if (getCookie(c, `eq_r_${campaign.id}`) === "1") {
         throw new HTTPException(409, { message: "Você já respondeu esta avaliação neste dispositivo" })
       }

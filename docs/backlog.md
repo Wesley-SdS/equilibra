@@ -24,7 +24,7 @@ Legenda: ✅ feito · 🟡 parcial · sem marca = a fazer
 | 9 | 🟡 Lembretes automáticos por **WhatsApp** (Cloud API) e e-mail | Pronto: lista de envio, convite e lembrete automático 2 dias antes do fim, lista apagada ao encerrar, simulação local. Falta criar o app na Meta e aprovar os templates |
 | 10 | **Assinatura digital** do relatório PGR pelo responsável técnico |
 | 11 | **White-label** para parceiros (logo, cores e domínio do contador/SST) |
-| 12 | Editar e duplicar campanha; agendar abertura e encerramento automáticos |
+| 12 | ✅ Editar e duplicar campanha; abertura e encerramento automáticos | Feito: edição de nome e datas (agenda, adia, estende e reabre), duplicação com link novo, fase Agendada/Ativa/Vencida/Encerrada, janela de resposta validada no servidor e encerramento automático pelo cron diário |
 | 13 | ✅ Anexos e mensagens bidirecionais no **canal de relato** | Feito: o RH responde e o autor lê/responde pelo protocolo (só o dia é gravado), notas internas invisíveis ao autor, imagens (até 3 por mensagem) regravadas sem EXIF, não lidos no menu, nova mensagem reabre relato resolvido e reavalia a triagem |
 | 14 | Prazos e responsáveis do plano com **notificações** (ação vencendo/vencida) |
 | 15 | Login social (Google/Microsoft) e **2FA** |

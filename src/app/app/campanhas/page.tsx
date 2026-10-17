@@ -17,12 +17,66 @@ function isoIn(days: number) {
   return d.toISOString().slice(0, 10)
 }
 
+const PHASE = {
+  scheduled: { label: "Agendada", cls: "bg-risk-mod/50 text-risk-mod-fg" },
+  open: { label: "Ativa", cls: "bg-brand/15 text-brand-fg" },
+  expired: { label: "Prazo vencido", cls: "bg-risk-high/15 text-risk-high-fg" },
+  closed: { label: "Encerrada", cls: "bg-tint/[0.06] text-muted" },
+} as const
+
+type Row = { id: string; name: string; startsAt: string; endsAt: string }
+
+/** Edição de nome e datas: serve para agendar a abertura, adiar ou estender o prazo (também reabre campanhas encerradas). */
+function EditForm({ row, onDone }: { row: Row; onDone: () => void }) {
+  const qc = useQueryClient()
+  const toast = useToast()
+  const [f, setF] = useState({ name: row.name, startsAt: row.startsAt, endsAt: row.endsAt })
+  const save = useMutation({
+    mutationFn: async () => (await client.campaigns.update.$post({ id: row.id, ...f })).json(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["campaigns"] })
+      toast("Campanha atualizada")
+      onDone()
+    },
+  })
+  return (
+    <form
+      className="grid w-full gap-3 border-t border-line pt-4 md:grid-cols-[2fr_1fr_1fr_auto] md:items-end"
+      onSubmit={(e) => {
+        e.preventDefault()
+        save.mutate()
+      }}
+    >
+      <Field label="Nome" htmlFor={`n-${row.id}`}>
+        <Input id={`n-${row.id}`} required value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
+      </Field>
+      <Field label="Abre em" htmlFor={`s-${row.id}`}>
+        <Input id={`s-${row.id}`} type="date" required value={f.startsAt} onChange={(e) => setF({ ...f, startsAt: e.target.value })} />
+      </Field>
+      <Field label="Encerra em" htmlFor={`e-${row.id}`}>
+        <Input id={`e-${row.id}`} type="date" required value={f.endsAt} onChange={(e) => setF({ ...f, endsAt: e.target.value })} />
+      </Field>
+      <div className="flex gap-2">
+        <Button type="submit" size="sm" loading={save.isPending}>
+          Salvar
+        </Button>
+        <Button type="button" variant="ghost" size="sm" onClick={onDone}>
+          Cancelar
+        </Button>
+      </div>
+      {save.error && <p className="text-sm text-risk-crit-fg md:col-span-4">{save.error.message}</p>}
+      <p className="text-xs text-subtle md:col-span-4">A abertura e o encerramento são automáticos nessas datas. O link e as respostas já recebidas não mudam.</p>
+    </form>
+  )
+}
+
 function CampaignsContent() {
   const can = useCan()
   const qc = useQueryClient()
   const toast = useToast()
   const [open, setOpen] = useState(useSearchParams().get("nova") === "1")
   const [form, setForm] = useState({ name: "", startsAt: isoIn(0), endsAt: isoIn(14) })
+  const [editing, setEditing] = useState<string | null>(null)
 
   const campaigns = useQuery({
     queryKey: ["campaigns"],
@@ -44,9 +98,19 @@ function CampaignsContent() {
     onSuccess: (r) => toast(r.sent ? `Lembrete enviado para ${r.sent} pessoa(s) da equipe` : "Ninguém para receber o lembrete"),
     onError: (e) => toast(e.message, "error"),
   })
+  const duplicate = useMutation({
+    mutationFn: async (id: string) => (await client.campaigns.duplicate.$post({ id })).json(),
+    onSuccess: (c) => {
+      qc.invalidateQueries({ queryKey: ["campaigns"] })
+      setEditing(c.id)
+      toast("Campanha duplicada com um link novo. Ajuste as datas e o nome.")
+    },
+    onError: (e) => toast(e.message, "error"),
+  })
   const setStatus = useMutation({
     mutationFn: async (v: { id: string; status: "active" | "closed" }) => (await client.campaigns.setStatus.$post(v)).json(),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["campaigns"] }),
+    onError: (e) => toast(e.message, "error"),
   })
 
   return (
@@ -106,14 +170,14 @@ function CampaignsContent() {
                       <span
                         className={cn(
                           "rounded-full px-2.5 py-0.5 text-xs font-medium",
-                          c.status === "active" ? "bg-brand/15 text-brand-fg" : "bg-tint/[0.06] text-muted"
+                          PHASE[c.phase].cls
                         )}
                       >
-                        {c.status === "active" ? "Ativa" : "Encerrada"}
+                        {PHASE[c.phase].label}
                       </span>
                     </div>
                     <p className="text-sm text-subtle">
-                      {formatDate(c.startsAt)} – {formatDate(c.endsAt)} · {c.responses} respostas
+                      {c.phase === "scheduled" ? `Abre em ${formatDate(c.startsAt)} · encerra em ${formatDate(c.endsAt)}` : `${formatDate(c.startsAt)} – ${formatDate(c.endsAt)}`} · {c.responses} respostas
                       {c.customCount > 0 && ` · +${c.customCount} perguntas da empresa`}
                     </p>
                     <code className="mt-1 truncate font-mono text-xs text-muted">{link}</code>
@@ -141,6 +205,16 @@ function CampaignsContent() {
                       </Button>
                     )}
                     {can.edit && (
+                      <Button variant="ghost" size="sm" onClick={() => setEditing(editing === c.id ? null : c.id)}>
+                        Editar
+                      </Button>
+                    )}
+                    {can.edit && (
+                      <Button variant="ghost" size="sm" loading={duplicate.isPending && duplicate.variables === c.id} onClick={() => duplicate.mutate(c.id)}>
+                        Duplicar
+                      </Button>
+                    )}
+                    {can.edit && (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -150,6 +224,7 @@ function CampaignsContent() {
                     </Button>
                     )}
                   </div>
+                  {editing === c.id && can.edit && <EditForm row={c} onDone={() => setEditing(null)} />}
                 </Card>
               </motion.div>
             )

@@ -34,7 +34,7 @@ Para entrar no painel de demonstração, use o botão **“Ver painel de demonst
 - **Cadastro em 2 passos**, login, convites por link e troca de senha
 - **Multiempresa**: carteira para contadores e SST, troca de empresa e criação de clientes
 - **Papéis**: dono, admin e leitor, validados no servidor a cada requisição
-- **Campanhas** com link anônimo, contador ao vivo e **kit de divulgação** (cartaz com QR code, textos para WhatsApp e e-mail)
+- **Campanhas** com link anônimo, **agendamento** (abre e encerra sozinha), edição, duplicação, contador ao vivo e **kit de divulgação** (cartaz com QR code, textos para WhatsApp e e-mail)
 - **Questionário mobile-first** (28 itens, atalhos 1–5, rascunho local, bloqueio de duplicidade)
 - **Visão geral**: mapa de calor setor × dimensão, ranking, participação, checklist de primeiros passos
 - **Detalhe por dimensão**: score por item, distribuição das respostas e medidas recomendadas

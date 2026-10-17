@@ -153,10 +153,15 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
       </Shell>
     )
   }
+  const today = new Date().toISOString().slice(0, 10)
   if (!data.campaign.isOpen && phase !== "done") {
     return (
       <Shell company={data.companyName}>
-        <Message title="Avaliação encerrada" text="Esta avaliação não está recebendo respostas no momento." />
+        {today < data.campaign.startsAt ? (
+          <Message title="Esta avaliação ainda não começou" text={`As respostas abrem em ${data.campaign.startsAt.split("-").reverse().join("/")}. Volte nesta data com o mesmo link.`} />
+        ) : (
+          <Message title="Avaliação encerrada" text="Esta avaliação não está recebendo respostas no momento." />
+        )}
       </Shell>
     )
   }

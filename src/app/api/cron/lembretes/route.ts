@@ -2,6 +2,7 @@ import { getDb } from "@/server/db"
 import { appUrl } from "@/server/email"
 import { runDailyReminders } from "@/server/reminders"
 import { runContactReminders } from "@/server/dispatch"
+import { closeExpiredCampaigns } from "@/server/campaigns"
 import { runRetention } from "@/server/retention"
 import { log } from "@/server/log"
 
@@ -18,9 +19,10 @@ export async function GET(req: Request) {
     return new Response("Não autorizado", { status: 401 })
   }
   const db = await getDb()
+  const closed = await closeExpiredCampaigns(db)
   const reminders = await runDailyReminders(db, appUrl(req.url))
   const contactReminders = await runContactReminders(db, appUrl(req.url))
   const retention = await runRetention(db)
-  log.info("cron.diario", { reminders, contactReminders, retention })
-  return Response.json({ reminders, contactReminders, retention })
+  log.info("cron.diario", { closed, reminders, contactReminders, retention })
+  return Response.json({ closed, reminders, contactReminders, retention })
 }
