@@ -11,6 +11,7 @@ import { hashPassword } from "../src/server/auth"
 import { LEGAL_VERSION } from "../src/lib/legal"
 import { triageReport } from "../src/server/decisions"
 import { QUESTIONS, type DimensionId } from "../src/lib/methodology"
+import { NR1_STANDARD_VERSION_ID } from "../src/lib/questionnaire"
 
 const PASSWORD = "equilibra-demo"
 
@@ -35,7 +36,7 @@ async function addCampaign(
 ) {
   const [campaign] = await db
     .insert(campaigns)
-    .values({ companyId, ...c, customQuestions: extra.map(({ id, text }) => ({ id, text })) })
+    .values({ companyId, ...c, questionnaireVersionId: NR1_STANDARD_VERSION_ID, customQuestions: extra.map(({ id, text }) => ({ id, text })) })
     .returning()
   for (const [name, p] of Object.entries(profile)) {
     const answered = Math.round(p.answered * (factor > 1 ? 0.85 : 1))

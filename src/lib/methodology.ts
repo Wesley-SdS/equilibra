@@ -81,13 +81,18 @@ export function itemRisk(q: Question, value: number): number {
 
 const QUESTION_BY_ID = new Map(QUESTIONS.map((q) => [q.id, q]))
 
-/** Score de 0 (sem risco) a 100 (risco máximo) por dimensão. */
+/**
+ * Score de 0 (sem risco) a 100 (risco máximo) por dimensão.
+ * `questions` = itens pontuáveis da versão do questionário aplicada (padrão: os 28 da metodologia).
+ */
 export function scoreDimensions(
-  answers: { questionId: string; value: number }[]
+  answers: { questionId: string; value: number }[],
+  questions: Question[] = QUESTIONS
 ): Record<DimensionId, number | null> {
+  const byId = questions === QUESTIONS ? QUESTION_BY_ID : new Map(questions.map((q) => [q.id, q]))
   const acc = new Map<DimensionId, { sum: number; n: number }>()
   for (const a of answers) {
-    const q = QUESTION_BY_ID.get(a.questionId)
+    const q = byId.get(a.questionId)
     if (!q) continue
     const cur = acc.get(q.dimension) ?? { sum: 0, n: 0 }
     cur.sum += itemRisk(q, a.value)

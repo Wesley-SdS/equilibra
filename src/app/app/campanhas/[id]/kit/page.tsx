@@ -9,7 +9,7 @@ import { DispatchCard } from "@/components/app/dispatch-card"
 import { Button, Card, Logo, Spinner } from "@/components/ui/primitives"
 import { useToast } from "@/components/ui/toast"
 import { client } from "@/lib/client"
-import { QUESTIONS } from "@/lib/methodology"
+import { estimatedMinutes } from "@/lib/questionnaire"
 import { formatDate } from "@/lib/utils"
 
 export default function CampaignKitPage({ params }: { params: Promise<{ id: string }> }) {
@@ -32,8 +32,10 @@ export default function CampaignKitPage({ params }: { params: Promise<{ id: stri
     )
   }
   const c = campaign.data
-  const whatsapp = `Oi, pessoal! A ${c.companyName} está fazendo uma avaliação sobre o nosso dia a dia de trabalho. São ${QUESTIONS.length} perguntas rápidas (uns 6 minutos), 100% anônimas: não pedimos nome, e-mail nem telefone. Responda até ${formatDate(c.endsAt)}: ${url}`
-  const email = `Assunto: Sua opinião sobre o ambiente de trabalho (anônimo, 6 min)\n\nOlá,\n\nEstamos realizando a avaliação de riscos psicossociais prevista na NR-1. Queremos entender como está a rotina de cada setor para melhorar as condições de trabalho.\n\n• ${QUESTIONS.length} perguntas, cerca de 6 minutos\n• Totalmente anônimo: sem nome, e-mail ou IP\n• Resultados só aparecem para grupos de 5 ou mais pessoas\n\nResponda até ${formatDate(c.endsAt)}: ${url}\n\nObrigado!`
+  const total = c.questionnaire.itemCount + c.customCount
+  const minutes = estimatedMinutes(total)
+  const whatsapp = `Oi, pessoal! A ${c.companyName} está fazendo uma avaliação sobre o nosso dia a dia de trabalho. São ${total} perguntas rápidas (uns ${minutes} minutos), 100% anônimas: não pedimos nome, e-mail nem telefone. Responda até ${formatDate(c.endsAt)}: ${url}`
+  const email = `Assunto: Sua opinião sobre o ambiente de trabalho (anônimo, ${minutes} min)\n\nOlá,\n\nEstamos realizando a avaliação de riscos psicossociais prevista na NR-1. Queremos entender como está a rotina de cada setor para melhorar as condições de trabalho.\n\n• ${total} perguntas, cerca de ${minutes} minutos\n• Totalmente anônimo: sem nome, e-mail ou IP\n• Resultados só aparecem para grupos de 5 ou mais pessoas\n\nResponda até ${formatDate(c.endsAt)}: ${url}\n\nObrigado!`
 
   const copy = (text: string, label: string) => {
     navigator.clipboard.writeText(text)

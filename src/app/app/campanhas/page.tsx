@@ -5,10 +5,11 @@ import { AnimatePresence, motion } from "motion/react"
 import { useSearchParams } from "next/navigation"
 import { Suspense, useState } from "react"
 import { PageHeader } from "@/components/app/page-header"
-import { Button, ButtonLink, Card, EmptyState, Field, Input, Spinner } from "@/components/ui/primitives"
+import { Button, ButtonLink, Card, EmptyState, Field, Input, Select, Spinner } from "@/components/ui/primitives"
 import { useToast } from "@/components/ui/toast"
 import { client } from "@/lib/client"
 import { useCan } from "@/lib/hooks"
+import { NR1_STANDARD_ID, estimatedMinutes, kindLabel } from "@/lib/questionnaire"
 import { cn, formatDate } from "@/lib/utils"
 
 function isoIn(days: number) {
@@ -74,8 +75,13 @@ function CampaignsContent() {
   const can = useCan()
   const qc = useQueryClient()
   const toast = useToast()
-  const [open, setOpen] = useState(useSearchParams().get("nova") === "1")
-  const [form, setForm] = useState({ name: "", startsAt: isoIn(0), endsAt: isoIn(14) })
+  const params = useSearchParams()
+  const [open, setOpen] = useState(params.get("nova") === "1")
+  const [form, setForm] = useState({ name: "", startsAt: isoIn(0), endsAt: isoIn(14), questionnaireId: params.get("questionario") ?? NR1_STANDARD_ID })
+
+  const library = useQuery({ queryKey: ["questionnaires"], queryFn: async () => (await client.questionnaires.list.$get()).json() })
+  const choices = (library.data ?? []).filter((q) => q.status === "active")
+  const chosen = choices.find((q) => q.id === form.questionnaireId)
   const [editing, setEditing] = useState<string | null>(null)
 
   const campaigns = useQuery({
@@ -86,7 +92,7 @@ function CampaignsContent() {
     mutationFn: async () => (await client.campaigns.create.$post(form)).json(),
     onSuccess: (c) => {
       setOpen(false)
-      setForm({ name: "", startsAt: isoIn(0), endsAt: isoIn(14) })
+      setForm({ name: "", startsAt: isoIn(0), endsAt: isoIn(14), questionnaireId: NR1_STANDARD_ID })
       qc.invalidateQueries({ queryKey: ["campaigns"] })
       qc.invalidateQueries({ queryKey: ["insights"] })
       navigator.clipboard?.writeText(`${window.location.origin}/r/${c.token}`).catch(() => {})
@@ -132,6 +138,22 @@ function CampaignsContent() {
                   create.mutate()
                 }}
               >
+                <div className="md:col-span-4">
+                  <Field label="Questionário" htmlFor="cquest" hint={chosen ? `${kindLabel(chosen.kind)} · ${chosen.itemCount ?? 0} itens · ~${estimatedMinutes(chosen.itemCount ?? 0)} min · v${chosen.version ?? 1}${chosen.kind === "nr1" ? " · alimenta inventário, evolução e relatório PGR" : " · resultado próprio, fora do score NR-1"}` : undefined}>
+                    <div className="flex flex-wrap gap-2">
+                      <Select id="cquest" className="min-w-0 flex-1" value={form.questionnaireId} onChange={(e) => setForm({ ...form, questionnaireId: e.target.value })}>
+                        {choices.map((q) => (
+                          <option key={q.id} value={q.id}>
+                            {q.name} · {kindLabel(q.kind)}
+                          </option>
+                        ))}
+                      </Select>
+                      <ButtonLink href="/app/questionario?novo=1" variant="secondary">
+                        Criar um novo
+                      </ButtonLink>
+                    </div>
+                  </Field>
+                </div>
                 <Field label="Nome" htmlFor="cname">
                   <Input id="cname" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Avaliação psicossocial · 1º semestre" />
                 </Field>
@@ -179,6 +201,9 @@ function CampaignsContent() {
                     <p className="text-sm text-subtle">
                       {c.phase === "scheduled" ? `Abre em ${formatDate(c.startsAt)} · encerra em ${formatDate(c.endsAt)}` : `${formatDate(c.startsAt)} – ${formatDate(c.endsAt)}`} · {c.responses} respostas
                       {c.customCount > 0 && ` · +${c.customCount} perguntas da empresa`}
+                    </p>
+                    <p className="text-xs text-subtle">
+                      <span className="rounded-full bg-tint/[0.06] px-2 py-0.5 text-muted">{kindLabel(c.questionnaire.kind)}</span> {c.questionnaire.name} · v{c.questionnaire.version} · {c.questionnaire.itemCount} itens
                     </p>
                     <code className="mt-1 truncate font-mono text-xs text-muted">{link}</code>
                   </div>

@@ -1,4 +1,5 @@
 import { boolean, customType, integer, jsonb, pgTable, primaryKey, serial, text, timestamp, unique } from "drizzle-orm/pg-core"
+import type { QuestionnaireItem, QuestionnaireKind, QuestionnaireOrigin, QuestionnaireStatus } from "@/lib/questionnaire"
 
 const bytea = customType<{ data: Buffer; driverData: Uint8Array }>({
   dataType: () => "bytea",
@@ -96,6 +97,38 @@ export const sectors = pgTable("sectors", {
   headcount: integer("headcount").notNull(),
 })
 
+/**
+ * Questionários da empresa (companyId nulo = questionário de sistema, igual para todos, como o
+ * NR-1 padrão). Editar cria uma versão nova; a campanha aponta para uma versão.
+ */
+export const questionnaires = pgTable("questionnaires", {
+  id: id(),
+  companyId: text("company_id").references(() => companies.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  purpose: text("purpose").notNull().default(""),
+  kind: text("kind").$type<QuestionnaireKind>().notNull().default("livre"),
+  // Decidido na criação: o NR-1 é sempre anônimo. (O modo identificado chega numa fase seguinte.)
+  anonymous: boolean("anonymous").notNull().default(true),
+  status: text("status").$type<QuestionnaireStatus>().notNull().default("active"),
+  origin: text("origin").$type<QuestionnaireOrigin>().notNull().default("manual"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+})
+
+export const questionnaireVersions = pgTable(
+  "questionnaire_versions",
+  {
+    id: id(),
+    questionnaireId: text("questionnaire_id")
+      .notNull()
+      .references(() => questionnaires.id, { onDelete: "cascade" }),
+    version: integer("version").notNull(),
+    items: jsonb("items").$type<QuestionnaireItem[]>().notNull(),
+    publishedAt: timestamp("published_at").notNull().defaultNow(),
+  },
+  (t) => [unique("questionnaire_version_unique").on(t.questionnaireId, t.version)]
+)
+
 export const campaigns = pgTable("campaigns", {
   id: id(),
   companyId: text("company_id")
@@ -108,6 +141,10 @@ export const campaigns = pgTable("campaigns", {
     .default("active"),
   startsAt: text("starts_at").notNull(),
   endsAt: text("ends_at").notNull(),
+  // Versão do questionário aplicada. Nunca muda depois de criada a campanha.
+  questionnaireVersionId: text("questionnaire_version_id")
+    .notNull()
+    .references(() => questionnaireVersions.id),
   // Cópia das perguntas da empresa no momento da criação: editar as perguntas depois
   // não altera campanhas já lançadas (nem invalida respostas antigas).
   customQuestions: jsonb("custom_questions").$type<CustomQuestionSnapshot[]>().notNull().default([]),

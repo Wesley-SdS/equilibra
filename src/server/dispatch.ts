@@ -7,7 +7,8 @@ import { respondentEmail } from "./email/templates"
 import { log } from "./log"
 import { normalizePhone, sendWhatsApp } from "./whatsapp"
 import { formatDate } from "@/lib/utils"
-import { QUESTIONS } from "@/lib/methodology"
+import { estimatedMinutes } from "@/lib/questionnaire"
+import { loadCampaignQuestionnaire } from "./questionnaires"
 
 const DAY = 86_400_000
 export const MAX_CONTACTS = 1000
@@ -81,7 +82,8 @@ export async function sendCampaignDispatch(db: Db, campaignId: string, kind: "in
 
   const link = `${baseUrl}/r/${campaign.token}`
   const endsAt = formatDate(campaign.endsAt)
-  const minutes = Math.max(6, Math.round((QUESTIONS.length + campaign.customQuestions.length) / 4.5))
+  const version = await loadCampaignQuestionnaire(db, campaign.questionnaireVersionId)
+  const minutes = estimatedMinutes(version.items.length + campaign.customQuestions.length)
 
   const wa = await pool(contacts.filter((c) => c.channel === "whatsapp"), 5, (c) =>
     sendWhatsApp({ to: c.address, template: kind, params: [company.name, campaign.name, link, endsAt] })

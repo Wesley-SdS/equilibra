@@ -12,6 +12,8 @@ import {
   companies,
   customQuestions,
   memberships,
+  questionnaireVersions,
+  questionnaires,
   responses,
   sectors,
   users,
@@ -59,6 +61,11 @@ export const accountRouter = j.router({
       team,
       sectors: await ctx.db.select({ id: sectors.id, name: sectors.name, headcount: sectors.headcount }).from(sectors).where(eq(sectors.companyId, companyId)),
       customQuestions: await ctx.db.select({ id: customQuestions.id, text: customQuestions.text, active: customQuestions.active }).from(customQuestions).where(eq(customQuestions.companyId, companyId)),
+      questionnaires: await ctx.db
+        .select({ id: questionnaires.id, name: questionnaires.name, kind: questionnaires.kind, anonymous: questionnaires.anonymous, status: questionnaires.status, version: questionnaireVersions.version, items: questionnaireVersions.items })
+        .from(questionnaires)
+        .innerJoin(questionnaireVersions, eq(questionnaireVersions.questionnaireId, questionnaires.id))
+        .where(eq(questionnaires.companyId, companyId)),
       campaigns: campaignRows.map((cp) => ({
         id: cp.id,
         name: cp.name,
@@ -66,6 +73,7 @@ export const accountRouter = j.router({
         startsAt: cp.startsAt,
         endsAt: cp.endsAt,
         customQuestions: cp.customQuestions,
+        questionnaireVersionId: cp.questionnaireVersionId,
         responses: responseRows
           .filter((r) => r.campaignId === cp.id)
           .map((r) => ({ sectorId: r.sectorId, day: r.createdDay, answers: answersByResponse.get(r.id) ?? [] })),

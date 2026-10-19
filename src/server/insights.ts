@@ -1,7 +1,9 @@
 import { and, desc, eq, inArray, ne, sql } from "drizzle-orm"
 import type { Db } from "./db"
 import { actions, answers, campaigns, companies, memberships, responses, sectors } from "./db/schema"
-import { DIMENSIONS, K_ANONYMITY, QUESTIONS, itemRisk, riskLevel, scoreDimensions, type DimensionId } from "@/lib/methodology"
+import { K_ANONYMITY, itemRisk, riskLevel, scoreDimensions, type DimensionId } from "@/lib/methodology"
+import { measuredDimensions } from "@/lib/questionnaire"
+import { campaignQuestions } from "./questionnaires"
 
 export type HeatmapRow = {
   key: string
@@ -21,6 +23,9 @@ export async function computeInsights(db: Db, companyId: string, campaignId: str
     where: and(eq(campaigns.id, campaignId), eq(campaigns.companyId, companyId)),
   })
   if (!campaign) return null
+  // Os itens pontuáveis vêm da versão do questionário aplicada nesta campanha.
+  const { questionnaire, questions } = await campaignQuestions(db, campaign.questionnaireVersionId)
+  const measured = measuredDimensions(questionnaire.items)
 
   const companySectors = await db.select().from(sectors).where(eq(sectors.companyId, companyId))
   const resp = await db.select().from(responses).where(eq(responses.campaignId, campaignId))
@@ -48,7 +53,7 @@ export async function computeInsights(db: Db, companyId: string, campaignId: str
   for (const r of resp) countBySector.set(r.sectorId, (countBySector.get(r.sectorId) ?? 0) + 1)
 
   const headcount = companySectors.reduce((s, x) => s + x.headcount, 0)
-  const overall = scoreDimensions(ans)
+  const overall = scoreDimensions(ans, questions)
 
   const rows: HeatmapRow[] = []
   const small: { answers: { questionId: string; value: number }[]; n: number } = { answers: [], n: 0 }
@@ -57,7 +62,7 @@ export async function computeInsights(db: Db, companyId: string, campaignId: str
     if (n === 0) continue
     const list = answersBySector.get(s.id) ?? []
     if (n >= K_ANONYMITY) {
-      rows.push({ key: s.id, label: s.name, responses: n, grouped: false, scores: scoreDimensions(list) })
+      rows.push({ key: s.id, label: s.name, responses: n, grouped: false, scores: scoreDimensions(list, questions) })
     } else {
       small.answers.push(...list)
       small.n += n
@@ -69,16 +74,17 @@ export async function computeInsights(db: Db, companyId: string, campaignId: str
       label: "Outros setores",
       responses: small.n,
       grouped: true,
-      scores: scoreDimensions(small.answers),
+      scores: scoreDimensions(small.answers, questions),
     })
   }
 
-  const ranking = DIMENSIONS.map((d) => {
+  // Só as dimensões medidas pelo questionário entram no ranking e no índice.
+  const ranking = measured.map((d) => {
     const score = overall[d.id] ?? 0
     return { id: d.id, name: d.name, short: d.short, severity: d.severity, score, level: riskLevel(score) }
   }).sort((a, b) => b.score - a.score)
 
-  const index = resp.length ? Math.round(ranking.reduce((s, r) => s + r.score, 0) / ranking.length) : 0
+  const index = resp.length && ranking.length ? Math.round(ranking.reduce((s, r) => s + r.score, 0) / ranking.length) : 0
 
   const participation = companySectors.map((s) => ({
     id: s.id,
@@ -89,6 +95,15 @@ export async function computeInsights(db: Db, companyId: string, campaignId: str
 
   return {
     campaign,
+    questionnaire: {
+      id: questionnaire.id,
+      name: questionnaire.name,
+      kind: questionnaire.kind,
+      anonymous: questionnaire.anonymous,
+      version: questionnaire.version,
+      itemCount: questionnaire.items.length,
+      scoredCount: questions.length,
+    },
     totals: {
       responses: resp.length,
       headcount,
@@ -113,7 +128,8 @@ export async function computeHistory(db: Db, companyId: string) {
   const points = []
   for (const c of list) {
     const data = await computeInsights(db, companyId, c.id)
-    if (!data || data.totals.responses < K_ANONYMITY) continue
+    // Só campanhas NR-1 entram na evolução (pulsos e clima têm resultado próprio).
+    if (!data || data.questionnaire.kind !== "nr1" || data.totals.responses < K_ANONYMITY) continue
     points.push({
       id: c.id,
       name: c.name,
@@ -134,7 +150,8 @@ export async function computeHistory(db: Db, companyId: string) {
 export async function computeDimension(db: Db, companyId: string, campaignId: string, dimension: DimensionId) {
   const base = await computeInsights(db, companyId, campaignId)
   if (!base) return null
-  const qs = QUESTIONS.filter((q) => q.dimension === dimension)
+  const { questions } = await campaignQuestions(db, base.campaign.questionnaireVersionId)
+  const qs = questions.filter((q) => q.dimension === dimension)
   const resp = await db.select({ id: responses.id }).from(responses).where(eq(responses.campaignId, campaignId))
   if (resp.length < K_ANONYMITY) {
     return { campaign: base.campaign, enough: false as const, items: [], sectors: [], score: 0 }

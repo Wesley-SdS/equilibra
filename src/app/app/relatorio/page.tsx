@@ -6,7 +6,7 @@ import { Suspense, useEffect } from "react"
 import { PageHeader } from "@/components/app/page-header"
 import { Button, EmptyState, ButtonLink, Spinner, buttonClass } from "@/components/ui/primitives"
 import { client } from "@/lib/client"
-import { DIMENSIONS, K_ANONYMITY, QUESTIONS, RISK_LEVELS, dimensionMeta, inventoryRating, riskLevel } from "@/lib/methodology"
+import { K_ANONYMITY, RISK_LEVELS, dimensionMeta, inventoryRating, riskLevel } from "@/lib/methodology"
 import { formatCnpj, formatDate } from "@/lib/utils"
 
 const STATUS = { todo: "A fazer", doing: "Em andamento", done: "Concluída" } as const
@@ -66,8 +66,8 @@ function ReportContent() {
 
         <Section n="1" title="Metodologia">
           <p className="text-muted">
-            Avaliação por questionário anônimo autoaplicável com {QUESTIONS.length} itens em {DIMENSIONS.length} dimensões
-            psicossociais ({DIMENSIONS.map((d) => d.name).join(", ")}), escala de frequência de 5 pontos. Cada dimensão recebe um
+            Avaliação por questionário anônimo autoaplicável (“{insights.questionnaire.name}”, versão {insights.questionnaire.version}) com {insights.questionnaire.scoredCount} itens pontuáveis em{" "}
+            {insights.ranking.length} dimensões psicossociais ({insights.ranking.map((d) => d.name).join(", ")}), escala de frequência de 5 pontos. Cada dimensão recebe um
             score de 0 (sem risco) a 100 (risco máximo): baixo &lt; 25, moderado 25–49, alto 50–74, crítico ≥ 75. A classificação
             do inventário combina probabilidade (derivada do score, 1–5) e severidade (1–5). Para proteger o anonimato, grupos com
             menos de {K_ANONYMITY} respostas não são exibidos isoladamente.

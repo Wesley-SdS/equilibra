@@ -9,9 +9,8 @@ import { clientIp, rateLimit } from "../rate-limit"
 import { addMessage, attachmentInput, loadThread, messageBody, retriageAfterReply } from "../channel-thread"
 import { triageReport } from "../decisions"
 import { entitlements } from "../billing"
-import { QUESTIONS } from "@/lib/methodology"
-
-const questionIds = new Set(QUESTIONS.map((q) => q.id))
+import { loadCampaignQuestionnaire } from "../questionnaires"
+import { DIMENSIONS } from "@/lib/methodology"
 
 export const surveyRouter = j.router({
   byToken: publicProcedure.input(z.object({ token: z.string().min(10) })).query(async ({ c, ctx, input }) => {
@@ -24,8 +23,16 @@ export const surveyRouter = j.router({
       .where(eq(sectors.companyId, campaign.companyId))
       .orderBy(sectors.name)
     const isOpen = campaign.status === "active" && today() >= campaign.startsAt && today() <= campaign.endsAt
+    const q = await loadCampaignQuestionnaire(ctx.db, campaign.questionnaireVersionId)
+    // Itens da versão aplicada + perguntas da empresa copiadas na campanha, na ordem de resposta.
+    const items = [
+      ...q.items.map((i) => ({ id: i.id, text: i.text, label: DIMENSIONS.find((d) => d.id === i.dimension)?.name ?? q.name })),
+      ...(campaign.customQuestions ?? []).map((i) => ({ id: i.id, text: i.text, label: "Perguntas da empresa" })),
+    ]
     return c.superjson({
       campaign: { name: campaign.name, startsAt: campaign.startsAt, endsAt: campaign.endsAt, isOpen },
+      questionnaire: { name: q.name, kind: q.kind, anonymous: q.anonymous },
+      items,
       companyName: company?.name ?? "",
       sectors: sectorList,
       alreadyAnswered: getCookie(c, `eq_r_${campaign.id}`) === "1",
@@ -38,10 +45,7 @@ export const surveyRouter = j.router({
       z.object({
         token: z.string().min(10),
         sectorId: z.string(),
-        answers: z
-          .array(z.object({ questionId: z.string(), value: z.number().int().min(1).max(5) }))
-          .min(QUESTIONS.length)
-          .max(QUESTIONS.length + 20),
+        answers: z.array(z.object({ questionId: z.string(), value: z.number().int().min(1).max(5) })).min(1).max(200),
       })
     )
     .mutation(async ({ c, ctx, input }) => {
@@ -57,8 +61,9 @@ export const surveyRouter = j.router({
         where: and(eq(sectors.id, input.sectorId), eq(sectors.companyId, campaign.companyId)),
       })
       if (!sector) throw new HTTPException(400, { message: "Setor inválido" })
-      // Exige exatamente as 28 perguntas padrão + as perguntas da empresa desta campanha.
-      const expected = new Set([...questionIds, ...(campaign.customQuestions ?? []).map((q) => q.id)])
+      // Exige exatamente os itens da versão aplicada + as perguntas da empresa desta campanha.
+      const version = await loadCampaignQuestionnaire(ctx.db, campaign.questionnaireVersionId)
+      const expected = new Set([...version.items.map((q) => q.id), ...(campaign.customQuestions ?? []).map((q) => q.id)])
       const ids = new Set(input.answers.map((a) => a.questionId))
       if (ids.size !== input.answers.length || ids.size !== expected.size || [...ids].some((id) => !expected.has(id))) {
         throw new HTTPException(422, { message: "Respostas incompletas" })

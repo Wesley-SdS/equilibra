@@ -1,6 +1,6 @@
 # Backlog — o que falta no Equilibra
 
-Estado em 15/10/2026 (atualizado após a v1.2). Prioridade: **P0** = necessário para cobrar dos primeiros clientes; **P1** = importante nos primeiros meses; **P2** = diferencial / escala.
+Estado em 19/10/2026 (atualizado após a fase 1 do PRD v2). Prioridade: **P0** = necessário para cobrar dos primeiros clientes; **P1** = importante nos primeiros meses; **P2** = diferencial / escala.
 
 Legenda: ✅ feito · 🟡 parcial · sem marca = a fazer
 
@@ -44,6 +44,22 @@ Legenda: ✅ feito · 🟡 parcial · sem marca = a fazer
 | 23 | API pública e webhooks para parceiros |
 | 24 | SSO corporativo (SAML) e multiunidades/filiais com consolidação |
 | 25 | App/PWA instalável para o painel |
+
+## PRD v2 (aprovado em 19/10/2026)
+
+PRD em Claude Docs: https://claude.ai/code/artifact/1bcdb356-1c6e-4506-85b8-050886c703d6 · artboards em `design/project`.
+
+| Fase | Item | Estado |
+|---|---|---|
+| 1 | ✅ Questionário vira entidade versionada (`questionnaires`, `questionnaire_versions`); campanha aponta para uma versão; NR-1 padrão migrado como v1 e sempre anônimo | Feito |
+| 1 | ✅ Biblioteca "Questionários" (criar, editar com nova versão, duplicar, arquivar) e escolha do questionário na nova campanha | Feito |
+| 1 | Modo identificado (switch), cadastro de pessoas e aba "quem respondeu" | A fazer |
+| 1 | Importação de formulários (XLSX, CSV, PDF, texto) com revisão e correção | A fazer |
+| 1 | Copiloto de questionários | A fazer |
+| 1 | Metodologias configuráveis (COPSOQ III, HSE, Guia MTE, própria) | A fazer, após confirmar licenças |
+| 2 | Redesenho de Evolução, cards do Plano e Relatório com resumo executivo | A fazer |
+| 2 | Copilotos do plano de ação e do canal; módulo comum `src/server/agents/` | A fazer |
+| 3 | Espaço de escuta (agente de apoio), só após parecer jurídico e psicólogo RT | A fazer |
 
 ## Produtos 2, 3 e 4
 

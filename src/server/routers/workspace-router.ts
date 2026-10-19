@@ -2,7 +2,7 @@ import { and, desc, eq, getTableColumns, ne, sql } from "drizzle-orm"
 import { HTTPException } from "hono/http-exception"
 import { z } from "zod"
 import type { Db } from "../db"
-import { actions, campaigns, channelMessages, channelReports, companies, customQuestions, responses, sectors } from "../db/schema"
+import { actions, campaigns, channelMessages, channelReports, companies, customQuestions, questionnaireVersions, questionnaires, responses, sectors } from "../db/schema"
 import { publicToken, today } from "../auth"
 import { phaseOf } from "../campaigns"
 import { stageOf } from "@/lib/deadline"
@@ -17,6 +17,7 @@ import { addMessage, attachmentInput, loadThread, messageBody } from "../channel
 import { chooseActions, triagePriority } from "../decisions"
 import { assertLimit, assertWritable } from "../billing"
 import { rateLimit } from "../rate-limit"
+import { latestVersion, resolveVersionForCampaign } from "../questionnaires"
 import { DIMENSIONS, type DimensionId } from "@/lib/methodology"
 
 const dimensionEnum = z.enum(DIMENSIONS.map((d) => d.id) as [DimensionId, ...DimensionId[]])
@@ -84,22 +85,32 @@ const campaignSelect = {
   createdAt: campaigns.createdAt,
   responses: sql<number>`(select count(*)::int from ${responses} where ${responses.campaignId} = ${campaigns.id})`,
   customCount: sql<number>`jsonb_array_length(${campaigns.customQuestions})::int`,
+  questionnaireVersionId: campaigns.questionnaireVersionId,
+  questionnaire: {
+    id: questionnaires.id,
+    name: questionnaires.name,
+    kind: questionnaires.kind,
+    anonymous: questionnaires.anonymous,
+    version: questionnaireVersions.version,
+    itemCount: sql<number>`jsonb_array_length(${questionnaireVersions.items})::int`,
+  },
 }
+
+/** Campanhas com o questionário aplicado (versão + questionário). */
+const campaignRows = (db: Db) =>
+  db
+    .select(campaignSelect)
+    .from(campaigns)
+    .innerJoin(questionnaireVersions, eq(questionnaireVersions.id, campaigns.questionnaireVersionId))
+    .innerJoin(questionnaires, eq(questionnaires.id, questionnaireVersions.questionnaireId))
 
 export const campaignsRouter = j.router({
   list: privateProcedure.query(async ({ c, ctx }) => {
-    const rows = await ctx.db
-      .select(campaignSelect)
-      .from(campaigns)
-      .where(eq(campaigns.companyId, ctx.session.companyId))
-      .orderBy(desc(campaigns.createdAt))
+    const rows = await campaignRows(ctx.db).where(eq(campaigns.companyId, ctx.session.companyId)).orderBy(desc(campaigns.createdAt))
     return c.superjson(rows.map((r) => ({ ...r, phase: phaseOf(r) })))
   }),
   get: privateProcedure.input(z.object({ id: z.string() })).query(async ({ c, ctx, input }) => {
-    const [row] = await ctx.db
-      .select(campaignSelect)
-      .from(campaigns)
-      .where(and(eq(campaigns.id, input.id), eq(campaigns.companyId, ctx.session.companyId)))
+    const [row] = await campaignRows(ctx.db).where(and(eq(campaigns.id, input.id), eq(campaigns.companyId, ctx.session.companyId)))
     if (!row) throw new HTTPException(404, { message: "Campanha não encontrada" })
     const company = await ctx.db.query.companies.findFirst({ where: eq(companies.id, ctx.session.companyId) })
     return c.superjson({ ...row, phase: phaseOf(row), companyName: company!.name })
@@ -111,10 +122,14 @@ export const campaignsRouter = j.router({
           name: z.string().trim().min(2, "Dê um nome à campanha").max(80),
           startsAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida"),
           endsAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida"),
+          // Questionário da biblioteca; sem ele, o NR-1 padrão.
+          questionnaireId: z.string().optional(),
         })
         .refine((v) => v.endsAt >= v.startsAt, { message: "O fim deve ser depois do início", path: ["endsAt"] })
     )
     .mutation(async ({ c, ctx, input }) => {
+      const { questionnaireId, ...data } = input
+      const chosen = await resolveVersionForCampaign(ctx.db, ctx.session.companyId, questionnaireId)
       const hasSectors = await ctx.db.query.sectors.findFirst({
         where: eq(sectors.companyId, ctx.session.companyId),
       })
@@ -128,13 +143,14 @@ export const campaignsRouter = j.router({
       const [row] = await ctx.db
         .insert(campaigns)
         .values({
-          ...input,
+          ...data,
           companyId: ctx.session.companyId,
           token: publicToken(),
+          questionnaireVersionId: chosen.version.id,
           customQuestions: extra.map((q) => ({ id: `c:${q.id}`, text: q.text })),
         })
         .returning()
-      await audit(ctx.db, ctx.session, { action: "create", entity: "campanha", entityId: row!.id, summary: `Campanha “${row!.name}” criada` })
+      await audit(ctx.db, ctx.session, { action: "create", entity: "campanha", entityId: row!.id, summary: `Campanha “${row!.name}” criada com o questionário “${chosen.questionnaire.name}” (v${chosen.version.version})` })
       return c.superjson(row!)
     }),
   /** Edita nome e datas (agendar, adiar ou estender o prazo). O link e as respostas não mudam. */
@@ -183,6 +199,10 @@ export const campaignsRouter = j.router({
         .from(customQuestions)
         .where(and(eq(customQuestions.companyId, ctx.session.companyId), eq(customQuestions.active, true)))
         .orderBy(customQuestions.position, customQuestions.createdAt)
+      // A cópia usa a versão mais recente do mesmo questionário.
+      const sourceVersion = await ctx.db.query.questionnaireVersions.findFirst({ where: eq(questionnaireVersions.id, source.questionnaireVersionId) })
+      const version = sourceVersion ? await latestVersion(ctx.db, sourceVersion.questionnaireId) : null
+      if (!version) throw new HTTPException(400, { message: "O questionário desta campanha não existe mais." })
       const days = Math.max(0, Math.round((Date.parse(`${source.endsAt}T00:00:00Z`) - Date.parse(`${source.startsAt}T00:00:00Z`)) / 86_400_000))
       const startsAt = input.startsAt ?? today()
       const endsAt = new Date(Date.parse(`${startsAt}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10)
@@ -194,6 +214,7 @@ export const campaignsRouter = j.router({
           token: publicToken(),
           startsAt,
           endsAt,
+          questionnaireVersionId: version.id,
           customQuestions: extra.map((q) => ({ id: `c:${q.id}`, text: q.text })),
         })
         .returning()

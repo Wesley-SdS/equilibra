@@ -2,20 +2,187 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { AnimatePresence, motion } from "motion/react"
-import { useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Suspense, useEffect, useState } from "react"
 import { PageHeader } from "@/components/app/page-header"
+import { EMPTY_DRAFT, QuestionnaireDrawer, type QuestionnaireDraft } from "@/components/app/questionnaire-editor"
 import { LikertBar, LikertLegend } from "@/components/app/trend"
-import { Button, Card, Field, Input, Spinner } from "@/components/ui/primitives"
+import { Button, ButtonLink, Card, EmptyState, Field, Input, Spinner } from "@/components/ui/primitives"
 import { useToast } from "@/components/ui/toast"
 import { JevBadge } from "@/components/app/jev-badge"
 import { client } from "@/lib/client"
 import { useCan } from "@/lib/hooks"
 import { DIMENSIONS, K_ANONYMITY, QUESTIONS, SCALE } from "@/lib/methodology"
-import { cn } from "@/lib/utils"
+import { QUESTIONNAIRE_KINDS, estimatedMinutes, kindLabel, type QuestionnaireKind } from "@/lib/questionnaire"
+import { cn, formatDate } from "@/lib/utils"
 
 const MAX = 10
 
-export default function QuestionnairePage() {
+const KIND_CLS: Record<string, string> = { nr1: "bg-brand/15 text-brand-fg", clima: "bg-risk-mod/50 text-risk-mod-fg", pulso: "bg-tint/[0.08] text-fg", livre: "bg-tint/[0.06] text-muted" }
+
+/** Biblioteca: o NR-1 padrão, os importados e os criados pela empresa, com versão atual e uso. */
+function Library() {
+  const can = useCan()
+  const qc = useQueryClient()
+  const toast = useToast()
+  const router = useRouter()
+  const params = useSearchParams()
+  const [editing, setEditing] = useState<QuestionnaireDraft | null>(null)
+  const [showArchived, setShowArchived] = useState(false)
+  const [filter, setFilter] = useState<QuestionnaireKind | "all">("all")
+
+  const list = useQuery({ queryKey: ["questionnaires"], queryFn: async () => (await client.questionnaires.list.$get()).json() })
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ["questionnaires"] })
+    qc.invalidateQueries({ queryKey: ["campaigns"] })
+  }
+
+  // ?novo=1 abre a gaveta de criação (ex.: vindo da tela de nova campanha).
+  useEffect(() => {
+    if (params.get("novo") === "1" && can.edit) setEditing({ ...EMPTY_DRAFT })
+  }, [params, can.edit])
+
+  const open = useMutation({
+    mutationFn: async (id: string) => (await client.questionnaires.get.$get({ id })).json(),
+    onSuccess: (q) => setEditing({ id: q.id, system: q.system, name: q.name, purpose: q.purpose, kind: q.kind, anonymous: q.anonymous, items: q.current?.items ?? [] }),
+    onError: (e) => toast(e.message, "error"),
+  })
+  const save = useMutation({
+    mutationFn: async (d: QuestionnaireDraft) => {
+      const body = { name: d.name, purpose: d.purpose, kind: d.kind, anonymous: d.anonymous, items: d.items.map(({ id, text, dimension, risk }) => ({ id, text, dimension, risk, type: "likert5" as const })) }
+      if (d.id) return (await client.questionnaires.update.$post({ id: d.id, ...body })).json()
+      return (await client.questionnaires.create.$post(body)).json()
+    },
+    onSuccess: (r, d) => {
+      setEditing(null)
+      refresh()
+      toast(d.id ? ("version" in r && r.version ? `Questionário salvo · versão ${r.version}` : "Questionário salvo") : "Questionário criado")
+    },
+  })
+  const duplicate = useMutation({
+    mutationFn: async (id: string) => (await client.questionnaires.duplicate.$post({ id })).json(),
+    onSuccess: (q) => {
+      setEditing(null)
+      refresh()
+      toast("Cópia criada. Edite o nome e os itens.")
+      open.mutate(q.id)
+    },
+    onError: (e) => toast(e.message, "error"),
+  })
+  const setStatus = useMutation({
+    mutationFn: async (v: { id: string; status: "active" | "archived" }) => (await client.questionnaires.setStatus.$post(v)).json(),
+    onSuccess: refresh,
+    onError: (e) => toast(e.message, "error"),
+  })
+
+  const rows = (list.data ?? []).filter((r) => (showArchived || r.status !== "archived") && (filter === "all" || r.kind === filter))
+  const counts = (k: string) => (list.data ?? []).filter((r) => r.status !== "archived" && (k === "all" || r.kind === k)).length
+
+  return (
+    <>
+      <PageHeader
+        title="Questionários"
+        description="Todos os questionários da empresa: o NR-1 padrão, os importados e os que você criou. Cada campanha aplica uma versão de um deles; editar nunca altera campanhas já lançadas."
+        actions={can.edit ? <Button onClick={() => setEditing({ ...EMPTY_DRAFT })}>Novo questionário</Button> : undefined}
+      />
+
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        {[{ id: "all" as const, label: "Todos" }, ...QUESTIONNAIRE_KINDS].map((k) => (
+          <button
+            key={k.id}
+            type="button"
+            onClick={() => setFilter(k.id)}
+            className={cn("rounded-lg border px-2.5 py-1 text-xs transition-colors", filter === k.id ? "border-brand/40 text-fg" : "border-line text-muted hover:text-fg")}
+          >
+            {k.label} · {counts(k.id)}
+          </button>
+        ))}
+        <label className="ml-auto flex items-center gap-2 text-xs text-muted">
+          <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} /> Mostrar arquivados
+        </label>
+      </div>
+
+      {list.isLoading ? (
+        <div className="grid h-40 place-items-center text-muted">
+          <Spinner />
+        </div>
+      ) : !rows.length ? (
+        <EmptyState title="Nenhum questionário neste filtro" text="Crie um novo ou duplique o NR-1 padrão para começar de uma base." />
+      ) : (
+        <div className="grid gap-2">
+          {rows.map((r) => (
+            <Card key={r.id} className={cn("grid items-center gap-3 md:grid-cols-[1.6fr_auto_auto_1fr_auto]", r.status === "archived" && "opacity-60")}>
+              <div className="min-w-0">
+                <button type="button" onClick={() => open.mutate(r.id)} className="text-left text-[15px] font-medium leading-snug hover:text-brand-fg">
+                  {r.name} <span className="font-mono text-xs text-subtle">v{r.version ?? 1}</span>
+                </button>
+                <p className="mt-0.5 text-xs text-subtle">
+                  {r.purpose || (r.companyId === null ? "Padrão do sistema" : "Criado pela empresa")} · {r.itemCount ?? 0} itens · ~{estimatedMinutes(r.itemCount ?? 0)} min
+                </p>
+              </div>
+              <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-medium", KIND_CLS[r.kind] ?? KIND_CLS.livre)}>{kindLabel(r.kind)}</span>
+              <span className="rounded-full bg-brand/10 px-2.5 py-0.5 text-xs text-brand-fg">🔒 Anônimo</span>
+              <span className="text-xs text-muted">
+                {r.lastCampaignName ? (
+                  <>
+                    {r.lastCampaignName}
+                    {r.lastCampaignStartsAt && ` · ${formatDate(r.lastCampaignStartsAt)}`}
+                    {r.campaignCount > 1 && ` · ${r.campaignCount} campanhas`}
+                  </>
+                ) : (
+                  "Nunca aplicado"
+                )}
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {can.edit && r.status === "active" && (
+                  <ButtonLink href={`/app/campanhas?nova=1&questionario=${r.id}`} size="sm">
+                    Lançar campanha
+                  </ButtonLink>
+                )}
+                <Button variant="secondary" size="sm" onClick={() => open.mutate(r.id)}>
+                  {can.edit && r.companyId !== null ? "Editar" : "Ver"}
+                </Button>
+                {can.edit && (
+                  <Button variant="ghost" size="sm" loading={duplicate.isPending && duplicate.variables === r.id} onClick={() => duplicate.mutate(r.id)}>
+                    Duplicar
+                  </Button>
+                )}
+                {can.edit && r.companyId !== null && (
+                  <Button variant="ghost" size="sm" onClick={() => setStatus.mutate({ id: r.id, status: r.status === "archived" ? "active" : "archived" })}>
+                    {r.status === "archived" ? "Restaurar" : "Arquivar"}
+                  </Button>
+                )}
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <QuestionnaireDrawer
+        draft={editing}
+        saving={save.isPending}
+        error={save.error?.message}
+        onClose={() => {
+          setEditing(null)
+          if (params.get("novo")) router.replace("/app/questionario")
+        }}
+        onSave={(d) => save.mutate(d)}
+        onDuplicate={(id) => duplicate.mutate(id)}
+      />
+    </>
+  )
+}
+
+export default function QuestionnairesPage() {
+  return (
+    <Suspense>
+      <Library />
+      <CompanyQuestions />
+    </Suspense>
+  )
+}
+
+function CompanyQuestions() {
   const can = useCan()
   const qc = useQueryClient()
   const toast = useToast()
@@ -60,15 +227,15 @@ export default function QuestionnairePage() {
 
   return (
     <>
-      <PageHeader
-        title="Questionário"
-        description="As 28 perguntas da metodologia são fixas, para manter o cálculo de risco válido. Você pode acrescentar até 10 perguntas próprias da empresa, relatadas à parte."
-        actions={
-          <Button variant="secondary" onClick={() => setPreview((v) => !v)}>
-            {preview ? "Fechar pré-visualização" : "Pré-visualizar"}
-          </Button>
-        }
-      />
+      <div className="mb-4 mt-10 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight">Perguntas da empresa</h2>
+          <p className="text-sm text-muted">Até 10 perguntas próprias, anexadas ao fim de toda campanha e relatadas à parte (não entram no score).</p>
+        </div>
+        <Button variant="secondary" size="sm" onClick={() => setPreview((v) => !v)}>
+          {preview ? "Fechar pré-visualização" : "Pré-visualizar"}
+        </Button>
+      </div>
 
       <AnimatePresence>
         {preview && (
@@ -78,10 +245,10 @@ export default function QuestionnairePage() {
         )}
       </AnimatePresence>
 
-      <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr] [&>*]:min-w-0">
+      <div className="grid gap-4 [&>*]:min-w-0">
         <Card>
           <div className="mb-4 flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold">Perguntas da empresa</h2>
+            <h3 className="text-lg font-semibold">Lista</h3>
             <span className="font-mono text-sm text-muted">
               {active.length}/{MAX} ativas
             </span>
@@ -173,28 +340,12 @@ export default function QuestionnairePage() {
           </p>
         </Card>
 
-        <div className="flex flex-col gap-4">
-          <Card>
-            <h2 className="mb-1 text-lg font-semibold">Metodologia (fixa)</h2>
-            <p className="mb-4 text-sm text-muted">
-              {QUESTIONS.length} itens em {DIMENSIONS.length} dimensões. Essas perguntas compõem o score de risco da NR-1.
-            </p>
-            <ul className="flex flex-col gap-2 text-sm">
-              {DIMENSIONS.map((d) => (
-                <li key={d.id} className="flex justify-between gap-3">
-                  <span>{d.name}</span>
-                  <span className="font-mono text-subtle">{QUESTIONS.filter((q) => q.dimension === d.id).length}</span>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        </div>
       </div>
 
       <Card className="mt-4">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold">Resultados das perguntas da empresa</h2>
+            <h3 className="text-lg font-semibold">Resultados das perguntas da empresa</h3>
             <p className="text-sm text-muted">{results.data ? results.data.campaign.name : "Última campanha"} · não entram no score NR-1</p>
           </div>
           <LikertLegend />

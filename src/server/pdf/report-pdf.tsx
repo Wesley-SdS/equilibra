@@ -1,6 +1,6 @@
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer"
 import type { Report } from "../report"
-import { DIMENSIONS, K_ANONYMITY, QUESTIONS, RISK_LEVELS, dimensionMeta, inventoryRating, riskLevel, type RiskLevel } from "@/lib/methodology"
+import { DIMENSIONS, K_ANONYMITY, RISK_LEVELS, dimensionMeta, inventoryRating, riskLevel, type RiskLevel } from "@/lib/methodology"
 import { formatCnpj, formatDate } from "@/lib/utils"
 
 const INK = "#0b1410"
@@ -115,7 +115,7 @@ export function ReportPdf({ report }: { report: Report }) {
             <Text style={s.num}>{next()} </Text>Metodologia
           </Text>
           <Text style={s.p}>
-            Questionário anônimo autoaplicável com {QUESTIONS.length} itens em {DIMENSIONS.length} dimensões psicossociais ({DIMENSIONS.map((d) => d.name).join(", ")}),
+            Questionário anônimo autoaplicável (“{insights.questionnaire.name}”, versão {insights.questionnaire.version}) com {insights.questionnaire.scoredCount} itens pontuáveis em {insights.ranking.length} dimensões psicossociais ({insights.ranking.map((d) => d.name).join(", ")}),
             escala de frequência de 5 pontos. Cada dimensão recebe um score de 0 (sem risco) a 100 (risco máximo): baixo &lt; 25, moderado 25–49, alto 50–74, crítico 75 ou mais.
             A classificação combina probabilidade (derivada do score, 1–5) e severidade (1–5). Grupos com menos de {K_ANONYMITY} respostas não são exibidos isoladamente.
           </Text>

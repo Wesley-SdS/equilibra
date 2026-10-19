@@ -6,7 +6,8 @@ import { use, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { LegalLinks } from "@/components/legal-links"
 import { Button, Logo, Spinner } from "@/components/ui/primitives"
 import { client } from "@/lib/client"
-import { DIMENSIONS, QUESTIONS, SCALE } from "@/lib/methodology"
+import { SCALE } from "@/lib/methodology"
+import { estimatedMinutes } from "@/lib/questionnaire"
 import { cn } from "@/lib/utils"
 
 type Phase = "intro" | "questions" | "done"
@@ -27,14 +28,8 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
     retry: false,
   })
 
-  // 28 perguntas da metodologia + perguntas da empresa (cópia salva na campanha).
-  const list = useMemo(
-    () => [
-      ...QUESTIONS.map((q) => ({ id: q.id, text: q.text, label: DIMENSIONS.find((d) => d.id === q.dimension)!.name })),
-      ...(info.data?.customQuestions ?? []).map((q) => ({ id: q.id, text: q.text, label: "Perguntas da empresa" })),
-    ],
-    [info.data]
-  )
+  // Itens da versão do questionário aplicada nesta campanha + perguntas da empresa (cópia salva na campanha).
+  const list = useMemo(() => info.data?.items ?? [], [info.data])
   const listRef = useRef(list)
   listRef.current = list
 
@@ -179,7 +174,7 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
               <span className="font-mono text-xs text-brand-fg">{data.campaign.name}</span>
               <h1 className="text-[32px] font-semibold leading-[1.1] tracking-[-0.03em]">Como está o seu dia a dia no trabalho?</h1>
               <p className="text-[15px] leading-relaxed text-muted">
-                São {list.length} perguntas rápidas, cerca de {Math.max(6, Math.round(list.length / 4.5))} minutos. Suas respostas ajudam a empresa a melhorar as condições de trabalho.
+                São {list.length} perguntas rápidas, cerca de {estimatedMinutes(list.length)} minutos. Suas respostas ajudam a empresa a melhorar as condições de trabalho.
               </p>
             </motion.div>
             <motion.ul
