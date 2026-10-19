@@ -1,8 +1,12 @@
 "use client"
 
 import { AnimatePresence, motion } from "motion/react"
+import { useMutation } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
+import { CopilotMessage, CopilotShell, useCopilot } from "@/components/app/copilot"
 import { Button, Field, Input, Select, Textarea } from "@/components/ui/primitives"
+import { useToast } from "@/components/ui/toast"
+import { client } from "@/lib/client"
 import { DIMENSIONS, type DimensionId } from "@/lib/methodology"
 import { MAX_ITEMS, QUESTIONNAIRE_KINDS, newItemId, type QuestionnaireItem, type QuestionnaireKind } from "@/lib/questionnaire"
 import { cn } from "@/lib/utils"
@@ -95,6 +99,7 @@ export function QuestionnaireDrawer({
                 if (!readOnly) onSave(d)
               }}
             >
+              {!readOnly && <QuestionnaireCopilot draft={d} onApply={(patch) => setD((x) => ({ ...x, ...patch }))} />}
               {!readOnly && (
                 <>
                   <Field label="Nome" htmlFor="qname">
@@ -246,5 +251,152 @@ function IconBtn({ label, d, onClick, disabled }: { label: string; d: string; on
         <path d={d} />
       </svg>
     </button>
+  )
+}
+
+type Proposal = Awaited<ReturnType<Awaited<ReturnType<typeof client.agents.questionnaire.$post>>["json"]>>
+
+/** Copiloto de questionários: o gestor descreve a dor, recebe itens e aceita um a um ou todos. */
+function QuestionnaireCopilot({ draft, onApply }: { draft: QuestionnaireDraft; onApply: (patch: Partial<QuestionnaireDraft>) => void }) {
+  const copilot = useCopilot()
+  const toast = useToast()
+  const [open, setOpen] = useState(!draft.id && !draft.items.length)
+  const [pain, setPain] = useState("")
+  const [instruction, setInstruction] = useState("")
+  const [proposal, setProposal] = useState<Proposal | null>(null)
+  const [taken, setTaken] = useState<Set<number>>(new Set())
+  const ask = useMutation({
+    mutationFn: async (refine: boolean) =>
+      (
+        await client.agents.questionnaire.$post({
+          pain: pain || draft.purpose || draft.name,
+          ...(refine && instruction ? { instruction } : {}),
+          ...(draft.items.length ? { draft: { name: draft.name, kind: draft.kind, items: draft.items.map(({ text, dimension, risk }) => ({ text, dimension, risk })) } } : {}),
+        })
+      ).json(),
+    onSuccess: (r) => {
+      setProposal(r)
+      setTaken(new Set())
+      setInstruction("")
+    },
+    onError: (e) => toast(e.message, "error"),
+  })
+  const feedback = (accepted: boolean) => proposal && client.agents.feedback.$post({ runId: proposal.runId, accepted }).catch(() => {})
+
+  if (!copilot.data?.available) return null
+  if (!open) {
+    return (
+      <button type="button" onClick={() => setOpen(true)} className="self-start text-sm font-medium text-brand-fg hover:underline">
+        ✦ Criar ou ajustar com o copiloto
+      </button>
+    )
+  }
+  const toItem = (it: Proposal["items"][number]): QuestionnaireItem => ({ id: newItemId(), text: it.text, type: "likert5", dimension: it.dimension, risk: it.risk })
+  const takeAll = () => {
+    if (!proposal) return
+    // Ajuste sobre um rascunho existente: a proposta substitui a lista inteira.
+    onApply({
+      items: proposal.items.map(toItem),
+      ...(draft.name ? {} : { name: proposal.suggestedName }),
+      ...(draft.purpose ? {} : { purpose: proposal.objective }),
+      ...(draft.id ? {} : { kind: proposal.suggestedKind, anonymous: proposal.suggestedKind === "nr1" ? true : proposal.suggestAnonymous }),
+    })
+    feedback(true)
+    setProposal(null)
+    toast("Itens do copiloto aplicados ao rascunho")
+  }
+
+  return (
+    <CopilotShell title="Copiloto de questionários">
+      <Textarea
+        aria-label="Descreva a situação"
+        className="min-h-20 bg-surface"
+        value={pain}
+        maxLength={2000}
+        onChange={(e) => setPain(e.target.value)}
+        placeholder="Ex.: A equipe de entregas reclama de rota mal planejada e de cobrança por WhatsApp fora do horário. Quero medir antes de mudar a escala."
+      />
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" size="sm" loading={ask.isPending && !ask.variables} disabled={(pain.trim().length < 10 && !draft.purpose) || ask.isPending} onClick={() => ask.mutate(false)}>
+          {draft.items.length ? "Revisar o rascunho" : "Propor questionário"}
+        </Button>
+        <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>
+          Fechar
+        </Button>
+      </div>
+      {proposal && (
+        <div className="flex flex-col gap-3">
+          <CopilotMessage>
+            {proposal.message}
+            <span className="mt-2 block text-xs text-muted">
+              <strong className="text-fg">Objetivo:</strong> {proposal.objective} · <strong className="text-fg">Público:</strong> {proposal.audience}
+            </span>
+            <span className="mt-1 block text-xs text-muted">
+              <strong className="text-fg">{proposal.suggestAnonymous ? "Sugiro anônimo" : "Pode ser identificado"}:</strong> {proposal.anonymityReason}
+            </span>
+            <span className="mt-1 block text-xs text-muted">
+              <strong className="text-fg">O questionário não mede bem:</strong> {proposal.notMeasurable}
+            </span>
+          </CopilotMessage>
+          {proposal.warnings.map((w) => (
+            <p key={w} className="text-xs text-risk-mod-fg">
+              {w}
+            </p>
+          ))}
+          <ol className="flex flex-col gap-1.5">
+            {proposal.items.map((it, i) => (
+              <li key={i} className={cn("flex items-start gap-2 rounded-xl border bg-surface/70 p-2.5 text-sm", it.flags.length ? "border-risk-mod/60" : "border-line", taken.has(i) && "opacity-50")}>
+                <span className="mt-0.5 font-mono text-[11px] text-subtle">{String(i + 1).padStart(2, "0")}</span>
+                <div className="flex-1">
+                  <p className="leading-snug">{it.text}</p>
+                  <p className="mt-1 text-[11px] text-subtle">
+                    {DIMENSIONS.find((x) => x.id === it.dimension)?.name ?? "Fora do score"} · {it.risk ? "risco" : "proteção"}
+                    {it.engine === "jev" && " · dimensão conferida pelo Jev"} · {it.rationale}
+                  </p>
+                  {it.flags.map((f) => (
+                    <p key={f} className="mt-1 text-[11px] text-risk-mod-fg">
+                      {f}
+                    </p>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  disabled={taken.has(i)}
+                  onClick={() => {
+                    onApply({ items: [...draft.items, toItem(it)] })
+                    setTaken((x) => new Set(x).add(i))
+                  }}
+                  className="rounded-lg border border-line px-2 py-1 text-xs text-brand-fg hover:border-brand/50 disabled:opacity-40"
+                >
+                  {taken.has(i) ? "Adicionado" : "Adicionar"}
+                </button>
+              </li>
+            ))}
+          </ol>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" onClick={takeAll}>
+              {draft.items.length ? "Substituir o rascunho por esta versão" : "Usar todos os itens"}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                feedback(false)
+                setProposal(null)
+              }}
+            >
+              Descartar
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Input aria-label="Pedir ajuste" className="h-9 bg-surface text-sm" value={instruction} maxLength={500} onChange={(e) => setInstruction(e.target.value)} placeholder="Peça um ajuste: “mais curto”, “adicione 2 sobre pausas”…" />
+            <Button type="button" size="sm" variant="secondary" disabled={!instruction.trim()} loading={ask.isPending && ask.variables === true} onClick={() => ask.mutate(true)}>
+              Ajustar
+            </Button>
+          </div>
+        </div>
+      )}
+    </CopilotShell>
   )
 }

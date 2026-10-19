@@ -9,6 +9,7 @@ import { questionsRouter } from "./routers/questions-router"
 import { questionnairesRouter } from "./routers/questionnaires-router"
 import { importsRouter } from "./routers/imports-router"
 import { employeesRouter, participantsRouter } from "./routers/people-router"
+import { agentsRouter } from "./routers/agents-router"
 import { billingRouter } from "./routers/billing-router"
 import { accountRouter } from "./routers/account-router"
 import { dispatchRouter } from "./routers/dispatch-router"
@@ -57,6 +58,7 @@ const appRouter = j.mergeRouters(api, {
   imports: withErrors(importsRouter),
   employees: withErrors(employeesRouter),
   participants: withErrors(participantsRouter),
+  agents: withErrors(agentsRouter),
   billing: withErrors(billingRouter),
   account: withErrors(accountRouter),
   dispatch: withErrors(dispatchRouter),

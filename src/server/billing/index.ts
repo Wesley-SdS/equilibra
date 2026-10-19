@@ -1,7 +1,7 @@
-import { and, eq, gte, isNull, sql } from "drizzle-orm"
+import { and, eq, gte, isNull, ne, sql } from "drizzle-orm"
 import { HTTPException } from "hono/http-exception"
 import type { Db } from "../db"
-import { campaigns, companies, customQuestions, invites, memberships, sectors } from "../db/schema"
+import { agentRuns, campaigns, companies, customQuestions, invites, memberships, sectors } from "../db/schema"
 import { TRIAL_DAYS, TRIAL_PLAN, formatLimit, planById, type Limits, type PlanId } from "@/lib/plans"
 
 type Company = typeof companies.$inferSelect
@@ -32,14 +32,17 @@ export type Entitlements = ReturnType<typeof entitlements>
 /** Uso atual de cada recurso limitado. */
 export async function usage(db: Db, companyId: string) {
   const yearAgo = new Date(Date.now() - 365 * DAY)
-  const [[emp], [camp], [cq], [mem], [inv]] = (await Promise.all([
+  const now = new Date()
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
+  const [[emp], [camp], [cq], [mem], [inv], [runs]] = (await Promise.all([
     db.select({ n: sql<number>`coalesce(sum(${sectors.headcount}), 0)::int` }).from(sectors).where(eq(sectors.companyId, companyId)),
     db.select({ n: sql<number>`count(*)::int` }).from(campaigns).where(and(eq(campaigns.companyId, companyId), eq(campaigns.imported, false), gte(campaigns.createdAt, yearAgo))),
     db.select({ n: sql<number>`count(*)::int` }).from(customQuestions).where(and(eq(customQuestions.companyId, companyId), eq(customQuestions.active, true))),
     db.select({ n: sql<number>`count(*)::int` }).from(memberships).where(eq(memberships.companyId, companyId)),
     db.select({ n: sql<number>`count(*)::int` }).from(invites).where(and(eq(invites.companyId, companyId), isNull(invites.acceptedAt))),
+    db.select({ n: sql<number>`count(*)::int` }).from(agentRuns).where(and(eq(agentRuns.companyId, companyId), gte(agentRuns.createdAt, monthStart), ne(agentRuns.status, "error"))),
   ])) as { n: number }[][]
-  return { employees: emp!.n, campaignsPerYear: camp!.n, customQuestions: cq!.n, seats: mem!.n + inv!.n }
+  return { employees: emp!.n, campaignsPerYear: camp!.n, customQuestions: cq!.n, seats: mem!.n + inv!.n, agentRuns: runs!.n }
 }
 
 export type Usage = Awaited<ReturnType<typeof usage>>
@@ -49,6 +52,7 @@ const LABEL: Record<keyof Omit<Limits, "channel" | "evolution">, string> = {
   campaignsPerYear: "campanhas por ano",
   customQuestions: "perguntas da empresa",
   seats: "pessoas na equipe",
+  agentRuns: "interações com os copilotos neste mês",
 }
 
 /** Erro 402 padronizado: a UI mostra a mensagem com um link para a tela de assinatura. */

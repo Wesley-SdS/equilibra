@@ -19,6 +19,7 @@ const USAGE_ROWS = [
   { key: "campaignsPerYear", label: "Campanhas nos últimos 12 meses" },
   { key: "customQuestions", label: "Perguntas da empresa ativas" },
   { key: "seats", label: "Pessoas na equipe (com convites)" },
+  { key: "agentRuns", label: "Interações com os copilotos (mês)" },
 ] as const
 
 function BillingContent() {

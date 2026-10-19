@@ -13,6 +13,8 @@ export type Limits = {
   seats: number
   channel: boolean
   evolution: boolean
+  /** Interações com os copilotos (IA) por mês */
+  agentRuns: number
 }
 
 export type Plan = {
@@ -36,7 +38,7 @@ export const PLANS: Plan[] = [
     audience: "até 50 funcionários",
     monthly: 249,
     yearlyMonthly: Math.round((249 * 10) / 12),
-    limits: { employees: 50, campaignsPerYear: 2, customQuestions: 3, seats: 2, channel: false, evolution: true },
+    limits: { employees: 50, campaignsPerYear: 2, customQuestions: 3, seats: 2, channel: false, evolution: true, agentRuns: 0 },
     highlights: ["2 campanhas por ano", "Mapa de risco por setor", "Plano de ação 5W2H", "Relatório PGR em PDF", "3 perguntas da empresa"],
   },
   {
@@ -46,8 +48,8 @@ export const PLANS: Plan[] = [
     monthly: 590,
     yearlyMonthly: Math.round((590 * 10) / 12),
     featured: true,
-    limits: { employees: 200, campaignsPerYear: UNLIMITED, customQuestions: 10, seats: 5, channel: true, evolution: true },
-    highlights: ["Campanhas ilimitadas", "Canal de relato com triagem", "Evolução entre campanhas", "10 perguntas da empresa", "5 pessoas na equipe"],
+    limits: { employees: 200, campaignsPerYear: UNLIMITED, customQuestions: 10, seats: 5, channel: true, evolution: true, agentRuns: 200 },
+    highlights: ["Campanhas ilimitadas", "Canal de relato com triagem", "Evolução entre campanhas", "Copilotos de IA (200/mês)", "5 pessoas na equipe"],
   },
   {
     id: "empresa",
@@ -55,8 +57,8 @@ export const PLANS: Plan[] = [
     audience: "200 a 500 funcionários",
     monthly: 1290,
     yearlyMonthly: Math.round((1290 * 10) / 12),
-    limits: { employees: 500, campaignsPerYear: UNLIMITED, customQuestions: 10, seats: UNLIMITED, channel: true, evolution: true },
-    highlights: ["Tudo do Profissional", "Equipe ilimitada", "Multiunidades (em breve)", "Gerente de sucesso", "Integrações de SST"],
+    limits: { employees: 500, campaignsPerYear: UNLIMITED, customQuestions: 10, seats: UNLIMITED, channel: true, evolution: true, agentRuns: 1000 },
+    highlights: ["Tudo do Profissional", "Equipe ilimitada", "Copilotos de IA (1.000/mês)", "Gerente de sucesso", "Integrações de SST"],
   },
 ]
 

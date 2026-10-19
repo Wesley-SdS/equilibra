@@ -435,3 +435,27 @@ export const responseIdentities = pgTable("response_identities", {
     .notNull()
     .references(() => employees.id, { onDelete: "cascade" }),
 })
+
+/**
+ * Cada chamada a um copiloto (IA generativa): quem pediu, qual agente, o que voltou, custo e se a
+ * proposta foi aceita. Aparece na trilha de auditoria e conta na cota mensal do plano.
+ * Não guarda a entrada em texto (pode ter dado sensível): só um hash dela.
+ */
+export const agentRuns = pgTable("agent_runs", {
+  id: id(),
+  companyId: text("company_id")
+    .notNull()
+    .references(() => companies.id, { onDelete: "cascade" }),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+  agent: text("agent").notNull(),
+  promptVersion: text("prompt_version").notNull(),
+  inputHash: text("input_hash").notNull(),
+  output: jsonb("output"),
+  model: text("model").notNull(),
+  status: text("status").$type<"ok" | "refused" | "error">().notNull(),
+  inputTokens: integer("input_tokens").notNull().default(0),
+  outputTokens: integer("output_tokens").notNull().default(0),
+  latencyMs: integer("latency_ms").notNull().default(0),
+  accepted: boolean("accepted"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+})
