@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Equilibra — Questionários</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./_shared.css">
+<style>
+.q{display:grid;grid-template-columns:1.6fr .7fr .5fr .8fr .8fr auto;gap:12px;align-items:center;padding:14px 16px;border-radius:14px;border:1px solid rgba(255,255,255,.08);background:#0C1011}
+.q.on{border-color:rgba(198,245,111,.35)}
+.q .n{font-weight:500;font-size:15px}.q .d{font-size:12px;color:#8A9692;margin-top:3px}
+.drawer{width:520px;flex:none;box-sizing:border-box;background:#0C1011;border-left:1px solid rgba(255,255,255,.14);padding:24px;display:flex;flex-direction:column;gap:16px;box-shadow:-30px 0 60px rgba(0,0,0,.5)}
+.item{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.02);font-size:14px;line-height:1.4}
+.item .k{font-family:'Geist Mono',monospace;font-size:11px;color:#8A9692;margin-top:3px}
+.item .t{flex:1}.item .m{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
+.item .a{display:flex;gap:2px}
+.ib{width:28px;height:28px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#A3ADA9;display:flex;align-items:center;justify-content:center;font-size:13px}
+</style>
+</helmet>
+<div class="app">
+<aside class="side">
+<div class="brand"><span class="logo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#07090A" stroke-width="2.6" stroke-linecap="round"><path d="M3 13c3-6 6-6 9 0s6 6 9 0"/></svg></span>equilibra</div>
+<div class="co"><b>P</b><span>Padaria Pão Dourado<small>Dono · 3 empresas</small></span></div>
+<span class="sec">DIAGNÓSTICO</span>
+<a href="#">Visão geral</a><a href="#">Evolução</a><a href="#">Campanhas</a><a href="#" class="on">Questionários</a>
+<span class="sec">GESTÃO</span>
+<a href="#">Plano de ação <span class="badge">2</span></a><a href="#">Relatório PGR</a><a href="#">Canal de relato</a><a href="#">Espaço de escuta</a>
+</aside>
+<main class="main">
+<div class="hd">
+<div><h1>Questionários</h1><p class="sub">Todos os questionários da empresa: o NR-1 padrão, os importados e os que você criou. Cada campanha aplica uma versão de um deles.</p></div>
+<div class="row"><button class="btn">Importar planilha ou PDF</button><button class="btn p">Novo questionário</button></div>
+</div>
+<div class="row" style="gap:6px"><span class="chip" style="border-color:rgba(198,245,111,.4);color:#EDEFEE">Todos · 5</span><span class="chip">NR-1 · 2</span><span class="chip">Clima · 1</span><span class="chip">Pulso · 1</span><span class="chip">Arquivados · 1</span><span style="flex:1"></span><input class="inp" style="width:260px" placeholder="Buscar questionário…"></div>
+<div style="display:grid;grid-template-columns:1.6fr .7fr .5fr .8fr .8fr auto;gap:12px;padding:0 16px" class="sb xs"><span>Nome</span><span>Tipo</span><span>Itens</span><span>Respostas</span><span>Última campanha</span><span style="width:120px"></span></div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div class="q"><div><div class="n">Equilibra NR-1 padrão <span class="mono sb xs">v1</span></div><div class="d">Metodologia Equilibra · 7 dimensões · origem: sistema</div></div><span class="pill gr">NR-1</span><span class="mono sm">28</span><span class="pill bp">🔒 Anônimo</span><span class="sm">Avaliação · out/2026 <span class="pill low" style="margin-left:4px">Ativa</span></span><div class="row" style="gap:4px"><button class="btn s">Duplicar</button><button class="btn s g">Ver</button></div></div>
+<div class="q on"><div><div class="n">Pulso Entregas · rota e cobrança <span class="mono sb xs">v2 · rascunho</span></div><div class="d">Pulso · 10 itens · criado com o copiloto em 18/10/2026</div></div><span class="pill gr">Pulso</span><span class="mono sm">10</span><span class="pill mod">👤 Identificado</span><span class="sm sb">Nunca aplicado</span><div class="row" style="gap:4px"><button class="btn s p">Lançar campanha</button><button class="btn s g">Editar</button></div></div>
+<div class="q"><div><div class="n">Clima 2025 (importado)</div><div class="d">Importado de pesquisa-clima-2025.xlsx · 17 itens com score · 1 aberta</div></div><span class="pill gr">Clima</span><span class="mono sm">18</span><span class="pill bp">🔒 Anônimo</span><span class="sm">Histórica · ago/2025 <span class="pill gr" style="margin-left:4px">Importada</span></span><div class="row" style="gap:4px"><button class="btn s">Duplicar</button><button class="btn s g">Ver</button></div></div>
+<div class="q"><div><div class="n">COPSOQ III · versão curta (PT)</div><div class="d">Metodologia COPSOQ III · 8 escalas · origem: biblioteca de mercado</div></div><span class="pill gr">NR-1</span><span class="mono sm">32</span><span class="pill bp">🔒 Anônimo</span><span class="sm sb">Nunca aplicado</span><div class="row" style="gap:4px"><button class="btn s">Duplicar</button><button class="btn s g">Ver</button></div></div>
+<div class="q" style="opacity:.55"><div><div class="n">Pesquisa de integração 2024</div><div class="d">Livre · arquivado em 02/10/2026</div></div><span class="pill gr">Livre</span><span class="mono sm">12</span><span class="pill bp">🔒 Anônimo</span><span class="sm sb">Integração · mar/2024</span><div class="row" style="gap:4px"><button class="btn s g">Restaurar</button></div></div>
+</div>
+<p class="sb xs" style="margin:4px 0 0">Editar um questionário cria uma versão nova. Campanhas já lançadas continuam com a versão que usaram.</p>
+</main>
+<aside class="drawer">
+<div class="row" style="justify-content:space-between"><h2>Novo questionário</h2><button class="ib">✕</button></div>
+<div><span class="lbl">Nome</span><input class="inp" value="Pulso Entregas · rota e cobrança"></div>
+<div class="card" style="padding:14px;display:flex;flex-direction:column;gap:8px">
+<div class="row" style="justify-content:space-between"><span class="sw"><i></i><span style="font-weight:500">Questionário anônimo</span></span><span class="pill mod">Identificado</span></div>
+<p class="sm mut" style="margin:0;line-height:1.5">Desligado: você verá <b style="color:#EDEFEE">quem respondeu e o que respondeu</b>. O respondente é avisado disso antes de começar. Recomendado para pulsos de equipe e acompanhamento de ações. Não disponível para o NR-1 padrão.</p>
+</div>
+<div class="cop" style="flex:1">
+<div class="who"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C6F56F" stroke-width="2.2" stroke-linecap="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.2 2.2M16.2 16.2l2.2 2.2M5.6 18.4l2.2-2.2M16.2 7.8l2.2-2.2"/></svg> Copiloto de questionários</div>
+<div class="msg me">A equipe de entregas reclama de rota mal planejada e de cobrança por WhatsApp fora do horário. Quero medir isso antes de mexer na escala.</div>
+<div class="msg ai">Entendi: duas dores, <b>organização da rota</b> (Demandas e Controle) e <b>contato fora do horário</b> (Demandas e Liderança). Proponho 10 itens na escala Nunca→Sempre. Como é uma equipe pequena, sugiro manter o anonimato se houver menos de 5 pessoas; com identificação você acompanha por pessoa, mas o risco de retaliação percebida sobe.</div>
+<div class="item"><span class="k">01</span><div class="t">Recebo mensagens de trabalho fora do meu horário.<div class="m"><span class="pill gr">Escala 1–5</span><span class="pill gr">Demandas</span><span class="pill crit">Risco</span></div></div><div class="a"><button class="ib" style="color:#C6F56F">✓</button><button class="ib">✎</button><button class="ib">✕</button></div></div>
+<div class="item"><span class="k">02</span><div class="t">A rota do dia é definida com tempo suficiente para eu me organizar.<div class="m"><span class="pill gr">Escala 1–5</span><span class="pill gr">Controle</span><span class="pill low">Proteção</span></div></div><div class="a"><button class="ib" style="color:#C6F56F">✓</button><button class="ib">✎</button><button class="ib">✕</button></div></div>
+<div class="item"><span class="k">03</span><div class="t">Consigo cumprir as entregas sem ultrapassar a jornada.<div class="m"><span class="pill gr">Escala 1–5</span><span class="pill gr">Demandas</span><span class="pill low">Proteção</span></div></div><div class="a"><button class="ib" style="color:#C6F56F">✓</button><button class="ib">✎</button><button class="ib">✕</button></div></div>
+<div class="item" style="border-color:rgba(240,207,106,.4)"><span class="k">04</span><div class="t">Meu supervisor João me cobra de forma agressiva.<div class="xs" style="color:#F0CF6A;margin-top:4px">⚠ Nomeia uma pessoa. Reescrevi: "Sou cobrado(a) de forma agressiva ou humilhante."</div><div class="m"><span class="pill gr">Escala 1–5</span><span class="pill gr">Liderança</span><span class="pill crit">Risco</span></div></div><div class="a"><button class="ib" style="color:#C6F56F">✓</button><button class="ib">✎</button><button class="ib">✕</button></div></div>
+<div class="sb xs">+ 6 itens propostos · <a href="#">ver todos</a> · <a href="#">adicionar 2 sobre pausas</a></div>
+<div class="ask"><span>Peça um ajuste: "mais curto", "troque a 03 para sim/não"…</span><b><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#07090A" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></b></div>
+</div>
+<div class="row" style="justify-content:space-between"><span class="sb xs">10 itens · ~4 minutos para responder</span><div class="row"><button class="btn">Salvar rascunho</button><button class="btn p">Salvar e lançar campanha</button></div></div>
+</aside>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1240}}'>
+class Component extends DCLogic { renderVals() { return {}; } }
+</script>
+</body>
+</html>

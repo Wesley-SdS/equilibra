@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Equilibra — Importar formulário</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./_shared.css">
+<style>
+.ok{color:#7FD8A8}.warn{color:#F0CF6A}.bad{color:#FF8A7A}
+.conf{display:inline-flex;align-items:center;gap:6px;font-family:'Geist Mono',monospace;font-size:12px}
+.conf i{width:44px;height:6px;border-radius:99px;background:rgba(255,255,255,.08);display:inline-block;overflow:hidden}.conf i:before{content:"";display:block;height:100%;background:#C6F56F;width:var(--w)}
+.conf.lo i:before{background:#F0CF6A}
+.cell{font-size:13px}.orig{color:#8A9692;font-size:13px;max-width:220px}
+.sel{height:30px;padding:0 8px;border-radius:8px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.02);color:#EDEFEE;font:inherit;font-size:13px}
+tr.flag td{background:rgba(240,207,106,.05)}
+tr.drop td{background:rgba(240,78,62,.05)}
+</style>
+</helmet>
+<div class="app">
+<aside class="side">
+<div class="brand"><span class="logo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#07090A" stroke-width="2.6" stroke-linecap="round"><path d="M3 13c3-6 6-6 9 0s6 6 9 0"/></svg></span>equilibra</div>
+<div class="co"><b>P</b><span>Padaria Pão Dourado<small>Dono · 3 empresas</small></span></div>
+<span class="sec">DIAGNÓSTICO</span>
+<a href="#">Visão geral</a><a href="#">Evolução</a><a href="#">Campanhas</a><a href="#" class="on">Questionários</a>
+<span class="sec">GESTÃO</span>
+<a href="#">Plano de ação <span class="badge">2</span></a><a href="#">Relatório PGR</a><a href="#">Canal de relato</a><a href="#">Espaço de escuta</a>
+</aside>
+<main class="main">
+<div class="hd">
+<div><div class="row sb sm"><a href="#" style="color:#8A9692;text-decoration:none">Questionários</a> › Importar</div><h1>Importar formulário</h1>
+<p class="sub">Trouxemos as perguntas e as respostas do arquivo. Confira o que foi reconhecido, corrija na hora e confirme. Nada entra no banco antes disso.</p></div>
+<div class="row"><button class="btn g">Descartar</button><button class="btn">Salvar rascunho</button></div>
+</div>
+<div class="row" style="gap:18px;margin-bottom:4px">
+<span class="stp done"><b>✓</b> Enviar arquivo</span><span class="sb">—</span>
+<span class="stp now"><b>2</b> Revisar e corrigir</span><span class="sb">—</span>
+<span class="stp"><b>3</b> Mapear setores</span><span class="sb">—</span>
+<span class="stp"><b>4</b> Confirmar</span>
+</div>
+<div style="display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start">
+<div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+<div class="card" style="display:flex;flex-direction:column;gap:14px">
+<div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
+<div class="row" style="gap:12px"><span class="logo" style="background:rgba(255,255,255,.06)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C6F56F" stroke-width="2"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg></span>
+<div><div style="font-weight:500">pesquisa-clima-2025.xlsx</div><div class="sb sm">Exportado do Google Forms · 24 colunas · 87 linhas · perguntas <b style="color:#EDEFEE;font-weight:500">e respostas</b></div></div></div>
+<div class="row" style="gap:6px;flex-wrap:wrap"><span class="pill low">18 perguntas reconhecidas</span><span class="pill mod">3 para conferir</span><span class="pill gr">1 ignorada</span><span class="pill crit">2 colunas identificáveis</span></div>
+</div>
+<div class="hr"></div>
+<div class="row" style="justify-content:space-between">
+<div class="row" style="gap:6px"><button class="btn s">Aceitar todas ≥ 90%</button><button class="btn s">Só as marcadas</button><span class="sb sm" style="margin-left:6px">Original à esquerda, resultado à direita. Clique numa célula para editar.</span></div>
+<span class="chip">Escala detectada: 1–5 (Nunca → Sempre)</span>
+</div>
+<table>
+<thead><tr><th style="width:28px">#</th><th>Coluna original</th><th>Pergunta (texto limpo)</th><th>Tipo</th><th>Dimensão</th><th>Polaridade</th><th>Confiança</th><th></th></tr></thead>
+<tbody>
+<tr><td class="mono sb xs">01</td><td class="orig">"Com que frequência você precisa trabalhar rapido para dar conta?"</td><td class="cell">Preciso trabalhar muito rápido para dar conta das tarefas.</td><td><select class="sel"><option>Escala 1–5</option></select></td><td><select class="sel"><option>Demandas</option></select></td><td><span class="pill crit">Risco</span></td><td><span class="conf"><i style="--w:96%"></i>96%</span></td><td class="row" style="gap:4px"><button class="btn s">Aceitar</button><button class="btn s g">Editar</button></td></tr>
+<tr><td class="mono sb xs">02</td><td class="orig">"Consegue fazer pausas?"</td><td class="cell">Consigo fazer pausas durante o dia quando preciso.</td><td><select class="sel"><option>Escala 1–5</option></select></td><td><select class="sel"><option>Demandas</option></select></td><td><span class="pill low">Proteção</span></td><td><span class="conf"><i style="--w:92%"></i>92%</span></td><td class="row" style="gap:4px"><button class="btn s">Aceitar</button><button class="btn s g">Editar</button></td></tr>
+<tr class="flag"><td class="mono sb xs">03</td><td class="orig">"Seu chefe te ajuda qnd precisa? (sim/não/às vezes)"</td><td class="cell">Minha liderança me ajuda quando o trabalho fica difícil.<div class="warn xs" style="margin-top:4px">⚠ Escala original tem 3 pontos. Converter para 1–5 ou manter como múltipla escolha (fora do score)?</div></td><td><select class="sel" style="border-color:#F0CF6A"><option>Confira…</option></select></td><td><select class="sel"><option>Liderança</option></select></td><td><span class="pill low">Proteção</span></td><td><span class="conf lo"><i style="--w:61%"></i>61%</span></td><td class="row" style="gap:4px"><button class="btn s">Converter</button><button class="btn s g">Manter</button></td></tr>
+<tr><td class="mono sb xs">04</td><td class="orig">"Recebo comentários de cunho sexual indesejados"</td><td class="cell">Recebo comentários ou investidas de cunho sexual indesejados.</td><td><select class="sel"><option>Escala 1–5</option></select></td><td><select class="sel"><option>Assédio</option></select></td><td><span class="pill crit">Risco</span></td><td><span class="conf"><i style="--w:98%"></i>98%</span></td><td class="row" style="gap:4px"><button class="btn s">Aceitar</button><button class="btn s g">Editar</button></td></tr>
+<tr class="flag"><td class="mono sb xs">05</td><td class="orig">"O que você mudaria na empresa?"</td><td class="cell">O que você mudaria na empresa?<div class="warn xs" style="margin-top:4px">⚠ Pergunta aberta: entra no questionário sem pontuação. 62 respostas em texto serão importadas.</div></td><td><select class="sel"><option>Aberta</option></select></td><td><select class="sel"><option>—</option></select></td><td><span class="pill gr">Sem score</span></td><td><span class="conf lo"><i style="--w:68%"></i>68%</span></td><td class="row" style="gap:4px"><button class="btn s">Aceitar</button><button class="btn s g">Ignorar</button></td></tr>
+<tr class="drop"><td class="mono sb xs">06</td><td class="orig">"Nome completo"</td><td class="cell bad">Coluna identifica pessoas. Este questionário é <b>anônimo</b>: a coluna será descartada antes de salvar e isso fica registrado na auditoria.</td><td colspan="3"><span class="pill crit">Descartar (anônimo)</span></td><td><span class="conf"><i style="--w:99%"></i>99%</span></td><td class="row" style="gap:4px"><button class="btn s g">Tornar identificado…</button></td></tr>
+<tr class="drop"><td class="mono sb xs">07</td><td class="orig">"E-mail"</td><td class="cell bad">Mesmo caso: descartada.</td><td colspan="3"><span class="pill crit">Descartar (anônimo)</span></td><td><span class="conf"><i style="--w:99%"></i>99%</span></td><td></td></tr>
+<tr><td class="mono sb xs">08</td><td class="orig">"Setor"</td><td class="cell">Setor do respondente <span class="sb">· 5 valores distintos</span></td><td colspan="3"><span class="pill bp">Mapear no passo 3</span></td><td><span class="conf"><i style="--w:100%"></i>100%</span></td><td></td></tr>
+<tr><td class="mono sb xs">…</td><td class="orig sb">+ 16 colunas reconhecidas</td><td class="cell sb">Mostrar todas</td><td colspan="5"></td></tr>
+</tbody>
+</table>
+</div>
+<div class="row" style="justify-content:space-between">
+<span class="sb sm">2 pendências impedem a confirmação (linhas 03 e 05).</span>
+<div class="row"><button class="btn">Voltar</button><button class="btn p" disabled>Confirmar importação</button></div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px">
+<div class="card" style="display:flex;flex-direction:column;gap:10px">
+<h3>O que vai nascer</h3>
+<div class="sm"><div class="row" style="justify-content:space-between"><span class="mut">Questionário</span><span>Clima 2025 (importado)</span></div>
+<div class="row" style="justify-content:space-between;margin-top:6px"><span class="mut">Itens</span><span class="mono">17 com score · 1 aberta</span></div>
+<div class="row" style="justify-content:space-between;margin-top:6px"><span class="mut">Anonimato</span><span class="pill bp">Anônimo</span></div>
+<div class="row" style="justify-content:space-between;margin-top:6px"><span class="mut">Campanha histórica</span><span>85 respostas · ago/2025</span></div></div>
+<div class="hr"></div>
+<p class="sb xs" style="margin:0;line-height:1.5">A campanha importada fica marcada "importada" e só entra na Evolução depois que você validar o mapeamento de setores.</p>
+</div>
+<div class="card" style="display:flex;flex-direction:column;gap:10px">
+<h3>Validações</h3>
+<ul class="sm" style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;line-height:1.45">
+<li class="ok">Escala de 5 pontos reconhecida</li>
+<li class="ok">Nenhuma resposta fora da escala</li>
+<li class="warn">1 item com escala de 3 pontos (linha 03)</li>
+<li class="warn">1 pergunta aberta sem decisão (linha 05)</li>
+<li class="ok">2 colunas identificáveis serão descartadas</li>
+<li class="ok">Arquivo dentro do limite (5 MB · 5.000 linhas)</li>
+</ul>
+</div>
+<div class="cop">
+<div class="who"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C6F56F" stroke-width="2.2" stroke-linecap="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.2 2.2M16.2 16.2l2.2 2.2M5.6 18.4l2.2-2.2M16.2 7.8l2.2-2.2"/></svg> Copiloto de questionários</div>
+<div class="msg ai">Reconheci 18 perguntas de clima com escala Nunca→Sempre, bem próximas da metodologia NR-1. Posso agrupar as 3 de "chefia" na dimensão Liderança e converter a de 3 pontos para 1–5 (sim=5, às vezes=3, não=1). Quer que eu faça?</div>
+<div class="row" style="gap:6px"><button class="btn s p">Sim, converter</button><button class="btn s">Manter 3 pontos</button></div>
+<div class="ask"><span>Pergunte ou peça um ajuste…</span><b><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#07090A" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></b></div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1940}}'>
+class Component extends DCLogic { renderVals() { return {}; } }
+</script>
+</body>
+</html>

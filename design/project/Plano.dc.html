@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Equilibra — Plano de ação</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./_shared.css">
+<style>
+.col{display:flex;flex-direction:column;gap:10px;border-radius:16px;border:1px solid rgba(255,255,255,.08);background:rgba(12,16,17,.5);padding:12px;min-width:0}
+.col header{display:flex;justify-content:space-between;align-items:center;padding:4px 6px 2px;font-size:13px;font-weight:500}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:8px}
+.ac{border-radius:14px;border:1px solid rgba(255,255,255,.08);background:#11171A;padding:14px;display:flex;flex-direction:column;gap:10px}
+.ac.late{border-color:rgba(240,78,62,.45)}
+.ac .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ac .what{font-size:15px;font-weight:500;line-height:1.35}
+.ac .why{font-size:12px;color:#8A9692;line-height:1.4}
+.meta{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:#A3ADA9;align-items:center}
+.av{width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.1);display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;margin-right:6px}
+.tl{height:4px;border-radius:99px;background:rgba(255,255,255,.08);flex:1;overflow:hidden}.tl i{display:block;height:100%;background:#A3ADA9}
+.steps{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#A3ADA9}
+.steps span{display:flex;align-items:center;gap:7px}.steps i{width:12px;height:12px;border-radius:3px;border:1px solid rgba(255,255,255,.25);display:inline-block}.steps .d i{background:#C6F56F;border-color:#C6F56F}.steps .d{color:#8A9692;text-decoration:line-through}
+.sc{font-family:'Geist Mono',monospace;font-size:12px}
+.pane{width:400px;flex:none}
+.prop{border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(12,16,17,.9);padding:12px;font-size:13px;display:flex;flex-direction:column;gap:6px}
+.prop b{color:#8A9692;font-weight:500;min-width:52px;display:inline-block}
+</style>
+</helmet>
+<div class="app">
+<aside class="side">
+<div class="brand"><span class="logo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#07090A" stroke-width="2.6" stroke-linecap="round"><path d="M3 13c3-6 6-6 9 0s6 6 9 0"/></svg></span>equilibra</div>
+<div class="co"><b>P</b><span>Padaria Pão Dourado<small>Dono · 3 empresas</small></span></div>
+<span class="sec">DIAGNÓSTICO</span>
+<a href="#">Visão geral</a><a href="#">Evolução</a><a href="#">Campanhas</a><a href="#">Questionários</a>
+<span class="sec">GESTÃO</span>
+<a href="#" class="on">Plano de ação <span class="badge">2</span></a><a href="#">Relatório PGR</a><a href="#">Canal de relato</a><a href="#">Espaço de escuta</a>
+</aside>
+<main class="main" style="flex-direction:row;gap:20px;align-items:flex-start">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:14px">
+<div class="hd"><div><h1>Plano de ação</h1><p class="sub">Medidas 5W2H para cada risco. Cada card mostra o risco que motivou a ação, quem cuida, o prazo e o quanto já andou.</p></div>
+<div class="row"><div class="seg" style="display:inline-flex;border:1px solid rgba(255,255,255,.14);border-radius:10px;overflow:hidden;font-size:13px"><span style="padding:8px 12px;background:rgba(255,255,255,.08)">Quadro</span><span style="padding:8px 12px;color:#A3ADA9">Por dimensão</span><span style="padding:8px 12px;color:#A3ADA9">Por setor</span></div><button class="btn p">Nova ação</button></div></div>
+<div class="row" style="gap:12px"><div class="bar" style="flex:1"><i style="width:44%"></i></div><span class="mono sm mut">4/9 concluídas</span><span class="pill crit">2 atrasadas</span><span class="pill mod">1 vence em 3 dias</span><span style="flex:1"></span><span class="chip">Responsável: todos</span><span class="chip">Prazo: todos</span></div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+<section class="col"><header><span><span class="dot" style="background:#8A9692"></span>A fazer</span><span class="mono xs sb">3</span></header>
+<article class="ac late">
+<div class="top"><span class="pill high">Liderança · <span class="sc">71</span></span><span class="pill crit">Atrasada 6 dias</span></div>
+<div class="what">Implantar conversas individuais (1:1) mensais com a equipe de Entregas</div>
+<div class="why">Liderança piorou 9 pontos em Entregas (62 → 71); item "posso falar com a liderança" é o pior do setor.</div>
+<div class="meta"><span><span class="av">RM</span>Rafael (RH)</span><span>Entregas</span><span>Prazo 13/10/2026</span></div>
+<div class="row" style="gap:8px"><div class="tl"><i style="width:100%;background:#F04E3E"></i></div><span class="xs" style="color:#FF8A7A">0/3 etapas</span></div>
+<div class="steps"><span><i></i>Roteiro de 20 min aprovado</span><span><i></i>Agenda com os 2 supervisores</span><span><i></i>Primeira rodada feita</span></div>
+<div class="row" style="justify-content:space-between"><span class="xs sb">Escolhida pelo Jev · 82%</span><button class="btn s">Mover →</button></div>
+</article>
+<article class="ac">
+<div class="top"><span class="pill high">Reconhecimento · <span class="sc">48</span></span><span class="pill bp">Sugerida pelo copiloto</span></div>
+<div class="what">Devolutiva pública das melhorias feitas a partir da pesquisa, no Balcão</div>
+<div class="why">Reconhecimento subiu 14 pontos no Balcão; item "informado com antecedência sobre mudanças" caiu para 2,1.</div>
+<div class="meta"><span><span class="av">—</span>Sem responsável</span><span>Balcão</span><span>Prazo a definir</span></div>
+<div class="row" style="gap:8px"><div class="tl"><i style="width:0"></i></div><span class="xs sb">0/2 etapas</span></div>
+<div class="row" style="justify-content:space-between"><span class="xs sb">R$ 0 · 2 h da liderança</span><button class="btn s">Completar</button></div>
+</article>
+<article class="ac" style="opacity:.75">
+<div class="top"><span class="pill mod">Papel · <span class="sc">25</span></span></div>
+<div class="what">Atualizar descrições de cargo do Administrativo</div>
+<div class="meta"><span><span class="av">CS</span>Carla</span><span>Administrativo</span><span>Prazo 30/11/2026</span></div>
+<div class="row" style="gap:8px"><div class="tl"><i style="width:18%"></i></div><span class="xs sb">0/4 etapas</span></div>
+</article>
+</section>
+<section class="col"><header><span><span class="dot" style="background:#F0CF6A"></span>Em andamento</span><span class="mono xs sb">2</span></header>
+<article class="ac">
+<div class="top"><span class="pill crit">Demandas · <span class="sc">72 → 58</span></span><span class="pill mod">Vence em 3 dias</span></div>
+<div class="what">Monitorar horas extras e banco de horas por setor</div>
+<div class="why">Demandas era crítico em Produção (90). Relatório mensal ao RH com alerta acima de 10 h extras/mês por pessoa.</div>
+<div class="meta"><span><span class="av">RM</span>Rafael (RH)</span><span>Produção</span><span>Prazo 22/10/2026</span></div>
+<div class="row" style="gap:8px"><div class="tl"><i style="width:82%;background:#F0CF6A"></i></div><span class="xs" style="color:#F0CF6A">2/3 etapas</span></div>
+<div class="steps"><span class="d"><i></i>Exportação do ponto configurada</span><span class="d"><i></i>Primeiro relatório enviado</span><span><i></i>Regra de alerta no DP</span></div>
+<div class="row" style="justify-content:space-between"><span class="xs sb">Último comentário há 2 dias</span><button class="btn s p">Concluir</button></div>
+</article>
+<article class="ac">
+<div class="top"><span class="pill crit">Assédio · <span class="sc">44</span></span></div>
+<div class="what">Treinar todas as pessoas em prevenção de assédio moral e sexual</div>
+<div class="why">Lei 14.457/2022 · 2 relatos no canal nos últimos 90 dias.</div>
+<div class="meta"><span><span class="av">CS</span>Carla</span><span>Toda a empresa</span><span>Prazo 15/12/2026</span></div>
+<div class="row" style="gap:8px"><div class="tl"><i style="width:35%"></i></div><span class="xs sb">1/4 etapas</span></div>
+</article>
+</section>
+<section class="col"><header><span><span class="dot" style="background:#C6F56F"></span>Concluída</span><span class="mono xs sb">4</span></header>
+<article class="ac" style="border-color:rgba(198,245,111,.25)">
+<div class="top"><span class="pill low">Demandas · <span class="sc">90 → 72</span></span><span class="pill low">Efeito medido</span></div>
+<div class="what">Instituir pausas programadas nos horários de pico</div>
+<div class="why">Produção · concluída em 22/05/2026 · Demandas caiu 18 pontos na campanha seguinte.</div>
+<div class="meta"><span><span class="av">RM</span>Rafael (RH)</span><span>Evidência: escala anexada</span></div>
+</article>
+<article class="ac" style="border-color:rgba(198,245,111,.25)">
+<div class="top"><span class="pill low">Demandas · <span class="sc">90 → 72</span></span><span class="pill low">Efeito medido</span></div>
+<div class="what">Revisar distribuição de metas com a liderança da Produção</div>
+<div class="meta"><span><span class="av">CS</span>Carla</span><span>Concluída 03/06/2026</span></div>
+</article>
+<article class="ac" style="opacity:.7">
+<div class="top"><span class="pill low">Assédio</span></div>
+<div class="what">Divulgar o canal de relato anônimo e o fluxo de apuração</div>
+<div class="meta"><span>Concluída 10/04/2026</span></div>
+</article>
+<div class="sb xs" style="padding:0 6px">+ 1 concluída</div>
+</section>
+</div>
+</div>
+<aside class="pane cop" style="position:sticky;top:36px">
+<div class="who"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C6F56F" stroke-width="2.2" stroke-linecap="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.2 2.2M16.2 16.2l2.2 2.2M5.6 18.4l2.2-2.2M16.2 7.8l2.2-2.2"/></svg> Copiloto do plano de ação</div>
+<div class="sb xs">Lê só os agregados que você já vê (k = 5). Propõe; você decide e salva.</div>
+<div class="msg me">Por que Reconhecimento piorou no Balcão? Dá pra fazer algo sem orçamento?</div>
+<div class="msg ai">No Balcão, Reconhecimento foi de 34 para 48 (+14) entre mar e out/2026. Os itens que mais pioraram foram <b>"sou informado(a) com antecedência sobre mudanças"</b> (3,4 → 2,1) e <b>"meu esforço é reconhecido"</b> (3,1 → 2,6). No mesmo período houve troca de escala e 2 saídas no setor; "remuneração justa" ficou estável. Isso aponta para <b>comunicação de mudanças</b>, não para salário. Duas ações sem custo direto:</div>
+<div class="prop"><div><b>O quê</b> Comunicar mudanças de escala com 15 dias de antecedência e espaço para dúvidas</div><div><b>Por quê</b> Item "informado com antecedência" caiu 1,3 ponto no Balcão</div><div><b>Onde</b> Balcão · <b>Quem</b> Supervisão do Balcão</div><div><b>Quando</b> 30 dias · <b>Como</b> Quadro de avisos + mensagem no grupo + 10 min na reunião semanal</div><div><b>Quanto</b> R$ 0</div><div class="row" style="gap:6px;margin-top:4px"><button class="btn s p">Adicionar ao plano</button><button class="btn s">Editar antes</button></div></div>
+<div class="prop"><div><b>O quê</b> Devolutiva pública do que mudou a partir da pesquisa (já no quadro)</div><div class="row" style="gap:6px;margin-top:4px"><button class="btn s">Ver card</button></div></div>
+<div class="sb xs">Não recomendo medidas contra pessoas; em questionário anônimo não identifico respondentes.</div>
+<div class="ask"><span>Pergunte sobre os dados ou peça uma ação…</span><b><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#07090A" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></b></div>
+<div class="row" style="justify-content:space-between" class="xs"><span class="xs sb">37 de 200 interações este mês</span><span class="xs sb">Registrado na auditoria</span></div>
+</aside>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1360}}'>
+class Component extends DCLogic { renderVals() { return {}; } }
+</script>
+</body>
+</html>

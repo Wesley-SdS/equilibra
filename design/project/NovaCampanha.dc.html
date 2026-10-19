@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Equilibra — Nova campanha</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./_shared.css">
+<style>
+.opt{border-radius:14px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.02);padding:16px;display:flex;flex-direction:column;gap:8px;position:relative;min-height:128px;box-sizing:border-box}
+.opt.on{border-color:#C6F56F;background:rgba(198,245,111,.06)}
+.opt .r{position:absolute;top:14px;right:14px;width:18px;height:18px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3)}
+.opt.on .r{border-color:#C6F56F;background:#C6F56F;box-shadow:inset 0 0 0 4px #0C1011}
+.opt .n{font-weight:500;font-size:15px;padding-right:24px}.opt .d{font-size:12px;color:#8A9692;line-height:1.45}
+.opt.new{border-style:dashed;align-items:center;justify-content:center;text-align:center;color:#C6F56F}
+.seg{display:inline-flex;border:1px solid rgba(255,255,255,.14);border-radius:10px;overflow:hidden}.seg span{padding:8px 14px;font-size:13px;color:#A3ADA9}.seg span.on{background:rgba(255,255,255,.08);color:#EDEFEE}
+.chk{display:flex;align-items:center;gap:8px;font-size:14px}.chk i{width:16px;height:16px;border-radius:4px;border:1.5px solid rgba(255,255,255,.3);display:inline-block}.chk.on i{background:#C6F56F;border-color:#C6F56F}
+</style>
+</helmet>
+<div class="app">
+<aside class="side">
+<div class="brand"><span class="logo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#07090A" stroke-width="2.6" stroke-linecap="round"><path d="M3 13c3-6 6-6 9 0s6 6 9 0"/></svg></span>equilibra</div>
+<div class="co"><b>P</b><span>Padaria Pão Dourado<small>Dono · 3 empresas</small></span></div>
+<span class="sec">DIAGNÓSTICO</span>
+<a href="#">Visão geral</a><a href="#">Evolução</a><a href="#" class="on">Campanhas</a><a href="#">Questionários</a>
+<span class="sec">GESTÃO</span>
+<a href="#">Plano de ação <span class="badge">2</span></a><a href="#">Relatório PGR</a><a href="#">Canal de relato</a><a href="#">Espaço de escuta</a>
+</aside>
+<main class="main">
+<div class="hd"><div><div class="row sb sm"><a href="#" style="color:#8A9692;text-decoration:none">Campanhas</a> › Nova</div><h1>Nova campanha</h1><p class="sub">Uma campanha aplica um questionário a um público num período. Escolha o questionário primeiro; o resto se ajusta a ele.</p></div><button class="btn g">Cancelar</button></div>
+<div style="display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start">
+<div style="display:flex;flex-direction:column;gap:16px">
+<div class="card" style="display:flex;flex-direction:column;gap:14px">
+<div class="row" style="justify-content:space-between"><h2>1. Qual questionário?</h2><div class="row" style="gap:6px"><span class="chip" style="border-color:rgba(198,245,111,.4);color:#EDEFEE">Todos</span><span class="chip">NR-1</span><span class="chip">Pulso</span><span class="chip">Clima</span></div></div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+<div class="opt on"><span class="r"></span><div class="n">Equilibra NR-1 padrão <span class="mono sb xs">v1</span></div><div class="d">28 itens · 7 dimensões · ~7 min<br>Alimenta inventário, evolução e relatório PGR.</div><div class="row" style="gap:4px;margin-top:auto"><span class="pill bp">🔒 Anônimo</span><span class="pill gr">NR-1</span></div></div>
+<div class="opt"><span class="r"></span><div class="n">COPSOQ III · versão curta</div><div class="d">32 itens · 8 escalas · ~9 min<br>Referência internacional; também alimenta o PGR.</div><div class="row" style="gap:4px;margin-top:auto"><span class="pill bp">🔒 Anônimo</span><span class="pill gr">NR-1</span></div></div>
+<div class="opt"><span class="r"></span><div class="n">Pulso Entregas · rota e cobrança</div><div class="d">10 itens · ~4 min<br>Resultado próprio; não entra no score NR-1.</div><div class="row" style="gap:4px;margin-top:auto"><span class="pill mod">👤 Identificado</span><span class="pill gr">Pulso</span></div></div>
+<div class="opt"><span class="r"></span><div class="n">Clima 2025 (importado)</div><div class="d">18 itens · ~5 min<br>Reaplicar permite comparar com ago/2025.</div><div class="row" style="gap:4px;margin-top:auto"><span class="pill bp">🔒 Anônimo</span><span class="pill gr">Clima</span></div></div>
+<div class="opt new"><div style="font-size:26px;line-height:1">+</div><div class="n" style="padding:0">Criar um novo com o copiloto</div><div class="d">Descreva a dor; volte para cá com o questionário pronto.</div></div>
+</div>
+<div class="row sb xs"><span>Pré-visualizar o questionário escolhido ↗</span></div>
+</div>
+<div class="card" style="display:flex;flex-direction:column;gap:14px">
+<h2>2. Para quem?</h2>
+<div class="seg"><span class="on">Toda a empresa</span><span>Setores escolhidos</span><span style="opacity:.5">Pessoas e grupos · só em identificado</span></div>
+<div class="row" style="gap:18px;flex-wrap:wrap"><span class="chk on"><i></i>Produção · 38</span><span class="chk on"><i></i>Balcão · 24</span><span class="chk on"><i></i>Entregas · 12</span><span class="chk on"><i></i>Administrativo · 9</span><span class="chk on"><i></i>Confeitaria · 7</span></div>
+<p class="sb xs" style="margin:0">90 pessoas. Setores com menos de 5 respostas aparecem agrupados para proteger o anonimato.</p>
+</div>
+<div class="card" style="display:flex;flex-direction:column;gap:14px">
+<h2>3. Quando?</h2>
+<div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px">
+<div><span class="lbl">Nome</span><input class="inp" value="Avaliação psicossocial · 1º semestre 2027"></div>
+<div><span class="lbl">Abre em</span><input class="inp" value="02/03/2027"></div>
+<div><span class="lbl">Encerra em</span><input class="inp" value="16/03/2027"></div>
+</div>
+<div class="row" style="gap:18px"><span class="chk on"><i></i>Lembrete automático 2 dias antes do fim</span><span class="chk on"><i></i>Enviar o kit de divulgação para mim</span></div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px">
+<div class="card" style="display:flex;flex-direction:column;gap:10px">
+<h3>Resumo</h3>
+<div class="sm" style="display:flex;flex-direction:column;gap:6px">
+<div class="row" style="justify-content:space-between"><span class="mut">Questionário</span><span>NR-1 padrão v1</span></div>
+<div class="row" style="justify-content:space-between"><span class="mut">Tipo</span><span class="pill gr">NR-1</span></div>
+<div class="row" style="justify-content:space-between"><span class="mut">Anonimato</span><span class="pill bp">Anônimo</span></div>
+<div class="row" style="justify-content:space-between"><span class="mut">Público</span><span>90 pessoas · 5 setores</span></div>
+<div class="row" style="justify-content:space-between"><span class="mut">Período</span><span class="mono">02/03 → 16/03/2027</span></div>
+<div class="row" style="justify-content:space-between"><span class="mut">Alimenta</span><span>Inventário · Evolução · PGR</span></div>
+</div>
+<div class="hr"></div>
+<p class="sb xs" style="margin:0;line-height:1.5">Esta será a 3ª campanha NR-1. A Evolução vai comparar com out/2026 e mar/2026.</p>
+<button class="btn p" style="width:100%">Criar campanha e copiar link</button>
+</div>
+<div class="card" style="display:flex;flex-direction:column;gap:8px">
+<h3>Metodologia da empresa</h3>
+<p class="sm mut" style="margin:0;line-height:1.5">Score calculado pela <b style="color:#EDEFEE">metodologia Equilibra</b> (inspirada em COPSOQ e HSE). Trocar para COPSOQ III ou HSE afeta só campanhas futuras.</p>
+<a href="#" class="sm">Ver metodologias disponíveis</a>
+</div>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1040}}'>
+class Component extends DCLogic { renderVals() { return {}; } }
+</script>
+</body>
+</html>

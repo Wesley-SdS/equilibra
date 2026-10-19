@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Equilibra — Espaço de escuta</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#07090A}
+.ph{position:relative;width:390px;height:844px;box-sizing:border-box;overflow:hidden;font-family:Geist,system-ui,sans-serif;color:#EDEFEE;background:#07090A;padding:22px 18px 18px;display:flex;flex-direction:column;gap:12px}
+.top{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#8A9692}
+.ai{display:flex;align-items:center;gap:8px;font-weight:600;font-size:15px;color:#EDEFEE}
+.ai i{width:26px;height:26px;border-radius:8px;background:#C6F56F;display:inline-flex;align-items:center;justify-content:center}
+.disc{border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);padding:10px 12px;font-size:12px;color:#A3ADA9;line-height:1.45}
+.disc b{color:#EDEFEE;font-weight:500}
+.chat{flex:1;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.b{max-width:86%;border-radius:16px;padding:11px 14px;font-size:15px;line-height:1.45}
+.b.me{align-self:flex-end;background:#C6F56F;color:#07090A;border-bottom-right-radius:6px}
+.b.ag{align-self:flex-start;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-bottom-left-radius:6px}
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+.opts span{padding:7px 11px;border-radius:999px;border:1px solid rgba(198,245,111,.35);color:#C6F56F;font-size:13px}
+.in{display:flex;gap:8px;align-items:center;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.02);padding:6px 6px 6px 14px;font-size:14px;color:#8A9692}
+.in span{flex:1}.in b{width:36px;height:36px;border-radius:10px;background:#C6F56F;display:inline-flex;align-items:center;justify-content:center}
+.foot{font-size:11px;color:#8A9692;text-align:center;line-height:1.4}
+</style>
+</helmet>
+<div class="ph">
+<div aria-hidden="true" style="position:absolute;left:50%;top:-240px;width:620px;height:440px;transform:translateX(-50%);background:radial-gradient(closest-side,rgba(150,230,90,.12),transparent)"></div>
+<div class="top" style="position:relative"><div class="ai"><i><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#07090A" stroke-width="2.6" stroke-linecap="round"><path d="M3 13c3-6 6-6 9 0s6 6 9 0"/></svg></i>Espaço de escuta</div><span>Apagar conversa</span></div>
+<div class="disc" style="position:relative">Sou uma <b>inteligência artificial</b>, não um psicólogo. Não faço terapia nem diagnóstico. Posso ouvir, dar informação e indicar onde buscar ajuda. <b>Sua empresa não vê esta conversa</b>; só temas agregados, e só se houver pelo menos 10 conversas. <a href="#" style="color:#C6F56F">Como funciona</a></div>
+<div class="chat" style="position:relative">
+<div class="b ag">Oi. Este é um espaço para você falar do que está pesando no trabalho. O que está acontecendo?</div>
+<div class="b me">Não durmo direito há semanas. Chego em casa e continuo recebendo mensagem do supervisor. Hoje travei no meio da rota e fiquei com vergonha.</div>
+<div class="b ag">Semanas sem dormir bem, mensagens fora do horário e um momento de travar na rota: isso cansa qualquer pessoa, e sentir vergonha depois é comum. Não é falha sua. Posso te ajudar de três jeitos agora:</div>
+<div class="opts"><span>Entender o que ajuda a dormir melhor</span><span>Organizar o que dizer ao supervisor</span><span>Onde buscar apoio profissional</span></div>
+<div class="b me">Organizar o que dizer. Tenho medo de parecer que não dou conta.</div>
+<div class="b ag">Faz sentido ter esse medo. Uma forma de colocar sem soar como "não dou conta" é falar de resultado e de horário, não de fraqueza. Por exemplo: "Para manter as entregas no prazo, preciso que as mensagens fiquem dentro da jornada; fora dela eu respondo no dia seguinte." Quer ajustar para o seu jeito de falar?</div>
+</div>
+<div class="in" style="position:relative"><span>Escreva aqui…</span><b><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#07090A" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></b></div>
+<div class="foot" style="position:relative">Em emergência: CVV 188 (24 h, gratuito) · SAMU 192 · Canal de relato anônimo da empresa</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic { renderVals() { return {}; } }
+</script>
+</body>
+</html>

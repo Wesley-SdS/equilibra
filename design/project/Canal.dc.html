@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Equilibra — Canal de relato</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./_shared.css">
+<style>
+.rep{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:#0C1011;font-size:13px}
+.rep.on{border-color:rgba(198,245,111,.35)}
+.bub{max-width:88%;border-radius:14px;padding:10px 14px;font-size:14px;line-height:1.5}
+.bub.r{background:rgba(255,255,255,.05);align-self:flex-start}.bub.h{background:rgba(198,245,111,.1);align-self:flex-end;border:1px solid rgba(198,245,111,.2)}.bub.n{background:rgba(240,207,106,.08);border:1px dashed rgba(240,207,106,.35);align-self:stretch;max-width:none;font-size:13px}
+.day{font-size:11px;color:#8A9692;text-align:center}
+.sec2{display:flex;flex-direction:column;gap:6px;font-size:13px;line-height:1.45}
+.sec2 h4{margin:0;font-size:12px;color:#8A9692;font-weight:500;letter-spacing:.04em;text-transform:uppercase}
+.q{display:flex;gap:8px;align-items:flex-start}.q i{width:14px;height:14px;border-radius:4px;border:1px solid rgba(255,255,255,.25);display:inline-block;margin-top:3px;flex:none}
+</style>
+</helmet>
+<div class="app">
+<aside class="side">
+<div class="brand"><span class="logo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#07090A" stroke-width="2.6" stroke-linecap="round"><path d="M3 13c3-6 6-6 9 0s6 6 9 0"/></svg></span>equilibra</div>
+<div class="co"><b>P</b><span>Padaria Pão Dourado<small>Dono · 3 empresas</small></span></div>
+<span class="sec">DIAGNÓSTICO</span>
+<a href="#">Visão geral</a><a href="#">Evolução</a><a href="#">Campanhas</a><a href="#">Questionários</a>
+<span class="sec">GESTÃO</span>
+<a href="#">Plano de ação <span class="badge">2</span></a><a href="#">Relatório PGR</a><a href="#" class="on">Canal de relato <span class="badge">1</span></a><a href="#">Espaço de escuta</a>
+</aside>
+<main class="main">
+<div class="hd"><div><h1>Canal de relato</h1><p class="sub">Relatos anônimos com triagem automática. Você responde ao autor pelo protocolo, sem saber quem ele é. O copiloto ajuda a entender o caso; a decisão é sua.</p></div><button class="btn">Copiar link do canal</button></div>
+<div style="display:grid;grid-template-columns:300px minmax(0,1fr) 380px;gap:16px;align-items:start">
+<div style="display:flex;flex-direction:column;gap:8px">
+<div class="row" style="gap:6px"><span class="chip" style="border-color:rgba(198,245,111,.4);color:#EDEFEE">Abertos · 3</span><span class="chip">Resolvidos · 7</span></div>
+<div class="rep on" style="flex-direction:column;align-items:stretch;gap:6px"><div class="row" style="justify-content:space-between"><span class="mono" style="color:#C6F56F">EQ-7F3K-92QD</span><span class="pill crit">Prioridade 78</span></div><div class="row" style="gap:6px"><span class="pill gr">Assédio moral</span><span class="sb xs">14/10/2026</span><span class="pill bp">Nova mensagem</span></div><div class="sb xs">Gravidade alta · pode identificar pessoas</div></div>
+<div class="rep" style="flex-direction:column;align-items:stretch;gap:6px"><div class="row" style="justify-content:space-between"><span class="mono" style="color:#C6F56F">EQ-2M8A-11TR</span><span class="pill high">Prioridade 52</span></div><div class="row" style="gap:6px"><span class="pill gr">Sobrecarga</span><span class="sb xs">09/10/2026</span></div><div class="sb xs">Gravidade média · em análise</div></div>
+<div class="rep" style="flex-direction:column;align-items:stretch;gap:6px"><div class="row" style="justify-content:space-between"><span class="mono" style="color:#C6F56F">EQ-9Q1C-30LP</span><span class="pill mod">Prioridade 31</span></div><div class="row" style="gap:6px"><span class="pill gr">Conflito</span><span class="sb xs">02/10/2026</span></div><div class="sb xs">Gravidade baixa · recebido</div></div>
+</div>
+<div class="card" style="display:flex;flex-direction:column;gap:12px;min-height:760px">
+<div class="row" style="justify-content:space-between"><div class="row" style="gap:10px"><span class="mono" style="color:#C6F56F">EQ-7F3K-92QD</span><span class="pill gr">Assédio moral</span><span class="pill crit">Gravidade alta</span><span class="pill mod">Pode identificar pessoas: sigilo</span></div><select class="inp" style="width:150px;height:34px"><option>Em análise</option></select></div>
+<div class="row" style="gap:8px" class="xs"><span class="sb xs">Triagem Jev · 91% · prioridade 78</span></div>
+<div class="hr"></div>
+<div style="display:flex;flex-direction:column;gap:10px;flex:1">
+<span class="day">14/10/2026</span>
+<div class="bub r">Trabalho no balcão há 2 anos. Desde que a nova supervisora chegou, sou chamada de lenta na frente dos clientes quase todo dia. Semana passada ela disse que "quem não aguenta pede pra sair". Duas colegas já saíram. Tenho medo de represália se alguém souber que escrevi.</div>
+<span class="day">15/10/2026</span>
+<div class="bub h">Obrigado por relatar. Recebemos e estamos tratando com sigilo. Para entender melhor, sem precisar se identificar: isso acontece em algum turno específico? Outras pessoas presenciam?</div>
+<div class="bub n"><b>Nota interna</b> (invisível ao autor) · Rafael, 15/10 · Conferir se os 2 desligamentos do Balcão em set/out foram voluntários.</div>
+<span class="day">18/10/2026</span>
+<div class="bub r">Turno da tarde, quase sempre. Sim, as meninas do caixa veem. Ontem foi na frente de um cliente de novo.</div>
+</div>
+<div class="row" style="gap:8px;border-top:1px solid rgba(255,255,255,.08);padding-top:12px"><input class="inp" style="flex:1" placeholder="Escreva a resposta ao autor (ou marque como nota interna)…"><span class="sw"><i></i><span class="xs sb">Nota interna</span></span><button class="btn p">Enviar</button></div>
+<span class="sb xs">A resposta só chega ao autor quando ele consultar o protocolo. Não peça dados que o identifiquem.</span>
+</div>
+<aside class="cop" style="position:sticky;top:36px">
+<div class="who"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C6F56F" stroke-width="2.2" stroke-linecap="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.2 2.2M16.2 16.2l2.2 2.2M5.6 18.4l2.2-2.2M16.2 7.8l2.2-2.2"/></svg> Copiloto do canal · visível só ao RH</div>
+<div class="sec2"><h4>Resumo do caso</h4><p style="margin:0">Pessoa do Balcão relata humilhações recorrentes por uma supervisora recém-chegada, em público e no turno da tarde, com ameaça velada de desligamento ("quem não aguenta pede pra sair"). Há testemunhas (caixa) e menção a 2 saídas recentes do setor. O autor expressa medo de represália.</p></div>
+<div class="sec2"><h4>Enquadramento</h4><p style="margin:0">Indícios de <b>assédio moral</b> (conduta repetida, humilhação pública, ameaça). A Lei 14.457/2022 exige canal, apuração com sigilo e não retaliação. Sugestão de prazo: apuração em até 30 dias. <span class="sb">Não é parecer jurídico.</span></p></div>
+<div class="sec2"><h4>O que ainda falta saber</h4><div class="q"><i></i><span>Desde quando (mês) os episódios acontecem?</span></div><div class="q"><i></i><span>Já houve conversa com alguém da empresa sobre isso?</span></div><div class="q"><i></i><span>Há registro (mensagens, câmeras do balcão)?</span></div></div>
+<div class="sec2"><h4>Rascunho de resposta ao autor</h4><div class="msg ai" style="font-size:13px">Obrigado por complementar. Vamos ouvir outras pessoas do turno da tarde de forma geral, sem citar este relato. Você não precisa se identificar em nenhum momento; retaliação é proibida e também pode ser relatada aqui. Voltamos com uma posição em até 30 dias.</div><div class="row" style="gap:6px"><button class="btn s p">Usar no campo</button><button class="btn s">Mais curto</button></div></div>
+<div class="sec2"><h4>Ligação com o plano</h4><p style="margin:0" class="sm">Balcão teve Liderança em 24 e Reconhecimento +14 na última campanha. Sugiro uma ação organizacional além da apuração: <b>código de conduta assinado pelas lideranças</b>.</p><button class="btn s">Propor ação no plano</button></div>
+<div class="sb xs">Não concluo culpa nem envio nada sem você clicar. Em risco imediato, a primeira linha seria o protocolo de emergência.</div>
+</aside>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1080}}'>
+class Component extends DCLogic { renderVals() { return {}; } }
+</script>
+</body>
+</html>

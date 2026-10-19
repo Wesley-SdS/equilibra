@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Equilibra — Relatório PGR</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./_shared.css">
+<style>
+.sheet{width:794px;min-height:1000px;box-sizing:border-box;background:#fff;color:#111;border-radius:6px;padding:56px 60px;display:flex;flex-direction:column;gap:22px;box-shadow:0 30px 80px rgba(0,0,0,.6);font-size:13px;line-height:1.5}
+.sheet h2{font-size:24px;letter-spacing:-.02em;color:#111}.sheet h3{font-size:13px;color:#555;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.sheet .m{color:#666}
+.semaf{display:flex;gap:14px;align-items:center;border:1px solid #e5e7e3;border-radius:12px;padding:16px}
+.semaf .big{font-size:44px;font-weight:600;letter-spacing:-.03em;line-height:1}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.box{border:1px solid #e5e7e3;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.box b{font-size:12px;color:#555;font-weight:600}
+.hmp{display:grid;grid-template-columns:110px repeat(5,1fr);gap:4px;font-size:11px}
+.hmp .c{height:30px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-family:'Geist Mono',monospace;color:#111}
+.pb{display:flex;align-items:center;gap:8px;font-size:12px}.pb i{height:8px;border-radius:99px;background:#5a7a1f;display:block}
+.tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600}
+.appr{border-radius:16px;border:1px solid rgba(240,207,106,.4);background:rgba(240,207,106,.06);padding:16px;display:flex;flex-direction:column;gap:10px}
+.toc{display:flex;flex-direction:column;gap:6px;font-size:13px}.toc span{display:flex;justify-content:space-between;color:#A3ADA9}.toc span.on{color:#EDEFEE;font-weight:500}
+</style>
+</helmet>
+<div class="app">
+<aside class="side">
+<div class="brand"><span class="logo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#07090A" stroke-width="2.6" stroke-linecap="round"><path d="M3 13c3-6 6-6 9 0s6 6 9 0"/></svg></span>equilibra</div>
+<div class="co"><b>P</b><span>Padaria Pão Dourado<small>Dono · 3 empresas</small></span></div>
+<span class="sec">DIAGNÓSTICO</span>
+<a href="#">Visão geral</a><a href="#">Evolução</a><a href="#">Campanhas</a><a href="#">Questionários</a>
+<span class="sec">GESTÃO</span>
+<a href="#">Plano de ação <span class="badge">2</span></a><a href="#" class="on">Relatório PGR</a><a href="#">Canal de relato</a><a href="#">Espaço de escuta</a>
+</aside>
+<main class="main" style="flex-direction:row;gap:24px;align-items:flex-start">
+<div style="width:300px;flex:none;display:flex;flex-direction:column;gap:16px;position:sticky;top:36px">
+<div><h1 style="font-size:26px">Relatório PGR</h1><p class="sub">Inventário de riscos psicossociais, plano de ação e evolução, prontos para anexar ao PGR. A primeira página responde em 1 minuto o que a direção e o auditor precisam saber.</p></div>
+<div class="appr">
+<div class="row" style="gap:8px"><span class="pill mod">Resumo aguardando aprovação</span></div>
+<p class="sm mut" style="margin:0;line-height:1.5">O texto do resumo executivo foi gerado pelo copiloto a partir dos agregados. Ele só entra no PDF depois que você revisar e aprovar; o relatório registra quem aprovou e quando.</p>
+<div class="row" style="gap:6px"><button class="btn s p">Aprovar texto</button><button class="btn s">Editar</button><button class="btn s g">Regerar</button></div>
+</div>
+<div class="card"><h3 style="margin-bottom:10px">Sumário</h3><div class="toc"><span class="on">1. Resumo executivo<em class="mono">p. 1</em></span><span>2. Metodologia e justificativa<em class="mono">p. 2</em></span><span>3. Participação por setor<em class="mono">p. 2</em></span><span>4. Inventário de riscos<em class="mono">p. 3</em></span><span>5. Plano de ação<em class="mono">p. 4</em></span><span>6. Evolução<em class="mono">p. 5</em></span><span>7. Observação e diálogo<em class="mono">p. 6</em></span><span>8. Responsabilidade<em class="mono">p. 6</em></span></div></div>
+<div class="row"><button class="btn" style="flex:1">Imprimir</button><button class="btn p" style="flex:1" disabled>Baixar PDF</button></div>
+<span class="sb xs">PDF liberado após aprovar o resumo.</span>
+</div>
+<div class="sheet">
+<div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="mono" style="font-size:10px;letter-spacing:.1em;color:#5a7a1f;text-transform:uppercase">Inventário de riscos psicossociais · NR-1 · Portaria MTE 1.419/2024</div><h2 style="margin:6px 0 2px">Padaria Pão Dourado Ltda.</h2><div class="m">CNPJ 12.345.678/0001-90 · Avaliação psicossocial · out/2026 · 01/10 a 31/10/2026 · emitido em 19/10/2026</div></div><span class="logo" style="background:#111"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C6F56F" stroke-width="2.6" stroke-linecap="round"><path d="M3 13c3-6 6-6 9 0s6 6 9 0"/></svg></span></div>
+<h3>1. Resumo executivo</h3>
+<div class="semaf"><div><div class="big">42</div><div class="m" style="font-size:11px">índice geral · 0 a 100</div></div><div style="width:1px;height:48px;background:#e5e7e3"></div><div style="flex:1"><span class="tag" style="background:#fbf1cf;color:#7a5e12">Risco moderado</span><div style="margin-top:6px">Queda de <b>8 pontos</b> desde mar/2026 (50 → 42). 93 de 122 pessoas responderam (76%). Nenhuma dimensão crítica; <b>3 em nível alto</b>: Demandas, Reconhecimento e Controle.</div></div></div>
+<p style="margin:0">Em outubro de 2026 o risco psicossocial geral da empresa está em nível moderado e em queda. A melhora concentra-se em <b>Demandas do trabalho</b> na Produção e nas Entregas, onde as duas ações concluídas em maio e junho (pausas programadas e revisão de metas) coincidem com a redução de 18 e 12 pontos. O ponto de atenção é <b>Reconhecimento e mudanças no Balcão</b>, que subiu 14 pontos após a troca de escala; há uma ação proposta e ainda sem responsável. <b>Apoio da liderança nas Entregas</b> piorou e a ação prevista (conversas 1:1) está atrasada. Os três riscos altos têm medidas no plano; duas estão em andamento.</p>
+<div class="g3">
+<div class="box"><b>Principais riscos</b><div>1. Demandas do trabalho <span class="mono">58</span></div><div>2. Reconhecimento e mudanças <span class="mono">52</span></div><div>3. Controle e autonomia <span class="mono">50</span></div></div>
+<div class="box"><b>Principais ações</b><div>Monitorar horas extras por setor <span class="tag" style="background:#fbf1cf;color:#7a5e12">em andamento</span></div><div>Conversas 1:1 nas Entregas <span class="tag" style="background:#fde2df;color:#8a2a21">atrasada</span></div><div>Comunicar mudanças com 15 dias <span class="tag" style="background:#eef1ea;color:#555">a fazer</span></div></div>
+<div class="box"><b>Participação</b><div class="pb"><span style="width:84px">Produção</span><i style="width:82%"></i><span class="mono">82%</span></div><div class="pb"><span style="width:84px">Balcão</span><i style="width:75%"></i><span class="mono">75%</span></div><div class="pb"><span style="width:84px">Entregas</span><i style="width:67%"></i><span class="mono">67%</span></div><div class="pb"><span style="width:84px">Administrat.</span><i style="width:90%"></i><span class="mono">90%</span></div></div>
+</div>
+<div class="box"><b>Mapa de risco · setor × dimensão (out/2026)</b>
+<div class="hmp"><span></span><span class="m" style="text-align:center">Demandas</span><span class="m" style="text-align:center">Controle</span><span class="m" style="text-align:center">Liderança</span><span class="m" style="text-align:center">Assédio</span><span class="m" style="text-align:center">Reconhec.</span>
+<span>Produção</span><span class="c" style="background:#f4b183">72</span><span class="c" style="background:#f6c89b">63</span><span class="c" style="background:#fbe6a8">49</span><span class="c" style="background:#fdf3cf">36</span><span class="c" style="background:#f6c89b">61</span>
+<span>Balcão</span><span class="c" style="background:#f6c89b">59</span><span class="c" style="background:#f6c89b">53</span><span class="c" style="background:#e3efd2">24</span><span class="c" style="background:#fdf3cf">31</span><span class="c" style="background:#fbe6a8">48</span>
+<span>Entregas</span><span class="c" style="background:#fbe6a8">49</span><span class="c" style="background:#fbe6a8">48</span><span class="c" style="background:#f4b183">71</span><span class="c" style="background:#fbe6a8">44</span><span class="c" style="background:#f6c89b">52</span>
+<span>Administrativo</span><span class="c" style="background:#fdf3cf">32</span><span class="c" style="background:#e3efd2">16</span><span class="c" style="background:#e3efd2">13</span><span class="c" style="background:#e3efd2">8</span><span class="c" style="background:#fdf3cf">34</span></div>
+<div class="m" style="font-size:11px">Setores com menos de 5 respostas estão agrupados em "Outros". Metodologia Equilibra (inspirada em COPSOQ e HSE); detalhes e justificativa na seção 2.</div></div>
+<div class="m" style="font-size:11px;margin-top:auto;display:flex;justify-content:space-between"><span>Resumo aprovado por: <i>pendente</i></span><span>Equilibra · página 1 de 6</span></div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1160}}'>
+class Component extends DCLogic { renderVals() { return {}; } }
+</script>
+</body>
+</html>
