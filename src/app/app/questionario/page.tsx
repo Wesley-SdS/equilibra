@@ -111,7 +111,7 @@ function Library() {
       ) : (
         <div className="grid gap-2">
           {rows.map((r) => (
-            <Card key={r.id} className={cn("grid items-center gap-3 md:grid-cols-[1.6fr_auto_auto_1fr_auto]", r.status === "archived" && "opacity-60")}>
+            <Card key={r.id} className={cn("grid items-center gap-3 xl:grid-cols-[1.6fr_auto_auto_1fr_auto]", r.status === "archived" && "opacity-60")}>
               <div className="min-w-0">
                 <button type="button" onClick={() => open.mutate(r.id)} className="text-left text-[15px] font-medium leading-snug hover:text-brand-fg">
                   {r.name} <span className="font-mono text-xs text-subtle">v{r.version ?? 1}</span>
