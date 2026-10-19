@@ -83,7 +83,16 @@ function Library() {
       <PageHeader
         title="Questionários"
         description="Todos os questionários da empresa: o NR-1 padrão, os importados e os que você criou. Cada campanha aplica uma versão de um deles; editar nunca altera campanhas já lançadas."
-        actions={can.edit ? <Button onClick={() => setEditing({ ...EMPTY_DRAFT })}>Novo questionário</Button> : undefined}
+        actions={
+          can.edit ? (
+            <>
+              <ButtonLink href="/app/questionario/importar" variant="secondary">
+                Importar planilha ou PDF
+              </ButtonLink>
+              <Button onClick={() => setEditing({ ...EMPTY_DRAFT })}>Novo questionário</Button>
+            </>
+          ) : undefined
+        }
       />
 
       <div className="mb-3 flex flex-wrap items-center gap-2">

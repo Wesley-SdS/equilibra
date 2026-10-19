@@ -1,5 +1,6 @@
 import { boolean, customType, integer, jsonb, pgTable, primaryKey, serial, text, timestamp, unique } from "drizzle-orm/pg-core"
 import type { QuestionnaireItem, QuestionnaireKind, QuestionnaireOrigin, QuestionnaireStatus } from "@/lib/questionnaire"
+import type { DimensionId } from "@/lib/methodology"
 
 const bytea = customType<{ data: Buffer; driverData: Uint8Array }>({
   dataType: () => "bytea",
@@ -150,6 +151,8 @@ export const campaigns = pgTable("campaigns", {
   customQuestions: jsonb("custom_questions").$type<CustomQuestionSnapshot[]>().notNull().default([]),
   // Último lembrete enviado à equipe (evita e-mails repetidos pelo cron).
   lastReminderAt: timestamp("last_reminder_at"),
+  // Campanha histórica trazida por importação de planilha (não conta no limite do plano).
+  imported: boolean("imported").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 })
 
@@ -321,4 +324,59 @@ export const channelAttachments = pgTable("channel_attachments", {
   mime: text("mime").notNull(),
   size: integer("size").notNull(),
   data: bytea("data").notNull(),
+})
+
+/** Classificação de uma coluna/linha do arquivo importado. */
+export type ImportColumnKind = "likert5" | "likert3" | "yesno" | "numeric" | "open" | "sector" | "identifier" | "timestamp" | "question"
+export type ImportProposal = { text: string; dimension: DimensionId | null; risk: boolean }
+
+/**
+ * Importação de formulários (planilha, CSV do Google Forms, PDF ou texto colado). Fica em rascunho
+ * até o gestor revisar e confirmar. Colunas que identificam pessoas nunca são gravadas.
+ * `data` guarda só as respostas das colunas de pergunta (e o setor) e é apagado ao confirmar ou descartar.
+ */
+export const imports = pgTable("imports", {
+  id: id(),
+  companyId: text("company_id")
+    .notNull()
+    .references(() => companies.id, { onDelete: "cascade" }),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+  source: text("source").$type<"xlsx" | "csv" | "pdf" | "text">().notNull(),
+  filename: text("filename").notNull(),
+  status: text("status").$type<"draft" | "confirmed" | "discarded">().notNull().default("draft"),
+  name: text("name").notNull(),
+  kind: text("kind").$type<QuestionnaireKind>().notNull().default("clima"),
+  responseCount: integer("response_count").notNull().default(0),
+  importResponses: boolean("import_responses").notNull().default(true),
+  /** Valor da coluna de setor → id do setor da empresa, "new" (criar) ou null (pendente). */
+  sectorMap: jsonb("sector_map").$type<Record<string, string | null>>().notNull().default({}),
+  defaultSectorId: text("default_sector_id"),
+  startsAt: text("starts_at"),
+  endsAt: text("ends_at"),
+  /** Nomes das colunas identificáveis descartadas (só o cabeçalho, nunca os valores). */
+  dropped: jsonb("dropped").$type<string[]>().notNull().default([]),
+  data: jsonb("data").$type<{ sectors: (string | null)[]; values: (string | null)[][] } | null>(),
+  questionnaireId: text("questionnaire_id").references(() => questionnaires.id, { onDelete: "set null" }),
+  campaignId: text("campaign_id").references(() => campaigns.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+})
+
+export const importRows = pgTable("import_rows", {
+  id: id(),
+  importId: text("import_id")
+    .notNull()
+    .references(() => imports.id, { onDelete: "cascade" }),
+  position: integer("position").notNull(),
+  /** Índice da coluna em `imports.data.values` (null quando o arquivo não tem respostas). */
+  column: integer("column"),
+  raw: text("raw").notNull(),
+  detected: text("detected").$type<ImportColumnKind>().notNull(),
+  /** Rótulo bruto → valor 1..5, quando a escala do arquivo precisa de conversão. */
+  valueMap: jsonb("value_map").$type<Record<string, number>>().notNull().default({}),
+  proposed: jsonb("proposed").$type<ImportProposal>().notNull(),
+  final: jsonb("final").$type<ImportProposal>().notNull(),
+  confidence: integer("confidence").notNull().default(0),
+  engine: text("engine").$type<"jev" | "regras" | "metodologia">().notNull().default("regras"),
+  issues: jsonb("issues").$type<string[]>().notNull().default([]),
+  action: text("action").$type<"pending" | "accept" | "ignore" | "sector">().notNull().default("pending"),
 })

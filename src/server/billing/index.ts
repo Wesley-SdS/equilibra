@@ -34,7 +34,7 @@ export async function usage(db: Db, companyId: string) {
   const yearAgo = new Date(Date.now() - 365 * DAY)
   const [[emp], [camp], [cq], [mem], [inv]] = (await Promise.all([
     db.select({ n: sql<number>`coalesce(sum(${sectors.headcount}), 0)::int` }).from(sectors).where(eq(sectors.companyId, companyId)),
-    db.select({ n: sql<number>`count(*)::int` }).from(campaigns).where(and(eq(campaigns.companyId, companyId), gte(campaigns.createdAt, yearAgo))),
+    db.select({ n: sql<number>`count(*)::int` }).from(campaigns).where(and(eq(campaigns.companyId, companyId), eq(campaigns.imported, false), gte(campaigns.createdAt, yearAgo))),
     db.select({ n: sql<number>`count(*)::int` }).from(customQuestions).where(and(eq(customQuestions.companyId, companyId), eq(customQuestions.active, true))),
     db.select({ n: sql<number>`count(*)::int` }).from(memberships).where(eq(memberships.companyId, companyId)),
     db.select({ n: sql<number>`count(*)::int` }).from(invites).where(and(eq(invites.companyId, companyId), isNull(invites.acceptedAt))),
