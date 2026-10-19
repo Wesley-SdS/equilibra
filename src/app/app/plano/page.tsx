@@ -32,9 +32,10 @@ type Draft = {
   how: string
   cost: string
   status: Status
+  employeeIds: string[]
 }
 
-const EMPTY: Draft = { dimension: "demandas", what: "", why: "", sectorId: null, who: "", due: "", how: "", cost: "", status: "todo" }
+const EMPTY: Draft = { dimension: "demandas", what: "", why: "", sectorId: null, who: "", due: "", how: "", cost: "", status: "todo", employeeIds: [] }
 
 function PlanContent() {
   const can = useCan()

@@ -44,7 +44,7 @@ function Library() {
 
   const open = useMutation({
     mutationFn: async (id: string) => (await client.questionnaires.get.$get({ id })).json(),
-    onSuccess: (q) => setEditing({ id: q.id, system: q.system, name: q.name, purpose: q.purpose, kind: q.kind, anonymous: q.anonymous, items: q.current?.items ?? [] }),
+    onSuccess: (q) => setEditing({ id: q.id, system: q.system, used: q.used, name: q.name, purpose: q.purpose, kind: q.kind, anonymous: q.anonymous, items: q.current?.items ?? [] }),
     onError: (e) => toast(e.message, "error"),
   })
   const save = useMutation({
@@ -130,7 +130,11 @@ function Library() {
                 </p>
               </div>
               <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-medium", KIND_CLS[r.kind] ?? KIND_CLS.livre)}>{kindLabel(r.kind)}</span>
-              <span className="rounded-full bg-brand/10 px-2.5 py-0.5 text-xs text-brand-fg">🔒 Anônimo</span>
+              {r.anonymous ? (
+                <span className="rounded-full bg-brand/10 px-2.5 py-0.5 text-xs text-brand-fg">🔒 Anônimo</span>
+              ) : (
+                <span className="rounded-full bg-risk-mod/50 px-2.5 py-0.5 text-xs text-risk-mod-fg">👤 Identificado</span>
+              )}
               <span className="text-xs text-muted">
                 {r.lastCampaignName ? (
                   <>

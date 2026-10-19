@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils"
 export type QuestionnaireDraft = {
   id?: string
   system?: boolean
+  /** Já usado em campanha: o anonimato não muda mais. */
+  used?: boolean
   name: string
   purpose: string
   kind: QuestionnaireKind
@@ -103,7 +105,7 @@ export function QuestionnaireDrawer({
                   </Field>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <Field label="Tipo" htmlFor="qkind" hint={QUESTIONNAIRE_KINDS.find((k) => k.id === d.kind)?.description}>
-                      <Select id="qkind" value={d.kind} onChange={(e) => setD({ ...d, kind: e.target.value as QuestionnaireKind })}>
+                      <Select id="qkind" value={d.kind} onChange={(e) => setD({ ...d, kind: e.target.value as QuestionnaireKind, anonymous: e.target.value === "nr1" ? true : d.anonymous })}>
                         {QUESTIONNAIRE_KINDS.map((k) => (
                           <option key={k.id} value={k.id}>
                             {k.label}
@@ -114,16 +116,30 @@ export function QuestionnaireDrawer({
                     <div className="flex flex-col gap-1.5">
                       <span className="text-sm font-medium">Anonimato</span>
                       <div className="flex items-center gap-3 rounded-xl border border-line px-3 py-2.5">
-                        <span role="switch" aria-checked="true" aria-label="Questionário anônimo" aria-disabled="true" className="relative h-6 w-10 rounded-full bg-brand opacity-80">
-                          <span className="absolute right-1 top-1 size-4 rounded-full bg-brand-ink" />
-                        </span>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={d.anonymous}
+                          aria-label="Questionário anônimo"
+                          disabled={d.kind === "nr1" || d.used}
+                          onClick={() => setD({ ...d, anonymous: !d.anonymous })}
+                          className={cn("relative h-6 w-10 shrink-0 rounded-full transition-colors disabled:opacity-60", d.anonymous ? "bg-brand" : "bg-tint/[0.14]")}
+                        >
+                          <span className={cn("absolute top-1 size-4 rounded-full transition-all", d.anonymous ? "right-1 bg-brand-ink" : "left-1 bg-surface")} />
+                        </button>
                         <div className="text-xs leading-snug text-muted">
-                          <span className="font-medium text-fg">Anônimo</span>
-                          {d.kind === "nr1" ? " · o NR-1 é sempre anônimo." : " · o modo identificado chega na próxima versão."}
+                          <span className="font-medium text-fg">{d.anonymous ? "Anônimo" : "Identificado"}</span>
+                          {d.kind === "nr1" ? " · o NR-1 é sempre anônimo." : d.used ? " · já usado em campanha: não muda mais." : d.anonymous ? " · ninguém é identificado; resultados só para grupos de 5+." : " · você verá quem respondeu e o quê; a pessoa é avisada antes."}
                         </div>
                       </div>
                     </div>
                   </div>
+                  {!d.anonymous && (
+                    <p className="rounded-xl border border-risk-mod/60 bg-risk-mod/10 px-3 py-2.5 text-xs leading-relaxed text-risk-mod-fg">
+                      Identificado: cada pessoa recebe um link pessoal e aceita um aviso antes de responder. Use para pulsos de equipe e acompanhamento de ações, nunca para
+                      temas de assédio ou medo de retaliação. Cadastre as pessoas em Pessoas antes de lançar a campanha.
+                    </p>
+                  )}
                 </>
               )}
 

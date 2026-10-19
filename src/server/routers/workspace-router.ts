@@ -2,7 +2,7 @@ import { and, desc, eq, getTableColumns, ne, sql } from "drizzle-orm"
 import { HTTPException } from "hono/http-exception"
 import { z } from "zod"
 import type { Db } from "../db"
-import { actions, campaigns, channelMessages, channelReports, companies, customQuestions, questionnaireVersions, questionnaires, responses, sectors } from "../db/schema"
+import { actions, campaignParticipants, campaigns, channelMessages, channelReports, companies, customQuestions, employees, questionnaireVersions, questionnaires, responses, sectors } from "../db/schema"
 import { publicToken, today } from "../auth"
 import { phaseOf } from "../campaigns"
 import { stageOf } from "@/lib/deadline"
@@ -86,6 +86,8 @@ const campaignSelect = {
   responses: sql<number>`(select count(*)::int from ${responses} where ${responses.campaignId} = ${campaigns.id})`,
   customCount: sql<number>`jsonb_array_length(${campaigns.customQuestions})::int`,
   questionnaireVersionId: campaigns.questionnaireVersionId,
+  imported: campaigns.imported,
+  participants: sql<number>`(select count(*)::int from ${campaignParticipants} p where p.campaign_id = ${campaigns.id})`,
   questionnaire: {
     id: questionnaires.id,
     name: questionnaires.name,
@@ -124,12 +126,27 @@ export const campaignsRouter = j.router({
           endsAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida"),
           // Questionário da biblioteca; sem ele, o NR-1 padrão.
           questionnaireId: z.string().optional(),
+          // Público de questionário identificado: pessoas e/ou setores inteiros (pessoas ativas).
+          employeeIds: z.array(z.string()).max(2000).optional(),
+          sectorIds: z.array(z.string()).max(200).optional(),
         })
         .refine((v) => v.endsAt >= v.startsAt, { message: "O fim deve ser depois do início", path: ["endsAt"] })
     )
     .mutation(async ({ c, ctx, input }) => {
-      const { questionnaireId, ...data } = input
+      const { questionnaireId, employeeIds, sectorIds, ...data } = input
       const chosen = await resolveVersionForCampaign(ctx.db, ctx.session.companyId, questionnaireId)
+      // Questionário identificado: cada pessoa recebe um link pessoal; sem público, não há campanha.
+      let audience: string[] = []
+      if (!chosen.questionnaire.anonymous) {
+        const people = await ctx.db
+          .select({ id: employees.id, sectorId: employees.sectorId })
+          .from(employees)
+          .where(and(eq(employees.companyId, ctx.session.companyId), eq(employees.active, true)))
+        const wanted = new Set(employeeIds ?? [])
+        const wantedSectors = new Set(sectorIds ?? [])
+        audience = people.filter((p) => wanted.has(p.id) || (p.sectorId && wantedSectors.has(p.sectorId))).map((p) => p.id)
+        if (!audience.length) throw new HTTPException(400, { message: "Questionário identificado: escolha as pessoas ou os setores que vão responder." })
+      }
       const hasSectors = await ctx.db.query.sectors.findFirst({
         where: eq(sectors.companyId, ctx.session.companyId),
       })
@@ -150,7 +167,15 @@ export const campaignsRouter = j.router({
           customQuestions: extra.map((q) => ({ id: `c:${q.id}`, text: q.text })),
         })
         .returning()
-      await audit(ctx.db, ctx.session, { action: "create", entity: "campanha", entityId: row!.id, summary: `Campanha “${row!.name}” criada com o questionário “${chosen.questionnaire.name}” (v${chosen.version.version})` })
+      if (audience.length) {
+        await ctx.db.insert(campaignParticipants).values(audience.map((employeeId) => ({ campaignId: row!.id, employeeId, token: publicToken() })))
+      }
+      await audit(ctx.db, ctx.session, {
+        action: "create",
+        entity: "campanha",
+        entityId: row!.id,
+        summary: `Campanha “${row!.name}” criada com o questionário “${chosen.questionnaire.name}” (v${chosen.version.version})${audience.length ? `, identificada, para ${audience.length} pessoas` : ""}`,
+      })
       return c.superjson(row!)
     }),
   /** Edita nome e datas (agendar, adiar ou estender o prazo). O link e as respostas não mudam. */
@@ -218,6 +243,10 @@ export const campaignsRouter = j.router({
           customQuestions: extra.map((q) => ({ id: `c:${q.id}`, text: q.text })),
         })
         .returning()
+      const sourceAudience = await ctx.db.select({ employeeId: campaignParticipants.employeeId }).from(campaignParticipants).where(eq(campaignParticipants.campaignId, source.id))
+      if (sourceAudience.length) {
+        await ctx.db.insert(campaignParticipants).values(sourceAudience.map((p) => ({ campaignId: row!.id, employeeId: p.employeeId, token: publicToken() })))
+      }
       await audit(ctx.db, ctx.session, { action: "create", entity: "campanha", entityId: row!.id, summary: `Campanha “${row!.name}” criada a partir de “${source.name}”` })
       return c.superjson({ ...row!, phase: phaseOf(row!) })
     }),
@@ -286,6 +315,7 @@ const actionInput = z.object({
   how: z.string().max(800).default(""),
   cost: z.string().max(60).default(""),
   status: z.enum(["todo", "doing", "done"]).default("todo"),
+  employeeIds: z.array(z.string()).max(500).default([]),
 })
 
 export const actionsRouter = j.router({

@@ -1,7 +1,7 @@
 import { and, asc, eq } from "drizzle-orm"
 import { HTTPException } from "hono/http-exception"
 import { z } from "zod"
-import { questionnaireVersions, questionnaires } from "../db/schema"
+import { campaigns, questionnaireVersions, questionnaires } from "../db/schema"
 import { audit } from "../audit"
 import { assertWritable } from "../billing"
 import { editorProcedure, j, privateProcedure } from "../jstack"
@@ -45,10 +45,20 @@ function canonical(items: QuestionnaireItem[]) {
 }
 
 function assertAnonymityRule(kind: QuestionnaireKind, anonymous: boolean) {
-  if (!anonymous) {
-    if (kind === "nr1") throw new HTTPException(400, { message: "O questionário NR-1 é sempre anônimo: a avaliação é das condições de trabalho, não das pessoas." })
-    throw new HTTPException(400, { message: "O modo identificado ainda não está disponível. Por enquanto todos os questionários são anônimos." })
+  if (!anonymous && kind === "nr1") {
+    throw new HTTPException(400, { message: "O questionário NR-1 é sempre anônimo: a avaliação é das condições de trabalho, não das pessoas." })
   }
+}
+
+/** O anonimato é decidido na criação: depois que uma campanha usou o questionário, não muda mais. */
+async function assertAnonymityLocked(db: Parameters<typeof latestVersion>[0], questionnaireId: string) {
+  const [used] = await db
+    .select({ id: campaigns.id })
+    .from(campaigns)
+    .innerJoin(questionnaireVersions, eq(questionnaireVersions.id, campaigns.questionnaireVersionId))
+    .where(eq(questionnaireVersions.questionnaireId, questionnaireId))
+    .limit(1)
+  if (used) throw new HTTPException(400, { message: "O anonimato não pode ser alterado depois que o questionário foi usado em uma campanha. Duplique-o para criar uma versão com outra regra." })
 }
 
 async function ownQuestionnaire(db: Parameters<typeof latestVersion>[0], companyId: string, id: string) {
@@ -74,9 +84,16 @@ export const questionnairesRouter = j.router({
       .where(eq(questionnaireVersions.questionnaireId, q.id))
       .orderBy(asc(questionnaireVersions.version))
     const current = versions[versions.length - 1]
+    const [used] = await ctx.db
+      .select({ id: campaigns.id })
+      .from(campaigns)
+      .innerJoin(questionnaireVersions, eq(questionnaireVersions.id, campaigns.questionnaireVersionId))
+      .where(and(eq(questionnaireVersions.questionnaireId, q.id), eq(campaigns.companyId, ctx.session.companyId)))
+      .limit(1)
     return c.superjson({
       ...q,
       system: q.companyId === null,
+      used: Boolean(used),
       current: current ? { id: current.id, version: current.version, items: current.items } : null,
       versions: versions.map((v) => ({ id: v.id, version: v.version, publishedAt: v.publishedAt, itemCount: v.items.length })),
     })
@@ -104,6 +121,7 @@ export const questionnairesRouter = j.router({
     const kind = input.kind ?? q.kind
     const anonymous = input.anonymous ?? q.anonymous
     assertAnonymityRule(kind, anonymous)
+    if (anonymous !== q.anonymous) await assertAnonymityLocked(ctx.db, q.id)
     const current = await latestVersion(ctx.db, q.id)
     const items = input.items ? normalizeItems(input.items) : null
     const changed = items !== null && canonical(items) !== canonical(current?.items ?? [])

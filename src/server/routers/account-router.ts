@@ -11,6 +11,7 @@ import {
   channelReports,
   companies,
   customQuestions,
+  employees,
   memberships,
   questionnaireVersions,
   questionnaires,
@@ -61,6 +62,7 @@ export const accountRouter = j.router({
       team,
       sectors: await ctx.db.select({ id: sectors.id, name: sectors.name, headcount: sectors.headcount }).from(sectors).where(eq(sectors.companyId, companyId)),
       customQuestions: await ctx.db.select({ id: customQuestions.id, text: customQuestions.text, active: customQuestions.active }).from(customQuestions).where(eq(customQuestions.companyId, companyId)),
+      people: await ctx.db.select({ id: employees.id, name: employees.name, email: employees.email, phone: employees.phone, sectorId: employees.sectorId, active: employees.active }).from(employees).where(eq(employees.companyId, companyId)),
       questionnaires: await ctx.db
         .select({ id: questionnaires.id, name: questionnaires.name, kind: questionnaires.kind, anonymous: questionnaires.anonymous, status: questionnaires.status, version: questionnaireVersions.version, items: questionnaireVersions.items })
         .from(questionnaires)

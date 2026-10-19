@@ -274,6 +274,8 @@ export const actions = pgTable("actions", {
     .default("todo"),
   // Quando a ação foi sugerida automaticamente: motor e confiança da escolha.
   decision: jsonb("decision").$type<Decision>(),
+  // Pessoas a quem a ação se destina (vem de campanhas identificadas). Vazio = setor ou empresa toda.
+  employeeIds: jsonb("employee_ids").$type<string[]>().notNull().default([]),
   // Controle dos avisos de prazo do cron: último estágio avisado ("soon" | "overdue") e quando.
   notifiedStage: text("notified_stage").notNull().default(""),
   notifiedAt: timestamp("notified_at"),
@@ -379,4 +381,57 @@ export const importRows = pgTable("import_rows", {
   engine: text("engine").$type<"jev" | "regras" | "metodologia">().notNull().default("regras"),
   issues: jsonb("issues").$type<string[]>().notNull().default([]),
   action: text("action").$type<"pending" | "accept" | "ignore" | "sector">().notNull().default("pending"),
+})
+
+/**
+ * Pessoas da empresa, usadas SÓ por questionários identificados (pulsos, acompanhamento de ações)
+ * e para endereçar ações a um grupo. O NR-1 nunca usa este cadastro.
+ */
+export const employees = pgTable("employees", {
+  id: id(),
+  companyId: text("company_id")
+    .notNull()
+    .references(() => companies.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  email: text("email"),
+  phone: text("phone"),
+  sectorId: text("sector_id").references(() => sectors.id, { onDelete: "set null" }),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+})
+
+/** Convite individual de uma campanha identificada: link pessoal, aceite e status de resposta. */
+export const campaignParticipants = pgTable(
+  "campaign_participants",
+  {
+    id: id(),
+    campaignId: text("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" }),
+    employeeId: text("employee_id")
+      .notNull()
+      .references(() => employees.id, { onDelete: "cascade" }),
+    token: text("token").notNull().unique(),
+    invitedAt: timestamp("invited_at"),
+    remindedAt: timestamp("reminded_at"),
+    consentAt: timestamp("consent_at"),
+    respondedAt: timestamp("responded_at"),
+  },
+  (t) => [unique("campaign_participant_unique").on(t.campaignId, t.employeeId)]
+)
+
+/**
+ * Vínculo resposta → pessoa, existe SÓ em campanhas de questionário identificado. A tabela de
+ * respostas continua sem identidade; consultas de campanhas anônimas nunca tocam nesta tabela.
+ */
+export const responseIdentities = pgTable("response_identities", {
+  responseId: text("response_id")
+    .primaryKey()
+    .references(() => responses.id, { onDelete: "cascade" }),
+  campaignId: text("campaign_id")
+    .notNull()
+    .references(() => campaigns.id, { onDelete: "cascade" }),
+  employeeId: text("employee_id")
+    .notNull()
+    .references(() => employees.id, { onDelete: "cascade" }),
 })

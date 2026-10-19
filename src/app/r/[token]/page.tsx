@@ -17,6 +17,7 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
   const storageKey = `eq_draft_${token}`
   const [phase, setPhase] = useState<Phase>("intro")
   const [sectorId, setSectorId] = useState<string | null>(null)
+  const [consent, setConsent] = useState(false)
   const [answers, setAnswers] = useState<Record<string, number>>({})
   const [index, setIndex] = useState(0)
   const [direction, setDirection] = useState(1)
@@ -62,6 +63,7 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
           token,
           sectorId: sectorId!,
           answers: listRef.current.map((q) => ({ questionId: q.id, value: final[q.id]! })),
+          consent,
         })
       ).json(),
     onSuccess: () => {
@@ -141,6 +143,8 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
     )
   }
   const data = info.data
+  const identified = !data.questionnaire.anonymous && !!data.person
+  if (identified && !sectorId && data.person?.sectorId) setSectorId(data.person.sectorId)
   if (data.alreadyAnswered && phase !== "done") {
     return (
       <Shell company={data.companyName}>
@@ -183,7 +187,14 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
               transition={{ delay: 0.1 }}
               className="flex flex-col gap-2.5 rounded-2xl border border-brand/20 bg-brand/[0.05] p-4 text-sm"
             >
-              {["Não pedimos nome, e-mail nem telefone", "Não registramos IP nem horário exato", "Resultados só aparecem para grupos de 5 ou mais pessoas"].map((t) => (
+              {(identified
+                ? [
+                    `Questionário identificado: o RH e a gestão da ${data.companyName} verão as suas respostas com o seu nome (${data.person!.name})`,
+                    data.questionnaire.purpose ? `Finalidade: ${data.questionnaire.purpose}` : "Finalidade: acompanhar a equipe e as ações de melhoria",
+                    "Não registramos IP nem horário exato; você pode pedir a exclusão dos seus dados ao RH",
+                  ]
+                : ["Não pedimos nome, e-mail nem telefone", "Não registramos IP nem horário exato", "Resultados só aparecem para grupos de 5 ou mais pessoas"]
+              ).map((t) => (
                 <li key={t} className="flex gap-2.5">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 shrink-0 text-brand-fg" aria-hidden="true">
                     <rect x="5" y="11" width="14" height="10" rx="2" />
@@ -193,6 +204,13 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
                 </li>
               ))}
             </motion.ul>
+            {identified && (
+              <label className="flex items-start gap-3 rounded-xl border border-line-strong p-4 text-sm">
+                <input type="checkbox" className="mt-0.5" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+                <span>Li o aviso e entendo que as minhas respostas serão vistas com o meu nome.</span>
+              </label>
+            )}
+            {!(identified && data.person?.sectorId) && (
             <motion.fieldset initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="flex flex-col gap-2.5">
               <legend className="mb-2.5 text-sm font-medium">Em qual setor você trabalha?</legend>
               {data.sectors.map((s) => (
@@ -211,7 +229,8 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
                 </label>
               ))}
             </motion.fieldset>
-            <Button size="lg" className="mt-auto" disabled={!sectorId} onClick={() => setPhase("questions")}>
+            )}
+            <Button size="lg" className="mt-auto" disabled={!sectorId || (identified && !consent)} onClick={() => setPhase("questions")}>
               {Object.keys(answers).length ? "Continuar de onde parei" : "Começar"}
             </Button>
           </motion.div>
@@ -310,7 +329,7 @@ export default function SurveyPage({ params }: { params: Promise<{ token: string
               </svg>
             </motion.div>
             <h1 className="text-3xl font-semibold tracking-tight">Obrigado!</h1>
-            <p className="max-w-xs text-muted">Sua resposta anônima foi registrada. Ela ajuda a construir um ambiente de trabalho mais saudável.</p>
+            <p className="max-w-xs text-muted">{info.data?.questionnaire.anonymous === false ? "Sua resposta foi registrada." : "Sua resposta anônima foi registrada."} Ela ajuda a construir um ambiente de trabalho mais saudável.</p>
           </motion.div>
         )}
       </AnimatePresence>

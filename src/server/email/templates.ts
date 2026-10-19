@@ -139,3 +139,24 @@ export function respondentEmail(p: { company: string; campaign: string; endsAt: 
     text: `${p.company} · ${p.campaign}\n\n${subject}\n\nResponda até ${p.endsAt} (cerca de ${p.minutes} min, anônimo): ${p.link}`,
   }
 }
+
+/** Convite de questionário IDENTIFICADO: link pessoal e aviso claro de que as respostas têm nome. */
+export function identifiedEmail(p: { company: string; campaign: string; person: string; endsAt: string; link: string; reminder: boolean; minutes: number; purpose: string }) {
+  const subject = p.reminder ? `Lembrete: ${p.campaign} (até ${p.endsAt})` : `${p.company}: ${p.campaign} (${p.minutes} min)`
+  return {
+    subject,
+    html: layout({
+      preheader: "Questionário identificado: suas respostas serão vistas com o seu nome",
+      title: p.reminder ? "Ainda dá tempo de responder" : `Olá, ${p.person.split(" ")[0]}`,
+      body: `<p style="margin:0">A <strong>${esc(p.company)}</strong> convidou você para responder <em>${esc(p.campaign)}</em>.</p>
+<ul style="margin:12px 0 0;padding-left:20px">
+<li style="margin-bottom:6px">Cerca de ${p.minutes} minutos, pelo celular</li>
+<li style="margin-bottom:6px"><strong>Identificado:</strong> o RH e a gestão verão as suas respostas com o seu nome${p.purpose ? `, para ${esc(p.purpose)}` : ""}</li>
+<li>Este link é pessoal: não encaminhe</li>
+</ul>
+<p style="margin:12px 0 0">Responda até <strong>${esc(p.endsAt)}</strong>.</p>`,
+      cta: { label: "Responder agora", href: p.link },
+    }),
+    text: `${p.company} · ${p.campaign}\n\nQuestionário identificado: o RH e a gestão verão as suas respostas com o seu nome.\nResponda até ${p.endsAt} (cerca de ${p.minutes} min): ${p.link}\nEste link é pessoal.`,
+  }
+}

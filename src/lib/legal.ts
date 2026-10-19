@@ -4,7 +4,7 @@
 // registrar a nova versão.
 
 // Formato AAAA-MM-DD ou AAAA-MM-DD.N (N = revisão no mesmo dia).
-export const LEGAL_VERSION = "2026-10-17.3"
+export const LEGAL_VERSION = "2026-10-19"
 
 /** Versão para exibição: 17/10/2026 (rev. 2). */
 export function formatLegalVersion(v: string = LEGAL_VERSION) {

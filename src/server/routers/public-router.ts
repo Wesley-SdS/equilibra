@@ -2,7 +2,8 @@ import { and, eq } from "drizzle-orm"
 import { getCookie, setCookie } from "hono/cookie"
 import { HTTPException } from "hono/http-exception"
 import { z } from "zod"
-import { answers, campaigns, channelReports, companies, responses, sectors } from "../db/schema"
+import { answers, campaignParticipants, campaigns, channelReports, companies, employees, questionnaires, responseIdentities, responses, sectors } from "../db/schema"
+import type { Db } from "../db"
 import { protocolCode, today } from "../auth"
 import { j, publicProcedure } from "../jstack"
 import { clientIp, rateLimit } from "../rate-limit"
@@ -12,18 +13,37 @@ import { entitlements } from "../billing"
 import { loadCampaignQuestionnaire } from "../questionnaires"
 import { DIMENSIONS } from "@/lib/methodology"
 
+/**
+ * Resolve o link: token da campanha (questionário anônimo) ou token pessoal de participante
+ * (questionário identificado). O link geral de uma campanha identificada não abre o questionário.
+ */
+async function resolveSurveyToken(db: Db, token: string) {
+  let campaign = await db.query.campaigns.findFirst({ where: eq(campaigns.token, token) })
+  let participant: typeof campaignParticipants.$inferSelect | undefined
+  if (!campaign) {
+    participant = await db.query.campaignParticipants.findFirst({ where: eq(campaignParticipants.token, token) })
+    if (participant) campaign = await db.query.campaigns.findFirst({ where: eq(campaigns.id, participant.campaignId) })
+  }
+  if (!campaign) throw new HTTPException(404, { message: "Link de avaliação inválido" })
+  const q = await loadCampaignQuestionnaire(db, campaign.questionnaireVersionId)
+  if (!q.anonymous && !participant) throw new HTTPException(403, { message: "Este questionário é identificado: use o link pessoal que você recebeu." })
+  if (q.anonymous && participant) throw new HTTPException(404, { message: "Link de avaliação inválido" })
+  const employee = participant ? await db.query.employees.findFirst({ where: eq(employees.id, participant.employeeId) }) : undefined
+  if (participant && !employee) throw new HTTPException(404, { message: "Link de avaliação inválido" })
+  return { campaign, questionnaire: q, participant, employee }
+}
+
 export const surveyRouter = j.router({
   byToken: publicProcedure.input(z.object({ token: z.string().min(10) })).query(async ({ c, ctx, input }) => {
-    const campaign = await ctx.db.query.campaigns.findFirst({ where: eq(campaigns.token, input.token) })
-    if (!campaign) throw new HTTPException(404, { message: "Link de avaliação inválido" })
+    const { campaign, questionnaire: q, participant, employee } = await resolveSurveyToken(ctx.db, input.token)
     const company = await ctx.db.query.companies.findFirst({ where: eq(companies.id, campaign.companyId) })
+    const purpose = (await ctx.db.query.questionnaires.findFirst({ where: eq(questionnaires.id, q.id) }))?.purpose ?? ""
     const sectorList = await ctx.db
       .select({ id: sectors.id, name: sectors.name })
       .from(sectors)
       .where(eq(sectors.companyId, campaign.companyId))
       .orderBy(sectors.name)
     const isOpen = campaign.status === "active" && today() >= campaign.startsAt && today() <= campaign.endsAt
-    const q = await loadCampaignQuestionnaire(ctx.db, campaign.questionnaireVersionId)
     // Itens da versão aplicada + perguntas da empresa copiadas na campanha, na ordem de resposta.
     const items = [
       ...q.items.map((i) => ({ id: i.id, text: i.text, label: DIMENSIONS.find((d) => d.id === i.dimension)?.name ?? q.name })),
@@ -31,11 +51,13 @@ export const surveyRouter = j.router({
     ]
     return c.superjson({
       campaign: { name: campaign.name, startsAt: campaign.startsAt, endsAt: campaign.endsAt, isOpen },
-      questionnaire: { name: q.name, kind: q.kind, anonymous: q.anonymous },
+      questionnaire: { name: q.name, kind: q.kind, anonymous: q.anonymous, purpose },
+      // Questionário identificado: quem está respondendo (só o próprio participante vê isto).
+      person: participant && employee ? { name: employee.name, sectorId: employee.sectorId } : null,
       items,
       companyName: company?.name ?? "",
       sectors: sectorList,
-      alreadyAnswered: getCookie(c, `eq_r_${campaign.id}`) === "1",
+      alreadyAnswered: participant ? participant.respondedAt !== null : getCookie(c, `eq_r_${campaign.id}`) === "1",
       customQuestions: campaign.customQuestions ?? [],
     })
   }),
@@ -46,23 +68,28 @@ export const surveyRouter = j.router({
         token: z.string().min(10),
         sectorId: z.string(),
         answers: z.array(z.object({ questionId: z.string(), value: z.number().int().min(1).max(5) })).min(1).max(200),
+        // Questionário identificado: aceite explícito de que as respostas serão vistas com o nome.
+        consent: z.boolean().optional(),
       })
     )
     .mutation(async ({ c, ctx, input }) => {
       await rateLimit(`survey:${input.token}`, 600, 60_000)
-      const campaign = await ctx.db.query.campaigns.findFirst({ where: eq(campaigns.token, input.token) })
-      if (!campaign) throw new HTTPException(404, { message: "Link de avaliação inválido" })
+      const { campaign, questionnaire: version, participant, employee } = await resolveSurveyToken(ctx.db, input.token)
       if (campaign.status !== "active" || today() > campaign.endsAt) throw new HTTPException(410, { message: "Esta avaliação foi encerrada" })
       if (today() < campaign.startsAt) throw new HTTPException(425, { message: "Esta avaliação ainda não começou" })
-      if (getCookie(c, `eq_r_${campaign.id}`) === "1") {
+      if (participant) {
+        if (participant.respondedAt) throw new HTTPException(409, { message: "Você já respondeu este questionário." })
+        if (input.consent !== true) throw new HTTPException(422, { message: "Confirme que leu o aviso: este questionário é identificado." })
+      } else if (getCookie(c, `eq_r_${campaign.id}`) === "1") {
         throw new HTTPException(409, { message: "Você já respondeu esta avaliação neste dispositivo" })
       }
+      // No identificado, o setor vem do cadastro da pessoa (quando houver).
+      const sectorId = employee?.sectorId ?? input.sectorId
       const sector = await ctx.db.query.sectors.findFirst({
-        where: and(eq(sectors.id, input.sectorId), eq(sectors.companyId, campaign.companyId)),
+        where: and(eq(sectors.id, sectorId), eq(sectors.companyId, campaign.companyId)),
       })
       if (!sector) throw new HTTPException(400, { message: "Setor inválido" })
       // Exige exatamente os itens da versão aplicada + as perguntas da empresa desta campanha.
-      const version = await loadCampaignQuestionnaire(ctx.db, campaign.questionnaireVersionId)
       const expected = new Set([...version.items.map((q) => q.id), ...(campaign.customQuestions ?? []).map((q) => q.id)])
       const ids = new Set(input.answers.map((a) => a.questionId))
       if (ids.size !== input.answers.length || ids.size !== expected.size || [...ids].some((id) => !expected.has(id))) {
@@ -75,6 +102,10 @@ export const surveyRouter = j.router({
           .values({ campaignId: campaign.id, sectorId: sector.id, createdDay: today() })
           .returning()
         await tx.insert(answers).values(input.answers.map((a) => ({ ...a, responseId: r!.id })))
+        if (participant) {
+          await tx.insert(responseIdentities).values({ responseId: r!.id, campaignId: campaign.id, employeeId: participant.employeeId })
+          await tx.update(campaignParticipants).set({ respondedAt: new Date(), consentAt: new Date() }).where(eq(campaignParticipants.id, participant.id))
+        }
       })
 
       setCookie(c, `eq_r_${campaign.id}`, "1", {

@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { AnimatePresence, motion } from "motion/react"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense, useState } from "react"
 import { PageHeader } from "@/components/app/page-header"
 import { Button, ButtonLink, Card, EmptyState, Field, Input, Select, Spinner } from "@/components/ui/primitives"
@@ -76,12 +76,21 @@ function CampaignsContent() {
   const qc = useQueryClient()
   const toast = useToast()
   const params = useSearchParams()
+  const router = useRouter()
   const [open, setOpen] = useState(params.get("nova") === "1")
   const [form, setForm] = useState({ name: "", startsAt: isoIn(0), endsAt: isoIn(14), questionnaireId: params.get("questionario") ?? NR1_STANDARD_ID })
 
   const library = useQuery({ queryKey: ["questionnaires"], queryFn: async () => (await client.questionnaires.list.$get()).json() })
   const choices = (library.data ?? []).filter((q) => q.status === "active")
   const chosen = choices.find((q) => q.id === form.questionnaireId)
+  // Público de questionário identificado: setores inteiros e/ou pessoas avulsas.
+  const [audSectors, setAudSectors] = useState<string[]>([])
+  const [audPeople, setAudPeople] = useState<string[]>([])
+  const identified = chosen ? !chosen.anonymous : false
+  const people = useQuery({ queryKey: ["employees"], queryFn: async () => (await client.employees.list.$get()).json(), enabled: identified })
+  const sectorList = useQuery({ queryKey: ["sectors"], queryFn: async () => (await client.sectors.list.$get()).json(), enabled: identified })
+  const activePeople = (people.data ?? []).filter((p) => p.active)
+  const audienceCount = activePeople.filter((p) => audPeople.includes(p.id) || (p.sectorId && audSectors.includes(p.sectorId))).length
   const [editing, setEditing] = useState<string | null>(null)
 
   const campaigns = useQuery({
@@ -89,14 +98,21 @@ function CampaignsContent() {
     queryFn: async () => (await client.campaigns.list.$get()).json(),
   })
   const create = useMutation({
-    mutationFn: async () => (await client.campaigns.create.$post(form)).json(),
+    mutationFn: async () => (await client.campaigns.create.$post({ ...form, ...(identified ? { employeeIds: audPeople, sectorIds: audSectors } : {}) })).json(),
     onSuccess: (c) => {
       setOpen(false)
       setForm({ name: "", startsAt: isoIn(0), endsAt: isoIn(14), questionnaireId: NR1_STANDARD_ID })
+      setAudPeople([])
+      setAudSectors([])
       qc.invalidateQueries({ queryKey: ["campaigns"] })
       qc.invalidateQueries({ queryKey: ["insights"] })
-      navigator.clipboard?.writeText(`${window.location.origin}/r/${c.token}`).catch(() => {})
-      toast("Campanha criada. Link anônimo copiado.")
+      if (identified) {
+        toast("Campanha identificada criada. Envie os links pessoais na tela de participantes.")
+        router.push(`/app/campanhas/${c.id}/participantes`)
+      } else {
+        navigator.clipboard?.writeText(`${window.location.origin}/r/${c.token}`).catch(() => {})
+        toast("Campanha criada. Link anônimo copiado.")
+      }
     },
   })
   const remind = useMutation({
@@ -154,6 +170,44 @@ function CampaignsContent() {
                     </div>
                   </Field>
                 </div>
+                {identified && (
+                  <div className="flex flex-col gap-3 rounded-xl border border-risk-mod/50 bg-risk-mod/[0.06] p-4 md:col-span-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-sm font-medium">Questionário identificado: quem vai responder?</span>
+                      <span className="font-mono text-xs text-muted">{audienceCount} pessoas</span>
+                    </div>
+                    {!activePeople.length ? (
+                      <p className="text-sm text-muted">
+                        Nenhuma pessoa cadastrada. <a className="text-brand-fg underline" href="/app/pessoas">Cadastre as pessoas</a> para lançar um questionário identificado.
+                      </p>
+                    ) : (
+                      <>
+                        <div className="flex flex-wrap gap-2">
+                          {(sectorList.data ?? []).map((s) => {
+                            const on = audSectors.includes(s.id)
+                            const n = activePeople.filter((p) => p.sectorId === s.id).length
+                            return (
+                              <button key={s.id} type="button" disabled={!n} onClick={() => setAudSectors((x) => (on ? x.filter((i) => i !== s.id) : [...x, s.id]))} className={cn("rounded-lg border px-2.5 py-1 text-xs disabled:opacity-40", on ? "border-brand bg-brand/10 text-fg" : "border-line text-muted")}>
+                                {s.name} · {n}
+                              </button>
+                            )
+                          })}
+                        </div>
+                        <details className="text-sm">
+                          <summary className="cursor-pointer text-muted">Escolher pessoas avulsas ({audPeople.length})</summary>
+                          <div className="mt-2 grid max-h-48 gap-1 overflow-y-auto sm:grid-cols-2">
+                            {activePeople.map((p) => (
+                              <label key={p.id} className="flex items-center gap-2 text-sm">
+                                <input type="checkbox" checked={audPeople.includes(p.id) || Boolean(p.sectorId && audSectors.includes(p.sectorId))} disabled={Boolean(p.sectorId && audSectors.includes(p.sectorId))} onChange={(e) => setAudPeople((x) => (e.target.checked ? [...x, p.id] : x.filter((i) => i !== p.id)))} />
+                                {p.name} <span className="text-xs text-subtle">{p.sectorName ?? ""}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </details>
+                      </>
+                    )}
+                  </div>
+                )}
                 <Field label="Nome" htmlFor="cname">
                   <Input id="cname" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Avaliação psicossocial · 1º semestre" />
                 </Field>
@@ -205,9 +259,19 @@ function CampaignsContent() {
                     <p className="text-xs text-subtle">
                       <span className="rounded-full bg-tint/[0.06] px-2 py-0.5 text-muted">{kindLabel(c.questionnaire.kind)}</span> {c.questionnaire.name} · v{c.questionnaire.version} · {c.questionnaire.itemCount} itens
                     </p>
-                    <code className="mt-1 truncate font-mono text-xs text-muted">{link}</code>
+                    {c.questionnaire.anonymous ? (
+                      <code className="mt-1 truncate font-mono text-xs text-muted">{link}</code>
+                    ) : (
+                      <span className="mt-1 text-xs text-risk-mod-fg">👤 Identificado · {c.participants} pessoas com link pessoal</span>
+                    )}
                   </div>
                   <div className="flex flex-wrap gap-2">
+                    {!c.questionnaire.anonymous && (
+                      <ButtonLink href={`/app/campanhas/${c.id}/participantes`} size="sm">
+                        Participantes
+                      </ButtonLink>
+                    )}
+                    {c.questionnaire.anonymous && (<>
                     <Button
                       variant="secondary"
                       size="sm"
@@ -224,6 +288,7 @@ function CampaignsContent() {
                     <ButtonLink href={`/r/${c.token}`} variant="secondary" size="sm">
                       Abrir questionário
                     </ButtonLink>
+                    </>)}
                     {can.edit && c.status === "active" && (
                       <Button variant="ghost" size="sm" loading={remind.isPending && remind.variables === c.id} onClick={() => remind.mutate(c.id)}>
                         Lembrar equipe

@@ -6,7 +6,7 @@
  */
 import { eq, inArray } from "drizzle-orm"
 import { getDb, type Db } from "../src/server/db"
-import { actions, answers, auditLog, campaigns, channelMessages, channelReports, companies, customQuestions, memberships, responses, sectors, users, type CustomQuestionSnapshot } from "../src/server/db/schema"
+import { actions, answers, auditLog, campaignParticipants, campaigns, channelMessages, channelReports, companies, customQuestions, employees, memberships, questionnaireVersions, questionnaires, responseIdentities, responses, sectors, users, type CustomQuestionSnapshot } from "../src/server/db/schema"
 import { hashPassword } from "../src/server/auth"
 import { LEGAL_VERSION } from "../src/lib/legal"
 import { triageReport } from "../src/server/decisions"
@@ -146,6 +146,39 @@ async function main() {
     { companyId: p.company.id, userId: carla!.id, action: "invite", entity: "equipe", summary: "Convite enviado para rh@equilibra.app (Leitor)", at: new Date("2026-09-30T14:10:00Z") },
     { companyId: p.company.id, userId: rafael!.id, action: "access", entity: "equipe", entityId: rafael!.id, summary: "Rafael Souza entrou na equipe", at: new Date("2026-09-30T15:31:00Z") },
   ])
+
+  // Pulso identificado das Entregas: pessoas cadastradas, link pessoal e quem já respondeu.
+  const entregasPeople = ["Ana Souza", "Bruno Lima", "Carlos Pereira", "Daniela Rocha", "Eduardo Alves", "Fernanda Costa"]
+  const people = await db
+    .insert(employees)
+    .values(entregasPeople.map((name, i) => ({ companyId: p.company.id, name, email: `${name.split(" ")[0]!.toLowerCase()}@paodourado.com.br`, phone: i % 2 ? `55119876543${10 + i}` : null, sectorId: p.sectorIds["Entregas"]! })))
+    .returning()
+  const [pulso] = await db
+    .insert(questionnaires)
+    .values({ companyId: p.company.id, name: "Pulso Entregas · rota e cobrança", purpose: "acompanhar a nova escala de rotas e o contato fora do horário", kind: "pulso", anonymous: false, origin: "manual" })
+    .returning()
+  const pulsoItems = [
+    { id: "i_rota1", text: "Recebo mensagens de trabalho fora do meu horário.", type: "likert5" as const, dimension: "demandas" as const, risk: true },
+    { id: "i_rota2", text: "A rota do dia é definida com tempo suficiente para eu me organizar.", type: "likert5" as const, dimension: "controle" as const, risk: false },
+    { id: "i_rota3", text: "Consigo cumprir as entregas sem ultrapassar a jornada.", type: "likert5" as const, dimension: "demandas" as const, risk: false },
+    { id: "i_rota4", text: "Sou cobrado(a) de forma agressiva ou humilhante.", type: "likert5" as const, dimension: "lideranca" as const, risk: true },
+  ]
+  const [pulsoV] = await db.insert(questionnaireVersions).values({ questionnaireId: pulso!.id, version: 1, items: pulsoItems }).returning()
+  const [pulsoCampaign] = await db
+    .insert(campaigns)
+    .values({ companyId: p.company.id, name: "Pulso Entregas · out/2026", token: "demo-pao-dourado-pulso", startsAt: "2026-10-10", endsAt: "2026-10-30", status: "active", questionnaireVersionId: pulsoV!.id })
+    .returning()
+  for (const [i, person] of people.entries()) {
+    const [part] = await db
+      .insert(campaignParticipants)
+      .values({ campaignId: pulsoCampaign!.id, employeeId: person.id, token: `demo-pulso-${i + 1}`, invitedAt: new Date("2026-10-10T12:00:00Z") })
+      .returning()
+    if (i >= 4) continue // duas pessoas ainda não responderam
+    const [r] = await db.insert(responses).values({ campaignId: pulsoCampaign!.id, sectorId: p.sectorIds["Entregas"]!, createdDay: `2026-10-1${i + 1}` }).returning()
+    await db.insert(answers).values(pulsoItems.map((it, k) => ({ responseId: r!.id, questionId: it.id, value: [5, 2, 2, 4, 4, 1, 2, 3, 5, 2, 1, 4, 3, 3, 3, 2][(i * 4 + k) % 16]! })))
+    await db.insert(responseIdentities).values({ responseId: r!.id, campaignId: pulsoCampaign!.id, employeeId: person.id })
+    await db.update(campaignParticipants).set({ respondedAt: new Date(`2026-10-1${i + 1}T15:00:00Z`), consentAt: new Date(`2026-10-1${i + 1}T15:00:00Z`) }).where(eq(campaignParticipants.id, part!.id))
+  }
 
   // 2) Carteira da consultora: outras duas empresas clientes.
   const clinica: Profile = {
