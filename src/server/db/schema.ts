@@ -471,3 +471,43 @@ export const agentRuns = pgTable("agent_runs", {
   accepted: boolean("accepted"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 })
+
+/**
+ * Resumo executivo do relatório PGR (página 1). Gerado pelo copiloto (ou por regras, sem IA),
+ * editável, e só entra no relatório depois que um usuário aprova — o relatório registra quem e quando.
+ */
+export const reportSummaries = pgTable("report_summaries", {
+  id: id(),
+  companyId: text("company_id")
+    .notNull()
+    .references(() => companies.id, { onDelete: "cascade" }),
+  campaignId: text("campaign_id")
+    .notNull()
+    .references(() => campaigns.id, { onDelete: "cascade" }),
+  text: text("text").notNull(),
+  engine: text("engine").$type<"copiloto" | "regras" | "manual">().notNull(),
+  runId: text("run_id"),
+  status: text("status").$type<"draft" | "approved">().notNull().default("draft"),
+  approvedBy: text("approved_by").references(() => users.id, { onDelete: "set null" }),
+  approvedByName: text("approved_by_name"),
+  approvedAt: timestamp("approved_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+})
+
+/**
+ * Registro de observação e diálogo: o MTE orienta que questionário sozinho não basta e que a
+ * avaliação inclua observação da atividade e conversa com os trabalhadores. Vai para o relatório PGR.
+ */
+export const observations = pgTable("observations", {
+  id: id(),
+  companyId: text("company_id")
+    .notNull()
+    .references(() => companies.id, { onDelete: "cascade" }),
+  day: text("day").notNull(),
+  method: text("method").$type<"observacao" | "conversa" | "grupo" | "entrevista">().notNull(),
+  sectorId: text("sector_id").references(() => sectors.id, { onDelete: "set null" }),
+  participants: integer("participants").notNull().default(0),
+  summary: text("summary").notNull(),
+  createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+})

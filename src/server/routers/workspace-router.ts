@@ -2,7 +2,8 @@ import { and, desc, eq, getTableColumns, ne, sql } from "drizzle-orm"
 import { HTTPException } from "hono/http-exception"
 import { z } from "zod"
 import type { Db } from "../db"
-import { actions, campaignParticipants, campaigns, channelMessages, channelReports, companies, customQuestions, employees, questionnaireVersions, questionnaires, responses, sectors } from "../db/schema"
+import { actions, campaignParticipants, campaigns, channelMessages, channelReports, companies, customQuestions, employees, observations, questionnaireVersions, questionnaires, reportSummaries, responses, sectors } from "../db/schema"
+import { generateSummary } from "../report-summary"
 import { publicToken, today } from "../auth"
 import { phaseOf } from "../campaigns"
 import { stageOf } from "@/lib/deadline"
@@ -451,7 +452,63 @@ export const actionsRouter = j.router({
   }),
 })
 
+const observationInput = z.object({
+  day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida"),
+  method: z.enum(["observacao", "conversa", "grupo", "entrevista"]),
+  sectorId: z.string().nullable().default(null),
+  participants: z.coerce.number().int().min(0).max(10000).default(0),
+  summary: z.string().trim().min(20, "Descreva o que foi observado ou conversado (mínimo de 20 caracteres)").max(2000),
+})
+
 export const reportRouter = j.router({
+  /** Gera (copiloto ou regras) um rascunho do resumo executivo da campanha. */
+  generateSummary: editorProcedure.input(z.object({ campaignId: z.string().optional() })).mutation(async ({ c, ctx, input }) => {
+    const report = await buildReport(ctx.db, ctx.session.companyId, input.campaignId)
+    if (!report.insights) throw new HTTPException(400, { message: "Sem dados para o relatório." })
+    const gen = await generateSummary({ db: ctx.db, companyId: ctx.session.companyId, userId: ctx.session.userId }, report)
+    const [row] = await ctx.db
+      .insert(reportSummaries)
+      .values({ companyId: ctx.session.companyId, campaignId: report.insights.campaign.id, text: gen.text, engine: gen.engine, runId: gen.runId })
+      .returning()
+    await audit(ctx.db, ctx.session, { action: "create", entity: "relatório", entityId: row!.id, summary: `Rascunho do resumo executivo gerado (${gen.engine === "copiloto" ? "copiloto" : "regras"})` })
+    return c.superjson(row!)
+  }),
+
+  /** Edita o texto de um rascunho (aprovar exige outro clique). */
+  saveSummary: editorProcedure.input(z.object({ id: z.string(), text: z.string().trim().min(40, "O resumo está curto demais").max(3000) })).mutation(async ({ c, ctx, input }) => {
+    const [row] = await ctx.db
+      .update(reportSummaries)
+      .set({ text: input.text, engine: "manual" })
+      .where(and(eq(reportSummaries.id, input.id), eq(reportSummaries.companyId, ctx.session.companyId), eq(reportSummaries.status, "draft")))
+      .returning()
+    if (!row) throw new HTTPException(404, { message: "Rascunho não encontrado" })
+    return c.superjson(row)
+  }),
+
+  /** Aprova o resumo: a partir daí ele entra no relatório e no PDF, com quem aprovou e quando. */
+  approveSummary: editorProcedure.input(z.object({ id: z.string() })).mutation(async ({ c, ctx, input }) => {
+    const user = await ctx.db.query.users.findFirst({ where: (t, { eq: e }) => e(t.id, ctx.session.userId) })
+    const [row] = await ctx.db
+      .update(reportSummaries)
+      .set({ status: "approved", approvedBy: ctx.session.userId, approvedByName: user?.name ?? null, approvedAt: new Date() })
+      .where(and(eq(reportSummaries.id, input.id), eq(reportSummaries.companyId, ctx.session.companyId)))
+      .returning()
+    if (!row) throw new HTTPException(404, { message: "Resumo não encontrado" })
+    await audit(ctx.db, ctx.session, { action: "status", entity: "relatório", entityId: row.id, summary: "Resumo executivo do relatório aprovado" })
+    return c.superjson(row)
+  }),
+
+  addObservation: editorProcedure.input(observationInput).mutation(async ({ c, ctx, input }) => {
+    const [row] = await ctx.db.insert(observations).values({ ...input, companyId: ctx.session.companyId, createdBy: ctx.session.userId }).returning()
+    await audit(ctx.db, ctx.session, { action: "create", entity: "observação", entityId: row!.id, summary: `Registro de ${input.method} adicionado ao relatório` })
+    return c.superjson(row!)
+  }),
+
+  removeObservation: editorProcedure.input(z.object({ id: z.string() })).mutation(async ({ c, ctx, input }) => {
+    await ctx.db.delete(observations).where(and(eq(observations.id, input.id), eq(observations.companyId, ctx.session.companyId)))
+    return c.superjson({ ok: true })
+  }),
+
   get: privateProcedure
     .input(z.object({ campaignId: z.string().optional() }).optional())
     .query(async ({ c, ctx, input }) => {

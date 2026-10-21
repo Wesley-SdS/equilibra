@@ -1,5 +1,6 @@
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer"
 import type { Report } from "../report"
+import { methodologyById } from "@/lib/methodologies"
 import { DIMENSIONS, K_ANONYMITY, RISK_LEVELS, dimensionMeta, inventoryRating, riskLevel, type RiskLevel } from "@/lib/methodology"
 import { formatCnpj, formatDate } from "@/lib/utils"
 
@@ -14,6 +15,7 @@ const RISK: Record<RiskLevel, { bg: string; fg: string }> = {
   critico: { bg: "#f6c2bc", fg: "#b42f1e" },
 }
 const STATUS = { todo: "A fazer", doing: "Em andamento", done: "Concluída" } as const
+const METHOD = { observacao: "Observação da atividade", conversa: "Conversa com trabalhadores", grupo: "Grupo de discussão", entrevista: "Entrevista" } as const
 
 const s = StyleSheet.create({
   page: { paddingTop: 48, paddingBottom: 56, paddingHorizontal: 44, fontSize: 9.5, color: INK, fontFamily: "Helvetica", lineHeight: 1.45 },
@@ -55,7 +57,7 @@ function Footer({ company }: { company: string }) {
 }
 
 export function ReportPdf({ report }: { report: Report }) {
-  const { company, insights, plan, sectors, history, custom } = report
+  const { company, insights, plan, sectors, history, custom, summary, observations, otherCampaigns } = report
   if (!insights) {
     return (
       <Document>
@@ -110,12 +112,25 @@ export function ReportPdf({ report }: { report: Report }) {
           </View>
         </View>
 
+        {summary && (
+          <View style={s.section}>
+            <Text style={s.h2} minPresenceAhead={60}>
+              <Text style={s.num}>{next()} </Text>Resumo executivo
+            </Text>
+            <Text style={{ fontSize: 10.5, lineHeight: 1.5 }}>{summary.text}</Text>
+            <Text style={[s.p, { fontSize: 8, marginTop: 4 }]}>
+              Aprovado{summary.approvedByName ? ` por ${summary.approvedByName}` : ""}
+              {summary.approvedAt ? ` em ${new Date(summary.approvedAt).toLocaleDateString("pt-BR")}` : ""}.
+            </Text>
+          </View>
+        )}
+
         <View style={s.section}>
           <Text style={s.h2} minPresenceAhead={60}>
             <Text style={s.num}>{next()} </Text>Metodologia
           </Text>
           <Text style={s.p}>
-            Metodologia: {insights.campaign.methodology?.name ?? "Equilibra NR-1"}. {insights.campaign.methodology?.justification ?? ""} Questionário anônimo autoaplicável (“{insights.questionnaire.name}”, versão {insights.questionnaire.version}) com {insights.questionnaire.scoredCount} itens pontuáveis em {insights.ranking.length} dimensões psicossociais ({insights.ranking.map((d) => d.name).join(", ")}),
+            Metodologia: {insights.campaign.methodology?.name ?? "Equilibra NR-1"}. {(insights.campaign.methodology?.justification ?? methodologyById("equilibra").justification)} Questionário anônimo autoaplicável (“{insights.questionnaire.name}”, versão {insights.questionnaire.version}) com {insights.questionnaire.scoredCount} itens pontuáveis em {insights.ranking.length} dimensões psicossociais ({insights.ranking.map((d) => d.name).join(", ")}),
             escala de frequência de 5 pontos. Cada dimensão recebe um score de 0 (sem risco) a 100 (risco máximo): baixo &lt; 25, moderado 25–49, alto 50–74, crítico 75 ou mais.
             A classificação combina probabilidade (derivada do score, 1–5) e severidade (1–5). Grupos com menos de {K_ANONYMITY} respostas não são exibidos isoladamente.
           </Text>
@@ -205,12 +220,16 @@ export function ReportPdf({ report }: { report: Report }) {
                   <View style={{ flex: 4, paddingRight: 6 }}>
                     <Text>{a.what}</Text>
                     {a.how ? <Text style={{ color: MUTED, fontSize: 8 }}>Como: {a.how}</Text> : null}
+                    {a.evidence ? <Text style={{ color: MUTED, fontSize: 8 }}>Evidência: {a.evidence}</Text> : null}
                   </View>
                   <Text style={{ flex: 1.4 }}>{dimensionMeta(a.dimension)?.short}</Text>
                   <Text style={{ flex: 1.6 }}>{sectorName(a.sectorId)}</Text>
                   <Text style={{ flex: 1.5 }}>{a.who || "—"}</Text>
                   <Text style={{ flex: 1.2 }}>{a.due ? formatDate(a.due) : "—"}</Text>
-                  <Text style={{ flex: 1.4 }}>{STATUS[a.status]}</Text>
+                  <Text style={{ flex: 1.4 }}>
+                    {STATUS[a.status]}
+                    {a.status === "done" && a.completedAt ? ` (${new Date(a.completedAt).toLocaleDateString("pt-BR")})` : ""}
+                  </Text>
                 </View>
               ))}
             </View>
@@ -267,6 +286,38 @@ export function ReportPdf({ report }: { report: Report }) {
                 </View>
               ))}
             </View>
+          </View>
+        )}
+
+        {observations.length > 0 && (
+          <View style={s.section}>
+            <Text style={s.h2} minPresenceAhead={60}>
+              <Text style={s.num}>{next()} </Text>Observação e diálogo
+            </Text>
+            <Text style={[s.p, { marginBottom: 6 }]}>Registros que complementam o questionário, conforme orientação do MTE (observação da atividade e diálogo com os trabalhadores).</Text>
+            {observations.map((o) => (
+              <View key={o.id} style={{ marginBottom: 6 }} wrap={false}>
+                <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 9 }}>
+                  {formatDate(o.day)} · {METHOD[o.method]} · {sectorName(o.sectorId)}
+                  {o.participants ? ` · ${o.participants} participantes` : ""}
+                </Text>
+                <Text style={s.p}>{o.summary}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {otherCampaigns.length > 0 && (
+          <View style={s.section} wrap={false}>
+            <Text style={s.h2} minPresenceAhead={60}>
+              <Text style={s.num}>{next()} </Text>Outras pesquisas aplicadas (anexo)
+            </Text>
+            <Text style={[s.p, { marginBottom: 4 }]}>Pesquisas de pulso e clima. Têm resultado próprio e não compõem o score NR-1.</Text>
+            {otherCampaigns.map((o) => (
+              <Text key={o.id} style={s.p}>
+                {o.name} · {o.questionnaire} · {formatDate(o.startsAt)} · {o.responses} respostas · {o.anonymous ? "anônima" : "identificada"}
+              </Text>
+            ))}
           </View>
         )}
 

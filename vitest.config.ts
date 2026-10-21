@@ -3,6 +3,8 @@ import { defineConfig } from "vitest/config"
 
 export default defineConfig({
   resolve: { alias: { "@": path.resolve(__dirname, "src") } },
+  // O tsconfig usa jsx "preserve" (Next.js); nos testes o PDF em TSX precisa ser compilado.
+  oxc: { jsx: { runtime: "automatic" } },
   test: {
     environment: "node",
     include: ["tests/**/*.test.ts"],
