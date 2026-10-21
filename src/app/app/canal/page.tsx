@@ -2,7 +2,9 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { AnimatePresence, motion } from "motion/react"
+import Link from "next/link"
 import { useState } from "react"
+import { CopilotShell, useCopilot } from "@/components/app/copilot"
 import { JevBadge } from "@/components/app/jev-badge"
 import { PageHeader } from "@/components/app/page-header"
 import { Composer, MessageList } from "@/components/channel/thread"
@@ -39,6 +41,16 @@ function ThreadPanel({ reportId, canEdit }: { reportId: string; canEdit: boolean
     },
   })
 
+  const copilot = useCopilot()
+  const [prefill, setPrefill] = useState<{ text: string; nonce: number } | undefined>()
+  const analyze = useMutation({
+    mutationFn: async () => (await client.agents.channel.$post({ reportId })).json(),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["channel-hr-thread", reportId] }),
+    onError: (e) => toast(e.message, "error"),
+  })
+  const analysis = thread.data?.copilot ?? null
+  const showCopilot = canEdit && copilot.data?.available
+
   // Abrir a conversa marca as mensagens como vistas: atualiza a lista e o indicador do menu.
   if (thread.isSuccess) {
     qc.invalidateQueries({ queryKey: ["channel-unread"] })
@@ -46,7 +58,8 @@ function ThreadPanel({ reportId, canEdit }: { reportId: string; canEdit: boolean
 
   return (
     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-      <div className="mt-1 flex flex-col gap-4 rounded-2xl border border-line bg-tint/[0.02] p-4">
+      <div className={cn("mt-1 grid gap-4", showCopilot && "xl:grid-cols-[minmax(0,1fr)_380px]")}>
+      <div className="flex min-w-0 flex-col gap-4 rounded-2xl border border-line bg-tint/[0.02] p-4">
         {thread.isLoading ? (
           <div className="grid h-24 place-items-center text-muted">
             <Spinner />
@@ -65,10 +78,78 @@ function ThreadPanel({ reportId, canEdit }: { reportId: string; canEdit: boolean
             placeholder="Escreva a resposta ao autor (ou marque como nota interna)…"
             hint="A resposta só chega ao autor quando ele consultar o protocolo. Não peça dados que o identifiquem."
             onSend={(v) => reply.mutateAsync(v)}
+            prefill={prefill}
           />
         ) : (
           <p className="text-xs text-subtle">Seu perfil é somente leitura.</p>
         )}
+      </div>
+      {showCopilot && (
+        <CopilotShell title="Copiloto do canal · só o RH vê" footer="Não conclui culpa e não envia nada sem você clicar. A análise é refeita só quando você pede.">
+          {!analysis ? (
+            <div className="flex flex-col gap-2">
+              <p className="text-sm text-muted">Resumo do caso, enquadramento, o que ainda falta perguntar e um rascunho de resposta ao autor.</p>
+              <Button size="sm" className="self-start" loading={analyze.isPending} onClick={() => analyze.mutate()}>
+                Analisar o caso
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3 text-sm leading-relaxed">
+              {analysis.warnings.map((w) => (
+                <p key={w} className={cn("rounded-lg px-3 py-2 text-xs", analysis.emergency && w === analysis.warnings[0] ? "bg-risk-crit/15 font-medium text-risk-crit-fg" : "bg-risk-mod/30 text-risk-mod-fg")}>
+                  {w}
+                </p>
+              ))}
+              <div>
+                <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-subtle">Resumo do caso</h4>
+                <p>{analysis.summary}</p>
+              </div>
+              <div>
+                <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-subtle">Enquadramento</h4>
+                <p className="text-muted">{analysis.framing}</p>
+                {analysis.legalRefs.length > 0 && <p className="mt-1 text-xs text-subtle">{analysis.legalRefs.join(" · ")}</p>}
+              </div>
+              {analysis.questionsToAsk.length > 0 && (
+                <div>
+                  <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-subtle">O que ainda falta saber</h4>
+                  <ul className="list-disc pl-4 text-muted">
+                    {analysis.questionsToAsk.map((q) => (
+                      <li key={q}>{q}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {analysis.replyDraft && (
+                <div>
+                  <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-subtle">Rascunho de resposta ao autor</h4>
+                  <p className="rounded-xl border border-line bg-surface/80 p-3 text-[13px]">{analysis.replyDraft}</p>
+                  <Button size="sm" variant="secondary" className="mt-2" onClick={() => setPrefill({ text: analysis.replyDraft, nonce: Date.now() })}>
+                    Usar no campo de resposta
+                  </Button>
+                </div>
+              )}
+              {analysis.suggestedAction && (
+                <div>
+                  <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-subtle">Ligação com o plano de ação</h4>
+                  <p className="text-muted">{analysis.suggestedAction.what}</p>
+                  <Link
+                    className="mt-1 inline-block text-xs text-brand-fg hover:underline"
+                    href={`/app/plano?nova=1&dimensao=${analysis.suggestedAction.dimension}&por=${encodeURIComponent(analysis.suggestedAction.why)}`}
+                  >
+                    Propor esta ação no plano →
+                  </Link>
+                </div>
+              )}
+              <div className="flex items-center justify-between gap-2 border-t border-line pt-2 text-xs text-subtle">
+                <span>Análise de {thread.data?.copilotAt ? new Date(thread.data.copilotAt).toLocaleDateString("pt-BR") : "hoje"}</span>
+                <Button size="sm" variant="ghost" loading={analyze.isPending} onClick={() => analyze.mutate()}>
+                  Atualizar análise
+                </Button>
+              </div>
+            </div>
+          )}
+        </CopilotShell>
+      )}
       </div>
     </motion.div>
   )

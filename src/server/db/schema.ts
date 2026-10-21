@@ -168,6 +168,18 @@ export type CustomQuestionSnapshot = { id: string; text: string }
 /** Registro de uma decisão automática: qual motor decidiu e com que confiança (auditável). */
 export type Decision = { engine: "jev" | "regras" | "copiloto"; model?: string; confidence?: number }
 
+export type ChannelCopilotAnalysis = {
+  summary: string
+  framing: string
+  legalRefs: string[]
+  questionsToAsk: string[]
+  replyDraft: string
+  suggestedAction: { dimension: DimensionId; what: string; why: string } | null
+  emergency: boolean
+  warnings: string[]
+  runId: string
+}
+
 export type Triage = Decision & {
   category: string
   categoryConfidence?: number
@@ -309,6 +321,9 @@ export const channelReports = pgTable("channel_reports", {
   triage: jsonb("triage").$type<Triage>(),
   // Maior `seq` de mensagem do autor do relato já visto pelo RH (não lido = seq maior que este).
   hrSeenSeq: integer("hr_seen_seq").notNull().default(0),
+  // Última análise do copiloto do canal (visível só ao RH) e quando foi feita.
+  copilot: jsonb("copilot").$type<ChannelCopilotAnalysis | null>(),
+  copilotAt: timestamp("copilot_at"),
 })
 
 /**

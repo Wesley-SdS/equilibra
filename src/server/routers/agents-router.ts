@@ -7,6 +7,7 @@ import { editorProcedure, j, privateProcedure } from "../jstack"
 import { agentsAvailable } from "../agents/client"
 import { proposeQuestionnaire } from "../agents/questionnaire-copilot"
 import { askPlanCopilot } from "../agents/plan-copilot"
+import { analyzeReport } from "../agents/channel-copilot"
 import { DIMENSIONS, type DimensionId } from "@/lib/methodology"
 import { QUESTIONNAIRE_KINDS, type QuestionnaireKind } from "@/lib/questionnaire"
 
@@ -51,6 +52,14 @@ export const agentsRouter = j.router({
       if (result.runId) await audit(ctx.db, ctx.session, { action: "create", entity: "copiloto", entityId: result.runId, summary: `Copiloto do plano respondeu e propôs ${result.actions.length} ações` })
       return c.superjson(result)
     }),
+
+  /** Copiloto do canal de relato: resumo, enquadramento, perguntas e rascunho de resposta (só para o RH). */
+  channel: editorProcedure.input(z.object({ reportId: z.string() })).mutation(async ({ c, ctx, input }) => {
+    const analysis = await analyzeReport({ db: ctx.db, companyId: ctx.session.companyId, userId: ctx.session.userId }, input.reportId)
+    // Auditoria sem o conteúdo: o relato pode conter dados sensíveis.
+    await audit(ctx.db, ctx.session, { action: "create", entity: "copiloto", entityId: analysis.runId, summary: "Copiloto do canal analisou um relato" })
+    return c.superjson(analysis)
+  }),
 
   /** O gestor aceitou (ou descartou) a proposta: alimenta a medição de qualidade dos copilotos. */
   feedback: editorProcedure.input(z.object({ runId: z.string(), accepted: z.boolean() })).mutation(async ({ c, ctx, input }) => {

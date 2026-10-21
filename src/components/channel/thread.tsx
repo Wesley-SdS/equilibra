@@ -1,7 +1,7 @@
 "use client"
 
 import { AnimatePresence, motion } from "motion/react"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Button, Spinner } from "@/components/ui/primitives"
 import { prepareImage, type PreparedImage } from "@/lib/image-prep"
 import { cn, formatDate } from "@/lib/utils"
@@ -81,14 +81,20 @@ export function Composer({
   placeholder,
   hint,
   allowInternal,
+  prefill,
 }: {
   onSend: (v: { body: string; attachments: { data: string }[]; internal: boolean }) => Promise<unknown>
   sending: boolean
   placeholder: string
   hint?: string
   allowInternal?: boolean
+  /** Texto colocado no campo por outra parte da tela (ex.: rascunho do copiloto). `nonce` muda a cada uso. */
+  prefill?: { text: string; nonce: number }
 }) {
   const [body, setBody] = useState("")
+  useEffect(() => {
+    if (prefill?.text) setBody(prefill.text)
+  }, [prefill?.nonce, prefill?.text])
   const [images, setImages] = useState<PreparedImage[]>([])
   const [internal, setInternal] = useState(false)
   const [error, setError] = useState<string | null>(null)

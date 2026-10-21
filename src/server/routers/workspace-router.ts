@@ -560,7 +560,7 @@ export const channelAdminRouter = j.router({
     const messages = await loadThread(ctx.db, report.id, true)
     const lastReporter = Math.max(0, ...messages.filter((m) => m.author === "reporter").map((m) => m.seq))
     if (lastReporter > report.hrSeenSeq) await ctx.db.update(channelReports).set({ hrSeenSeq: lastReporter }).where(eq(channelReports.id, report.id))
-    return c.superjson({ protocol: report.protocol, status: report.status, messages })
+    return c.superjson({ protocol: report.protocol, status: report.status, messages, copilot: report.copilot, copilotAt: report.copilotAt })
   }),
 
   /** Resposta ao autor (visível a ele) ou nota interna (só RH). Responder move "Recebido" para "Em análise". */
