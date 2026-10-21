@@ -373,7 +373,7 @@ export const imports = pgTable("imports", {
     .notNull()
     .references(() => companies.id, { onDelete: "cascade" }),
   userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
-  source: text("source").$type<"xlsx" | "csv" | "pdf" | "text">().notNull(),
+  source: text("source").$type<"xlsx" | "csv" | "pdf" | "text" | "image" | "sheets" | "forms">().notNull(),
   filename: text("filename").notNull(),
   status: text("status").$type<"draft" | "confirmed" | "discarded">().notNull().default("draft"),
   name: text("name").notNull(),

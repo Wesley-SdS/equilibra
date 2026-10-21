@@ -9,6 +9,9 @@ import { classifyQuestion } from "./decisions"
 import { DIMENSIONS, QUESTIONS, type DimensionId } from "@/lib/methodology"
 
 export const MAX_IMPORT_BYTES = 3 * 1024 * 1024
+
+/** De onde veio o questionário importado. */
+export type ImportSource = "xlsx" | "csv" | "pdf" | "text" | "image" | "sheets" | "forms"
 export const MAX_IMPORT_ROWS = 5000
 export const MAX_IMPORT_QUESTIONS = 60
 
@@ -22,7 +25,7 @@ export type ParsedColumn = {
 }
 
 export type ParsedFile = {
-  source: "xlsx" | "csv" | "pdf" | "text"
+  source: ImportSource
   columns: ParsedColumn[]
   dropped: string[]
   /** Respostas: setor (texto bruto) e valores brutos por coluna de pergunta. */
@@ -73,7 +76,9 @@ const FREQUENCY: Record<string, number> = {
 const YES_NO: Record<string, number> = { sim: 5, nao: 1, "as vezes": 3, "talvez": 3, "em parte": 3, parcialmente: 3 }
 
 const IDENTIFIER = /\b(nome|name|e-?mail|cpf|rg|matricula|telefone|celular|whats ?app|endereco|registro|crach)/
-const TIMESTAMP = /(carimbo|timestamp|data e hora|^data$|^hora$|enviado em|submitted)/
+const TIMESTAMP = /(carimbo|timestamp|data e hora|^data\/hora|^data$|^hora$|enviado em|submitted)/
+// Valores que são todos datas (ISO ou dd/mm/aaaa, com hora opcional) também denunciam uma coluna de data.
+const DATE_VALUE = /^(\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{2,4})([ t]\d{1,2}:\d{2}(:\d{2})?)?/i
 const SECTOR = /^(setor|departamento|area|equipe|unidade|time|filial|loja)\b|(seu|qual) (setor|departamento|area|equipe)/
 const EMAIL_VALUE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 
@@ -84,7 +89,7 @@ export function classifyColumn(header: string, values: string[]): Omit<ParsedCol
   if (IDENTIFIER.test(h) || (filled.length && filled.filter((v) => EMAIL_VALUE.test(v)).length / filled.length > 0.5)) {
     return { detected: "identifier", valueMap: {}, issues: ["Coluna identifica pessoas: será descartada (o questionário é anônimo)."] }
   }
-  if (TIMESTAMP.test(h)) return { detected: "timestamp", valueMap: {}, issues: ["Data/hora de envio: ignorada para não ajudar a identificar quem respondeu."] }
+  if (TIMESTAMP.test(h) || (filled.length > 0 && filled.every((v) => DATE_VALUE.test(v)))) return { detected: "timestamp", valueMap: {}, issues: ["Data/hora de envio: ignorada para não ajudar a identificar quem respondeu."] }
   if (SECTOR.test(h)) return { detected: "sector", valueMap: {}, issues: [] }
   if (!filled.length) return { detected: "question", valueMap: {}, issues: [] }
 
@@ -135,22 +140,28 @@ function cell(v: unknown): string {
 }
 
 /** Lê XLSX ou CSV (primeira aba; primeira linha = cabeçalhos). */
-export function parseSheet(buffer: Buffer, source: "xlsx" | "csv"): ParsedFile {
+export function parseSheet(buffer: Buffer, source: "xlsx" | "csv" | "sheets"): ParsedFile {
   const wb = XLSX.read(buffer, { type: "buffer", cellDates: true, raw: false, dense: true, codepage: 65001 })
   const sheet = wb.Sheets[wb.SheetNames[0]!]
   if (!sheet) throw new ImportError("A planilha está vazia.")
   const rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, blankrows: false, defval: "" }) as unknown[][]
   if (!rows.length) throw new ImportError("A planilha está vazia.")
-  if (rows.length - 1 > MAX_IMPORT_ROWS) throw new ImportError(`A planilha tem mais de ${MAX_IMPORT_ROWS} linhas de resposta.`)
-  const headers = rows[0]!.map(cell)
-  const body = rows.slice(1).filter((r) => r.some((v) => cell(v).trim()))
+  return parseRows(rows[0]!.map(cell), rows.slice(1).map((r) => r.map(cell)), source)
+}
+
+/**
+ * Classifica colunas e monta os dados a partir de cabeçalhos e linhas já em texto. Usado por
+ * planilhas, CSV, Google Sheets e Google Forms. Colunas identificáveis nunca entram em `data`.
+ */
+export function parseRows(headers: string[], rows: string[][], source: ImportSource, dropped: string[] = []): ParsedFile {
+  const body = rows.filter((r) => r.some((v) => (v ?? "").trim()))
+  if (body.length > MAX_IMPORT_ROWS) throw new ImportError(`O arquivo tem mais de ${MAX_IMPORT_ROWS} linhas de resposta.`)
   const columns: ParsedColumn[] = []
-  const dropped: string[] = []
   const keep: number[] = []
   let sectorCol: number | null = null
   headers.forEach((header, i) => {
     if (!header.trim()) return
-    const values = body.map((r) => cell(r[i]))
+    const values = body.map((r) => r[i] ?? "")
     const c = classifyColumn(header, values)
     if (c.detected === "identifier") dropped.push(header.trim())
     if (c.detected === "sector" && sectorCol === null) sectorCol = i
@@ -164,8 +175,8 @@ export function parseSheet(buffer: Buffer, source: "xlsx" | "csv"): ParsedFile {
   const sc = sectorCol as number | null
   const data = body.length
     ? {
-        sectors: body.map((r) => (sc === null ? null : cell(r[sc]).trim() || null)),
-        values: body.map((r) => keep.map((i) => cell(r[i]).trim() || null)),
+        sectors: body.map((r) => (sc === null ? null : (r[sc] ?? "").trim() || null)),
+        values: body.map((r) => keep.map((i) => (r[i] ?? "").trim() || null)),
       }
     : null
   return { source, columns, dropped, data }
@@ -175,7 +186,7 @@ const SCALE_LINE = /^(nunca|raramente|as vezes|frequentemente|sempre|sim|nao|con
 const NUMBERING = /^\s*(?:\(?\d{1,3}[.)\-–]|[-•*▪●◦]|[a-z]\))\s+/i
 
 /** Extrai perguntas de texto livre (PDF ou colado): linhas numeradas, com "?" ou com marcador. */
-export function parseText(text: string, source: "pdf" | "text"): ParsedFile {
+export function parseText(text: string, source: "pdf" | "text" | "image"): ParsedFile {
   const lines = text
     .split(/\r?\n/)
     .map((l) => l.replace(/\s+/g, " ").trim())
@@ -203,18 +214,34 @@ export async function parsePdf(buffer: Buffer): Promise<ParsedFile> {
   const pdf = await getDocumentProxy(new Uint8Array(buffer))
   const { text } = await extractText(pdf, { mergePages: true })
   const merged = Array.isArray(text) ? text.join("\n") : text
-  if (!merged.trim()) throw new ImportError("O PDF não tem texto selecionável (parece ser uma imagem escaneada). Cole o texto das perguntas ou envie a planilha.")
+  if (!merged.trim()) throw new ScannedPdfError("O PDF não tem texto selecionável (parece ser uma imagem escaneada).")
   return parseText(merged, "pdf")
 }
 
-export class ImportError extends Error {}
+/** Perguntas lidas pelo Claude num PDF escaneado ou numa foto: entram como texto, para revisão. */
+export function fromExtracted(questions: string[], source: "pdf" | "image", identifiesPeople: boolean): ParsedFile {
+  const lines = questions.map((q) => cleanText(q)).filter((q) => q.length >= 8)
+  if (!lines.length) throw new ImportError("Não encontramos perguntas legíveis no documento. Tente uma foto mais nítida ou cole o texto.")
+  const parsed = parseText(lines.map((l, i) => `${i + 1}. ${l}`).join(String.fromCharCode(10)), source)
+  return { ...parsed, dropped: identifiesPeople ? ["Dados pessoais escritos no documento (não transcritos)"] : [] }
+}
 
-export function detectSource(filename: string): "xlsx" | "csv" | "pdf" | null {
+export class ImportError extends Error {}
+/** PDF sem texto selecionável: pode ser lido pelo Claude, se os copilotos estiverem ativos. */
+export class ScannedPdfError extends ImportError {}
+
+export function detectSource(filename: string): "xlsx" | "csv" | "pdf" | "image" | null {
   const ext = filename.toLowerCase().split(".").pop()
   if (ext === "xlsx" || ext === "xls" || ext === "ods") return "xlsx"
   if (ext === "csv" || ext === "tsv" || ext === "txt") return "csv"
   if (ext === "pdf") return "pdf"
+  if (ext === "png" || ext === "jpg" || ext === "jpeg" || ext === "webp") return "image"
   return null
+}
+
+export function imageMediaType(filename: string): "image/png" | "image/jpeg" | "image/webp" {
+  const ext = filename.toLowerCase().split(".").pop()
+  return ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg"
 }
 
 // ---------------------------------------------------------------- propostas

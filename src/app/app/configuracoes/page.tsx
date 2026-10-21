@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/app/page-header"
 import { Button, Card, Field, Input, Select, Spinner } from "@/components/ui/primitives"
 import { useToast } from "@/components/ui/toast"
 import { JevBadge } from "@/components/app/jev-badge"
+import { useCopilot } from "@/components/app/copilot"
 import { client } from "@/lib/client"
 import { ROLE_LABEL, useCan, useMe } from "@/lib/hooks"
 import { cn, formatCnpj } from "@/lib/utils"
@@ -125,6 +126,7 @@ function CompanyTab() {
         </p>
         {!me.data?.jev && <p className="text-xs text-subtle">Configure AI_GATEWAY_API_KEY (ou faça o deploy na Vercel) para ativar.</p>}
       </Card>
+      <CopilotStatusCard />
       <Card className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Links públicos</h2>
         <p className="text-sm text-muted">O canal de relato fica disponível o tempo todo, independente de campanha.</p>
@@ -517,5 +519,46 @@ export default function SettingsPage() {
     <Suspense>
       <SettingsContent />
     </Suspense>
+  )
+}
+
+/** Onde estão os copilotos e se estão ativos (eles somem das telas quando não há credencial de IA). */
+function CopilotStatusCard() {
+  const copilot = useCopilot()
+  const d = copilot.data
+  const state = !d ? "…" : !d.configured ? "Sem credencial" : d.limit === 0 ? "Fora do plano" : "Ativos"
+  return (
+    <Card className="flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold">Copilotos de IA</h2>
+        <span className={d?.available ? "rounded-full bg-brand/15 px-2.5 py-0.5 text-xs text-brand-fg" : "rounded-full bg-tint/[0.06] px-2.5 py-0.5 text-xs text-muted"}>{state}</span>
+      </div>
+      <ul className="flex flex-col gap-1 text-sm text-muted">
+        <li>
+          <strong className="text-fg">Questionários:</strong> “Criar ou ajustar com o copiloto”, dentro de Novo questionário
+        </li>
+        <li>
+          <strong className="text-fg">Plano de ação:</strong> botão “Copiloto” no topo da página
+        </li>
+        <li>
+          <strong className="text-fg">Canal de relato:</strong> painel ao abrir a conversa de um relato
+        </li>
+        <li>
+          <strong className="text-fg">Relatório PGR:</strong> “Gerar resumo” do resumo executivo
+        </li>
+        <li>
+          <strong className="text-fg">Importação:</strong> leitura de PDF escaneado e de foto do questionário
+        </li>
+      </ul>
+      {d && (
+        <p className="text-xs text-subtle">
+          {!d.configured
+            ? "Sem credencial de IA neste ambiente (ANTHROPIC_API_KEY ou Vercel AI Gateway): os copilotos ficam ocultos e as telas seguem no modo manual."
+            : d.limit === 0
+              ? "O plano atual não inclui copilotos. Eles estão no Profissional (200 por mês) e no Empresa (1.000 por mês)."
+              : `${d.used} de ${Number.isFinite(d.limit) ? d.limit : "∞"} interações usadas neste mês.`}
+        </p>
+      )}
+    </Card>
   )
 }

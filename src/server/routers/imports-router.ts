@@ -7,7 +7,11 @@ import { audit } from "../audit"
 import { publicToken, today } from "../auth"
 import { assertLimit, assertWritable } from "../billing"
 import { editorProcedure, j, privateProcedure } from "../jstack"
-import { ImportError, MAX_IMPORT_BYTES, cleanText, detectSource, norm, parsePdf, parseSheet, parseText, propose, type ParsedFile } from "../imports"
+import { ImportError, MAX_IMPORT_BYTES, ScannedPdfError, cleanText, detectSource, fromExtracted, imageMediaType, norm, parsePdf, parseSheet, parseText, propose, type ParsedFile } from "../imports"
+import { agentsAvailable } from "../agents/client"
+import { GOOGLE_TOKEN_COOKIE, googleFormsEnabled, importFromForms, importFromSheets } from "../google"
+import { deleteCookie, getCookie } from "hono/cookie"
+import { extractQuestionsWithClaude, type ExtractMedia } from "../agents/import-extractor"
 import { rateLimit } from "../rate-limit"
 import { DIMENSIONS, type DimensionId } from "@/lib/methodology"
 import { QUESTIONNAIRE_KINDS, type QuestionnaireItem, type QuestionnaireKind } from "@/lib/questionnaire"
@@ -128,6 +132,16 @@ const proposalInput = z.object({
 })
 
 export const importsRouter = j.router({
+  /** Se a conexão com o Google Forms está configurada e se este navegador já conectou. */
+  googleStatus: privateProcedure.query(async ({ c }) => {
+    return c.superjson({ formsEnabled: googleFormsEnabled(), connected: Boolean(getCookie(c, GOOGLE_TOKEN_COOKIE)) })
+  }),
+
+  googleDisconnect: editorProcedure.mutation(async ({ c }) => {
+    deleteCookie(c, GOOGLE_TOKEN_COOKIE, { path: "/" })
+    return c.superjson({ ok: true })
+  }),
+
   /** Rascunhos de importação em andamento (para retomar depois). */
   list: privateProcedure.query(async ({ c, ctx }) => {
     const rows = await ctx.db
@@ -148,6 +162,8 @@ export const importsRouter = j.router({
         filename: z.string().trim().min(1).max(160),
         data: z.string().max(Math.ceil((MAX_IMPORT_BYTES * 4) / 3) + 8, "Arquivo grande demais (máximo de 3 MB).").optional(),
         text: z.string().max(60_000).optional(),
+        // Link de planilha do Google Sheets ("qualquer pessoa com o link") ou de edição do Google Forms.
+        googleUrl: z.string().trim().url("Link inválido").max(500).optional(),
       })
     )
     .mutation(async ({ c, ctx, input }) => {
@@ -155,24 +171,52 @@ export const importsRouter = j.router({
       await rateLimit(`import:${ctx.session.companyId}`, 30, 60 * 60_000)
       let parsed: ParsedFile
       try {
-        if (input.text !== undefined) {
+        if (input.googleUrl) {
+          if (input.googleUrl.includes("/forms/")) {
+            const token = getCookie(c, GOOGLE_TOKEN_COOKIE)
+            if (!token) throw new ImportError("Conecte sua conta Google para importar do Forms (ou exporte as respostas para o Google Sheets e cole o link da planilha).")
+            parsed = await importFromForms(input.googleUrl, token)
+          } else {
+            parsed = await importFromSheets(input.googleUrl)
+          }
+        } else if (input.text !== undefined) {
           parsed = parseText(input.text, "text")
         } else {
           if (!input.data) throw new ImportError("Envie um arquivo ou cole o texto das perguntas.")
           const source = detectSource(input.filename)
-          if (!source) throw new ImportError("Formato não suportado. Envie XLSX, CSV ou PDF.")
+          if (!source) throw new ImportError("Formato não suportado. Envie XLSX, CSV, PDF ou foto (JPG, PNG).")
           const buffer = Buffer.from(input.data, "base64")
           if (buffer.length > MAX_IMPORT_BYTES) throw new ImportError("Arquivo grande demais (máximo de 3 MB).")
-          parsed = source === "pdf" ? await parsePdf(buffer) : parseSheet(buffer, source)
+          // PDF escaneado ou foto do questionário em papel: leitura pelo Claude (conta na cota dos copilotos).
+          const viaClaude = async (media: ExtractMedia, kind: "pdf" | "image") => {
+            if (!agentsAvailable()) {
+              throw new ImportError(`${kind === "pdf" ? "O PDF não tem texto selecionável (parece escaneado)" : "Fotos"} só podem ser lidos com os copilotos de IA ativos. Cole o texto das perguntas ou envie a planilha.`)
+            }
+            const out = await extractQuestionsWithClaude({ db: ctx.db, companyId: ctx.session.companyId, userId: ctx.session.userId }, buffer, media)
+            return fromExtracted(out.questions, kind, out.identifiesPeople)
+          }
+          if (source === "pdf") {
+            try {
+              parsed = await parsePdf(buffer)
+            } catch (err) {
+              if (!(err instanceof ScannedPdfError)) throw err
+              parsed = await viaClaude("application/pdf", "pdf")
+            }
+          } else if (source === "image") {
+            parsed = await viaClaude(imageMediaType(input.filename), "image")
+          } else {
+            parsed = parseSheet(buffer, source)
+          }
         }
       } catch (err) {
+        if (err instanceof HTTPException) throw err
         if (err instanceof ImportError) throw new HTTPException(422, { message: err.message })
         throw new HTTPException(422, { message: "Não conseguimos ler este arquivo. Confira se ele abre normalmente e tente de novo." })
       }
       if (!parsed.columns.some((col) => QUESTION_KINDS.has(col.detected))) {
         throw new HTTPException(422, { message: "Não encontramos perguntas no arquivo. A primeira linha da planilha deve ter as perguntas." })
       }
-      const base = input.filename.replace(/\.[a-z0-9]+$/i, "").trim() || "Questionário importado"
+      const base = ("title" in parsed && typeof parsed.title === "string" && parsed.title) || input.filename.replace(/\.[a-z0-9]+$/i, "").trim() || "Questionário importado"
       const [imp] = await ctx.db
         .insert(imports)
         .values({

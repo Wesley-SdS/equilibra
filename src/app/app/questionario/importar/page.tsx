@@ -43,9 +43,19 @@ function Upload() {
   const input = useRef<HTMLInputElement>(null)
   const [drag, setDrag] = useState(false)
   const [text, setText] = useState("")
+  const [googleUrl, setGoogleUrl] = useState("")
+  const params = useSearchParams()
+  const google = useQuery({ queryKey: ["google-status"], queryFn: async () => (await client.imports.googleStatus.$get()).json() })
+  useEffect(() => {
+    const g = params.get("google")
+    if (g === "conectado") toast("Conta Google conectada. Cole o link de edição do formulário.")
+    else if (g === "negado" || g === "erro") toast("Não foi possível conectar a conta Google.", "error")
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- avisa uma vez ao voltar do Google
+  }, [])
+  const isForms = googleUrl.includes("/forms/")
   const drafts = useQuery({ queryKey: ["imports"], queryFn: async () => (await client.imports.list.$get()).json() })
   const upload = useMutation({
-    mutationFn: async (v: { filename: string; data?: string; text?: string }) => (await client.imports.upload.$post(v)).json(),
+    mutationFn: async (v: { filename: string; data?: string; text?: string; googleUrl?: string }) => (await client.imports.upload.$post(v)).json(),
     onSuccess: (r) => router.replace(`/app/questionario/importar?id=${r.id}`),
     onError: (e) => toast(e.message, "error"),
   })
@@ -85,19 +95,44 @@ function Upload() {
                 <path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
               <span className="font-medium">Arraste aqui ou clique para escolher</span>
-              <span className="text-xs text-subtle">XLSX, CSV (inclusive a exportação do Google Forms) ou PDF com texto · até 3 MB</span>
+              <span className="text-xs text-subtle">XLSX, CSV, PDF (inclusive escaneado) ou foto do questionário em papel · até 3 MB</span>
             </>
           )}
         </button>
-        <input ref={input} type="file" accept=".xlsx,.xls,.ods,.csv,.tsv,.pdf" className="hidden" onChange={(e) => send(e.target.files?.[0])} />
+        <input ref={input} type="file" accept=".xlsx,.xls,.ods,.csv,.tsv,.pdf,.png,.jpg,.jpeg,.webp" className="hidden" onChange={(e) => send(e.target.files?.[0])} />
         <ul className="flex flex-col gap-1.5 text-xs text-muted">
           <li>• Planilha: a primeira linha deve ter as perguntas; as demais linhas, as respostas (opcional).</li>
           <li>• Colunas com nome, e-mail, CPF, matrícula ou telefone são descartadas na leitura e nunca gravadas.</li>
           <li>• Nada vira questionário antes de você revisar, corrigir e confirmar.</li>
+          <li>• PDF escaneado e foto são lidos pelo copiloto de IA (contam na cota do plano).</li>
         </ul>
       </Card>
 
       <div className="flex flex-col gap-4">
+        <Card className="flex flex-col gap-3">
+          <h2 className="text-lg font-semibold">Importar do Google</h2>
+          <Input aria-label="Link do Google Sheets ou do Google Forms" value={googleUrl} onChange={(e) => setGoogleUrl(e.target.value)} placeholder="https://docs.google.com/spreadsheets/d/… ou /forms/d/…/edit" />
+          <p className="text-xs text-subtle">
+            {isForms
+              ? google.data?.formsEnabled
+                ? google.data.connected
+                  ? "Conta Google conectada (somente leitura, por até 1 hora)."
+                  : "Para ler o formulário e as respostas, conecte a conta Google dona do formulário (somente leitura)."
+                : "A conexão direta com o Forms não está configurada. No Forms, abra Respostas → Vincular ao Planilhas e cole aqui o link da planilha."
+              : "Planilha do Google Sheets compartilhada como “Qualquer pessoa com o link: leitor”. Também serve a planilha de respostas do Google Forms."}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {isForms && google.data?.formsEnabled && !google.data.connected ? (
+              <Button variant="secondary" size="sm" onClick={() => window.location.assign("/api/google/start")}>
+                Conectar conta Google
+              </Button>
+            ) : (
+              <Button variant="secondary" size="sm" disabled={!googleUrl.trim() || (isForms && !google.data?.connected)} loading={upload.isPending && !!googleUrl} onClick={() => upload.mutate({ filename: isForms ? "google-forms" : "google-sheets.csv", googleUrl: googleUrl.trim() })}>
+                Importar do Google
+              </Button>
+            )}
+          </div>
+        </Card>
         <Card className="flex flex-col gap-3">
           <h2 className="text-lg font-semibold">Ou cole as perguntas</h2>
           <Textarea aria-label="Texto das perguntas" className="min-h-36" value={text} onChange={(e) => setText(e.target.value)} placeholder={"1. Recebo retorno claro sobre o meu trabalho.\n2. Tenho voz nas decisões que afetam a minha rotina."} />
