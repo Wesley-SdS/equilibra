@@ -4,7 +4,11 @@ import { z } from "zod"
 import { auditLog, companies, invites, memberships, ROLES, users } from "../db/schema"
 import { publicToken } from "../auth"
 import { audit } from "../audit"
-import { j, ownerProcedure, privateProcedure } from "../jstack"
+import { editorProcedure, j, ownerProcedure, privateProcedure } from "../jstack"
+import { questionnaires } from "../db/schema"
+import { visibleTo } from "../questionnaires"
+import { METHODOLOGIES, effectiveSeverity, methodologyById } from "@/lib/methodologies"
+import { DIMENSIONS, type DimensionId } from "@/lib/methodology"
 import { appUrl, sendEmail } from "../email"
 import { inviteEmail } from "../email/templates"
 import { assertLimit } from "../billing"
@@ -107,6 +111,53 @@ export const companyRouter = j.router({
     .mutation(async ({ c, ctx, input }) => {
       await ctx.db.update(companies).set(input).where(eq(companies.id, ctx.session.companyId))
       await audit(ctx.db, ctx.session, { action: "update", entity: "empresa", entityId: ctx.session.companyId, summary: "Dados da empresa atualizados" })
+      return c.superjson({ ok: true })
+    }),
+
+  /** Metodologia de avaliação da empresa: catálogo, escolha atual, justificativa e severidades. */
+  methodology: privateProcedure.query(async ({ c, ctx }) => {
+    const company = await ctx.db.query.companies.findFirst({ where: eq(companies.id, ctx.session.companyId) })
+    const current = methodologyById(company!.methodologyId)
+    return c.superjson({
+      catalog: METHODOLOGIES,
+      current: {
+        id: current.id,
+        note: company!.methodologyNote,
+        questionnaireId: current.standardQuestionnaireId ?? company!.methodologyQuestionnaireId,
+        customQuestionnaireId: company!.methodologyQuestionnaireId,
+        severity: effectiveSeverity(current.id, company!.severityOverrides),
+        overrides: company!.severityOverrides,
+      },
+    })
+  }),
+
+  setMethodology: editorProcedure
+    .input(
+      z.object({
+        id: z.enum(["equilibra", "mte", "copsoq3", "hse", "propria"]),
+        note: z.string().trim().max(2000).default(""),
+        questionnaireId: z.string().nullable().default(null),
+        severity: z.record(z.string(), z.number().int().min(1).max(5)).default({}),
+      })
+    )
+    .mutation(async ({ c, ctx, input }) => {
+      const m = methodologyById(input.id)
+      if (m.status !== "disponivel") throw new HTTPException(400, { message: `${m.name} ainda aguarda a confirmação da licença de uso. Use a metodologia própria com o instrumento licenciado da sua consultoria.` })
+      if (m.id === "propria") {
+        if (!input.questionnaireId) throw new HTTPException(400, { message: "Escolha o questionário da metodologia própria." })
+        if (input.note.length < 40) throw new HTTPException(400, { message: "Escreva a justificativa técnica da metodologia própria (ela vai para o relatório PGR)." })
+      }
+      if (input.questionnaireId) {
+        const q = await ctx.db.query.questionnaires.findFirst({ where: and(eq(questionnaires.id, input.questionnaireId), visibleTo(ctx.session.companyId)) })
+        if (!q || q.kind !== "nr1") throw new HTTPException(400, { message: "A metodologia precisa de um questionário do tipo NR-1 (anônimo)." })
+      }
+      const ids = new Set(DIMENSIONS.map((d) => d.id as string))
+      const overrides = Object.fromEntries(Object.entries(input.severity).filter(([k, v]) => ids.has(k) && v !== m.severity[k as DimensionId])) as Partial<Record<DimensionId, number>>
+      await ctx.db
+        .update(companies)
+        .set({ methodologyId: m.id, methodologyNote: input.note, methodologyQuestionnaireId: m.id === "propria" ? input.questionnaireId : null, severityOverrides: overrides })
+        .where(eq(companies.id, ctx.session.companyId))
+      await audit(ctx.db, ctx.session, { action: "update", entity: "metodologia", entityId: ctx.session.companyId, summary: `Metodologia definida: ${m.name} (vale para as próximas campanhas)` })
       return c.superjson({ ok: true })
     }),
 

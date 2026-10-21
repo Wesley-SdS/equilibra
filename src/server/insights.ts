@@ -79,9 +79,11 @@ export async function computeInsights(db: Db, companyId: string, campaignId: str
   }
 
   // Só as dimensões medidas pelo questionário entram no ranking e no índice.
+  // Severidade da metodologia vigente na criação da campanha (ou a padrão do Equilibra).
+  const severity = campaign.methodology?.severity
   const ranking = measured.map((d) => {
     const score = overall[d.id] ?? 0
-    return { id: d.id, name: d.name, short: d.short, severity: d.severity, score, level: riskLevel(score) }
+    return { id: d.id, name: d.name, short: d.short, severity: severity?.[d.id] ?? d.severity, score, level: riskLevel(score) }
   }).sort((a, b) => b.score - a.score)
 
   const index = resp.length && ranking.length ? Math.round(ranking.reduce((s, r) => s + r.score, 0) / ranking.length) : 0

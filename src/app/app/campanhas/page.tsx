@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { AnimatePresence, motion } from "motion/react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Suspense, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { PageHeader } from "@/components/app/page-header"
 import { Button, ButtonLink, Card, EmptyState, Field, Input, Select, Spinner } from "@/components/ui/primitives"
 import { useToast } from "@/components/ui/toast"
@@ -81,6 +81,11 @@ function CampaignsContent() {
   const [form, setForm] = useState({ name: "", startsAt: isoIn(0), endsAt: isoIn(14), questionnaireId: params.get("questionario") ?? NR1_STANDARD_ID })
 
   const library = useQuery({ queryKey: ["questionnaires"], queryFn: async () => (await client.questionnaires.list.$get()).json() })
+  const method = useQuery({ queryKey: ["methodology"], queryFn: async () => (await client.company.methodology.$get()).json() })
+  const methodQuestionnaire = method.data?.current.questionnaireId ?? NR1_STANDARD_ID
+  useEffect(() => {
+    if (!params.get("questionario") && method.data) setForm((f) => (f.questionnaireId === NR1_STANDARD_ID ? { ...f, questionnaireId: methodQuestionnaire } : f))
+  }, [method.data, methodQuestionnaire, params])
   const choices = (library.data ?? []).filter((q) => q.status === "active")
   const chosen = choices.find((q) => q.id === form.questionnaireId)
   // Público de questionário identificado: setores inteiros e/ou pessoas avulsas.

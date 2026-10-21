@@ -18,6 +18,7 @@ import { chooseActions, triagePriority } from "../decisions"
 import { assertLimit, assertWritable } from "../billing"
 import { rateLimit } from "../rate-limit"
 import { latestVersion, resolveVersionForCampaign } from "../questionnaires"
+import { effectiveSeverity, methodologyById } from "@/lib/methodologies"
 import { DIMENSIONS, type DimensionId } from "@/lib/methodology"
 
 const dimensionEnum = z.enum(DIMENSIONS.map((d) => d.id) as [DimensionId, ...DimensionId[]])
@@ -134,7 +135,15 @@ export const campaignsRouter = j.router({
     )
     .mutation(async ({ c, ctx, input }) => {
       const { questionnaireId, employeeIds, sectorIds, ...data } = input
-      const chosen = await resolveVersionForCampaign(ctx.db, ctx.session.companyId, questionnaireId)
+      const company = await ctx.db.query.companies.findFirst({ where: eq(companies.id, ctx.session.companyId) })
+      const method = methodologyById(company!.methodologyId)
+      // Sem escolha explícita, a campanha usa o questionário da metodologia da empresa.
+      const chosen = await resolveVersionForCampaign(ctx.db, ctx.session.companyId, questionnaireId ?? method.standardQuestionnaireId ?? company!.methodologyQuestionnaireId)
+      // Campanhas NR-1 guardam a metodologia vigente: trocá-la depois só afeta campanhas futuras.
+      const methodology =
+        chosen.questionnaire.kind === "nr1"
+          ? { id: method.id, name: method.name, severity: effectiveSeverity(method.id, company!.severityOverrides), justification: company!.methodologyNote || method.justification }
+          : null
       // Questionário identificado: cada pessoa recebe um link pessoal; sem público, não há campanha.
       let audience: string[] = []
       if (!chosen.questionnaire.anonymous) {
@@ -164,6 +173,7 @@ export const campaignsRouter = j.router({
           companyId: ctx.session.companyId,
           token: publicToken(),
           questionnaireVersionId: chosen.version.id,
+          methodology,
           customQuestions: extra.map((q) => ({ id: `c:${q.id}`, text: q.text })),
         })
         .returning()
@@ -240,6 +250,7 @@ export const campaignsRouter = j.router({
           startsAt,
           endsAt,
           questionnaireVersionId: version.id,
+          methodology: source.methodology,
           customQuestions: extra.map((q) => ({ id: `c:${q.id}`, text: q.text })),
         })
         .returning()

@@ -66,6 +66,7 @@ function ReportContent() {
 
         <Section n="1" title="Metodologia">
           <p className="text-muted">
+            <strong className="text-fg">Metodologia: {insights.campaign.methodology?.name ?? "Equilibra NR-1"}.</strong> {insights.campaign.methodology?.justification}{" "}
             Avaliação por questionário anônimo autoaplicável (“{insights.questionnaire.name}”, versão {insights.questionnaire.version}) com {insights.questionnaire.scoredCount} itens pontuáveis em{" "}
             {insights.ranking.length} dimensões psicossociais ({insights.ranking.map((d) => d.name).join(", ")}), escala de frequência de 5 pontos. Cada dimensão recebe um
             score de 0 (sem risco) a 100 (risco máximo): baixo &lt; 25, moderado 25–49, alto 50–74, crítico ≥ 75. A classificação

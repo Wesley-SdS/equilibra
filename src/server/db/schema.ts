@@ -30,6 +30,11 @@ export const companies = pgTable("companies", {
   billingProvider: text("billing_provider"),
   providerCustomerId: text("provider_customer_id"),
   providerSubscriptionId: text("provider_subscription_id"),
+  // Metodologia de avaliação escolhida (src/lib/methodologies.ts), justificativa técnica e ajustes de severidade.
+  methodologyId: text("methodology_id").notNull().default("equilibra"),
+  methodologyNote: text("methodology_note").notNull().default(""),
+  methodologyQuestionnaireId: text("methodology_questionnaire_id"),
+  severityOverrides: jsonb("severity_overrides").$type<Partial<Record<DimensionId, number>>>().notNull().default({}),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 })
 
@@ -153,6 +158,8 @@ export const campaigns = pgTable("campaigns", {
   lastReminderAt: timestamp("last_reminder_at"),
   // Campanha histórica trazida por importação de planilha (não conta no limite do plano).
   imported: boolean("imported").notNull().default(false),
+  // Metodologia vigente quando a campanha foi criada: trocar a metodologia só afeta campanhas futuras.
+  methodology: jsonb("methodology").$type<{ id: string; name: string; severity: Record<DimensionId, number>; justification: string } | null>(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 })
 
