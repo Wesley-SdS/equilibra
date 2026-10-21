@@ -14,6 +14,7 @@ import { deleteCookie, getCookie } from "hono/cookie"
 import { extractQuestionsWithClaude, type ExtractMedia } from "../agents/import-extractor"
 import { rateLimit } from "../rate-limit"
 import { DIMENSIONS, type DimensionId } from "@/lib/methodology"
+import { INSTRUMENTS, copsoqKey, hseKey, type InstrumentId } from "@/lib/instruments"
 import { QUESTIONNAIRE_KINDS, type QuestionnaireItem, type QuestionnaireKind } from "@/lib/questionnaire"
 
 const kindEnum = z.enum(QUESTIONNAIRE_KINDS.map((k) => k.id) as [QuestionnaireKind, ...QuestionnaireKind[]])
@@ -90,11 +91,51 @@ function buildResponses(imp: Imp, accepted: Row[]) {
   return { ok, skipped }
 }
 
-async function createRows(db: Db, importId: string, parsed: ParsedFile) {
-  // Propostas em paralelo (o Jev responde em uma chamada por pergunta; sem credencial, só regras).
-  const proposals = await Promise.all(
-    parsed.columns.map(async (c) => {
+type Template = "auto" | InstrumentId
+type Proposed = { proposal: { text: string; dimension: DimensionId | null; risk: boolean }; confidence: number; engine: "jev" | "regras" | "metodologia"; issue?: string } | null
+
+const COPSOQ_PREFIX = /^\s*[A-Z]{2}\s?\d{1,2}[a-z]?\s*[-–.:)]?\s*/
+
+/**
+ * Propostas pela chave oficial do instrumento (HSE pela posição do item, COPSOQ pelo código da escala).
+ * Lança ImportError quando o arquivo não tem a estrutura do instrumento escolhido.
+ */
+export function instrumentProposals(parsed: ParsedFile, template: InstrumentId): Proposed[] {
+  const questionIdx = parsed.columns.map((c, i) => (QUESTION_KINDS.has(c.detected) ? i : -1)).filter((i) => i >= 0)
+  if (template === "hse") {
+    if (questionIdx.length !== 35) {
+      throw new ImportError(`O HSE Indicator Tool tem 35 itens na ordem oficial; o arquivo tem ${questionIdx.length} perguntas. Use o arquivo original, sem incluir ou tirar perguntas.`)
+    }
+    return parsed.columns.map((c, i) => {
+      const pos = questionIdx.indexOf(i)
+      if (pos < 0) return null
+      const k = hseKey(pos + 1)!
+      return { proposal: { text: cleanText(c.raw), dimension: k.dimension, risk: k.risk }, confidence: 98, engine: "metodologia" as const, issue: `Item ${pos + 1} do HSE · escala ${k.scale}` }
+    })
+  }
+  const out = parsed.columns.map((c) => {
+    if (!QUESTION_KINDS.has(c.detected)) return null
+    const k = copsoqKey(c.raw)
+    if (!k) return null
+    const text = cleanText(c.raw.replace(COPSOQ_PREFIX, ""))
+    return {
+      proposal: { text, dimension: k.dimension, risk: k.risk },
+      confidence: 97,
+      engine: "metodologia" as const,
+      issue: k.dimension ? `COPSOQ ${k.code} · ${k.scale}` : `COPSOQ ${k.code} · ${k.scale}: fora do score NR-1 (relatado à parte)`,
+    }
+  })
+  if (!out.some(Boolean)) throw new ImportError("Não reconhecemos os códigos de escala do COPSOQ (ex.: QD1, WP2, IN3) no início dos cabeçalhos. Use o arquivo oficial da rede COPSOQ.")
+  return out
+}
+
+async function createRows(db: Db, importId: string, parsed: ParsedFile, template: Template = "auto") {
+  // Instrumento de mercado: chave oficial. Senão, propostas em paralelo (Jev quando houver; senão, regras).
+  const keyed = template === "auto" ? null : instrumentProposals(parsed, template)
+  const proposals: Proposed[] = await Promise.all(
+    parsed.columns.map(async (c, i) => {
       if (!QUESTION_KINDS.has(c.detected)) return null
+      if (keyed?.[i]) return keyed[i]
       return propose(cleanText(c.raw))
     })
   )
@@ -103,8 +144,8 @@ async function createRows(db: Db, importId: string, parsed: ParsedFile) {
     const text = cleanText(c.raw)
     const proposal = p?.proposal ?? { text, dimension: null, risk: true }
     const action: Row["action"] =
-      c.detected === "identifier" || c.detected === "timestamp" || c.detected === "open" ? "ignore" : c.detected === "sector" ? "sector" : "pending"
-    const issues = [...c.issues]
+      c.detected === "identifier" || c.detected === "timestamp" || c.detected === "open" ? "ignore" : c.detected === "sector" ? "sector" : p?.engine === "metodologia" ? "accept" : "pending"
+    const issues = [...c.issues, ...(p?.issue ? [p.issue] : [])]
     if (p && p.confidence < 70) issues.push("Confira a dimensão e a polaridade: a classificação automática tem pouca confiança.")
     return {
       importId,
@@ -164,6 +205,8 @@ export const importsRouter = j.router({
         text: z.string().max(60_000).optional(),
         // Link de planilha do Google Sheets ("qualquer pessoa com o link") ou de edição do Google Forms.
         googleUrl: z.string().trim().url("Link inválido").max(500).optional(),
+        // Modelo de leitura: automático ou instrumento de mercado (HSE, COPSOQ III) pontuado pela chave oficial.
+        template: z.enum(["auto", "hse", "copsoq3"]).default("auto"),
       })
     )
     .mutation(async ({ c, ctx, input }) => {
@@ -213,6 +256,14 @@ export const importsRouter = j.router({
         if (err instanceof ImportError) throw new HTTPException(422, { message: err.message })
         throw new HTTPException(422, { message: "Não conseguimos ler este arquivo. Confira se ele abre normalmente e tente de novo." })
       }
+      if (input.template !== "auto") {
+        try {
+          instrumentProposals(parsed, input.template)
+        } catch (err) {
+          if (err instanceof ImportError) throw new HTTPException(422, { message: err.message })
+          throw err
+        }
+      }
       if (!parsed.columns.some((col) => QUESTION_KINDS.has(col.detected))) {
         throw new HTTPException(422, { message: "Não encontramos perguntas no arquivo. A primeira linha da planilha deve ter as perguntas." })
       }
@@ -224,14 +275,16 @@ export const importsRouter = j.router({
           userId: ctx.session.userId,
           source: parsed.source,
           filename: input.filename,
-          name: `${base} (importado)`.slice(0, 80),
+          name: input.template === "auto" ? `${base} (importado)`.slice(0, 80) : INSTRUMENTS[input.template].name,
+          template: input.template,
+          kind: input.template === "auto" ? "clima" : "nr1",
           responseCount: parsed.data?.values.length ?? 0,
           importResponses: Boolean(parsed.data?.values.length),
           dropped: parsed.dropped,
           data: parsed.data,
         })
         .returning()
-      await createRows(ctx.db, imp!.id, parsed)
+      await createRows(ctx.db, imp!.id, parsed, input.template)
       await audit(ctx.db, ctx.session, {
         action: "create",
         entity: "importação",
@@ -339,7 +392,15 @@ export const importsRouter = j.router({
     const result = await ctx.db.transaction(async (tx) => {
       const [q] = await tx
         .insert(questionnaires)
-        .values({ companyId: ctx.session.companyId, name: imp.name, purpose: `Importado de ${imp.filename}`, kind: imp.kind, anonymous: true, origin: "imported" })
+        .values({
+          companyId: ctx.session.companyId,
+          name: imp.name,
+          purpose: imp.template === "auto" ? `Importado de ${imp.filename}` : `${INSTRUMENTS[imp.template].source}. ${INSTRUMENTS[imp.template].attribution}`,
+          kind: imp.kind,
+          anonymous: true,
+          origin: "imported",
+          instrument: imp.template === "auto" ? null : imp.template,
+        })
         .returning()
       const [version] = await tx.insert(questionnaireVersions).values({ questionnaireId: q!.id, version: 1, items }).returning()
       let campaignId: string | null = null

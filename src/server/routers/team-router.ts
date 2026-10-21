@@ -6,7 +6,7 @@ import { publicToken } from "../auth"
 import { audit } from "../audit"
 import { editorProcedure, j, ownerProcedure, privateProcedure } from "../jstack"
 import { questionnaires } from "../db/schema"
-import { visibleTo } from "../questionnaires"
+import { latestVersion, visibleTo } from "../questionnaires"
 import { METHODOLOGIES, effectiveSeverity, methodologyById } from "@/lib/methodologies"
 import { DIMENSIONS, type DimensionId } from "@/lib/methodology"
 import { appUrl, sendEmail } from "../email"
@@ -142,7 +142,10 @@ export const companyRouter = j.router({
     )
     .mutation(async ({ c, ctx, input }) => {
       const m = methodologyById(input.id)
-      if (m.status !== "disponivel") throw new HTTPException(400, { message: `${m.name} ainda aguarda a confirmação da licença de uso. Use a metodologia própria com o instrumento licenciado da sua consultoria.` })
+      const needsQuestionnaire = m.id === "propria" || m.status === "importar"
+      if (needsQuestionnaire && !input.questionnaireId) {
+        throw new HTTPException(400, { message: m.status === "importar" ? `Importe o arquivo oficial do ${m.name} em Questionários → Importar e escolha-o aqui.` : "Escolha o questionário da metodologia própria." })
+      }
       if (m.id === "propria") {
         if (!input.questionnaireId) throw new HTTPException(400, { message: "Escolha o questionário da metodologia própria." })
         if (input.note.length < 40) throw new HTTPException(400, { message: "Escreva a justificativa técnica da metodologia própria (ela vai para o relatório PGR)." })
@@ -150,12 +153,17 @@ export const companyRouter = j.router({
       if (input.questionnaireId) {
         const q = await ctx.db.query.questionnaires.findFirst({ where: and(eq(questionnaires.id, input.questionnaireId), visibleTo(ctx.session.companyId)) })
         if (!q || q.kind !== "nr1") throw new HTTPException(400, { message: "A metodologia precisa de um questionário do tipo NR-1 (anônimo)." })
+        if (m.status === "importar") {
+          if (q.instrument !== m.id) throw new HTTPException(400, { message: `Escolha um questionário importado com o modelo ${m.name}.` })
+          const v = await latestVersion(ctx.db, q.id)
+          if (m.id === "copsoq3" && (v?.version ?? 1) !== 1) throw new HTTPException(400, { message: "Este COPSOQ foi modificado e não pode ser usado com o nome COPSOQ. Importe de novo o arquivo oficial." })
+        }
       }
       const ids = new Set(DIMENSIONS.map((d) => d.id as string))
       const overrides = Object.fromEntries(Object.entries(input.severity).filter(([k, v]) => ids.has(k) && v !== m.severity[k as DimensionId])) as Partial<Record<DimensionId, number>>
       await ctx.db
         .update(companies)
-        .set({ methodologyId: m.id, methodologyNote: input.note, methodologyQuestionnaireId: m.id === "propria" ? input.questionnaireId : null, severityOverrides: overrides })
+        .set({ methodologyId: m.id, methodologyNote: input.note, methodologyQuestionnaireId: needsQuestionnaire ? input.questionnaireId : null, severityOverrides: overrides })
         .where(eq(companies.id, ctx.session.companyId))
       await audit(ctx.db, ctx.session, { action: "update", entity: "metodologia", entityId: ctx.session.companyId, summary: `Metodologia definida: ${m.name} (vale para as próximas campanhas)` })
       return c.superjson({ ok: true })

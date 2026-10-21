@@ -125,6 +125,9 @@ export const questionnairesRouter = j.router({
     const current = await latestVersion(ctx.db, q.id)
     const items = input.items ? normalizeItems(input.items) : null
     const changed = items !== null && canonical(items) !== canonical(current?.items ?? [])
+    if (changed && q.instrument === "copsoq3") {
+      throw new HTTPException(400, { message: "O COPSOQ não pode ser modificado (licença CC BY-NC-ND da rede COPSOQ). Duplique o questionário para criar uma adaptação própria, sem o nome COPSOQ." })
+    }
     const next = changed ? (current?.version ?? 0) + 1 : null
     await ctx.db.transaction(async (tx) => {
       await tx
@@ -151,7 +154,15 @@ export const questionnairesRouter = j.router({
     const row = await ctx.db.transaction(async (tx) => {
       const [q] = await tx
         .insert(questionnaires)
-        .values({ companyId: ctx.session.companyId, name: `${source.name} (cópia)`.slice(0, 80), purpose: source.purpose, kind: source.kind, anonymous: true, origin: "manual" })
+        .values({
+          companyId: ctx.session.companyId,
+          // Cópia de instrumento licenciado vira questionário próprio, sem o nome nem a chave do instrumento.
+          name: source.instrument ? "Questionário próprio (adaptado)" : `${source.name} (cópia)`.slice(0, 80),
+          purpose: source.instrument ? "Adaptação própria; não é o instrumento original." : source.purpose,
+          kind: source.kind,
+          anonymous: true,
+          origin: "manual",
+        })
         .returning()
       await tx.insert(questionnaireVersions).values({ questionnaireId: q!.id, version: 1, items: version?.items ?? [] })
       return q!

@@ -155,3 +155,29 @@ describe("Espaço de escuta", () => {
     expect(await purgeListening(db)).toBeGreaterThanOrEqual(1)
   })
 })
+
+describe("cenários de segurança (scripts/escuta-cenarios.json)", () => {
+  it("todo cenário de crise dispara o protocolo fixo; os cenários comuns não", async () => {
+    const { default: s } = await import("../scripts/escuta-cenarios.json")
+    for (const t of s.crise) expect(detectRisk(t), t).toBe(true)
+    for (const c of s.modelo) expect(detectRisk(c.texto), c.texto).toBe(false)
+  })
+})
+
+describe("piloto fechado", () => {
+  it("sem liberação geral, só as empresas da lista do piloto", async () => {
+    const { listeningPlatformEnabled } = await import("@/server/listening")
+    const prev = process.env.ESCUTA_ENABLED
+    delete process.env.ESCUTA_ENABLED
+    process.env.ESCUTA_PILOT_COMPANIES = "padaria-sol, Metal-Norte"
+    try {
+      expect(listeningPlatformEnabled("padaria-sol")).toBe(true)
+      expect(listeningPlatformEnabled("metal-norte")).toBe(true)
+      expect(listeningPlatformEnabled("outra")).toBe(false)
+      expect(listeningPlatformEnabled(null)).toBe(false)
+    } finally {
+      delete process.env.ESCUTA_PILOT_COMPANIES
+      process.env.ESCUTA_ENABLED = prev
+    }
+  })
+})

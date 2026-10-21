@@ -78,6 +78,7 @@ export async function listQuestionnaires(db: Db, companyId: string) {
       anonymous: questionnaires.anonymous,
       status: questionnaires.status,
       origin: questionnaires.origin,
+      instrument: questionnaires.instrument,
       createdAt: questionnaires.createdAt,
       updatedAt: questionnaires.updatedAt,
       version: sql<number>`(select max(v.version) from ${questionnaireVersions} v where v.questionnaire_id = questionnaires.id)::int`,

@@ -27,6 +27,13 @@ const DETECTED: Record<string, { label: string; cls: string }> = {
   timestamp: { label: "Data/hora (ignorada)", cls: "bg-tint/[0.06] text-subtle" },
 }
 
+type Template = "auto" | "hse" | "copsoq3"
+const TEMPLATES: Record<Template, { label: string; hint: string }> = {
+  auto: { label: "Automático (qualquer questionário)", hint: "O copiloto classifica cada pergunta nas 7 dimensões; você revisa antes de confirmar." },
+  hse: { label: "HSE Management Standards Indicator Tool", hint: "35 itens na ordem oficial, pontuados pela chave do HSE. Baixe o arquivo gratuito em hse.gov.uk/stress/standards." },
+  copsoq3: { label: "COPSOQ III (arquivo oficial)", hint: "Cabeçalhos com os códigos das escalas (QD1, WP2, IN3…). Obtenha a versão em português com a rede COPSOQ; o questionário não pode ser modificado." },
+}
+
 function toBase64(file: File) {
   return new Promise<string>((resolve, reject) => {
     const r = new FileReader()
@@ -45,6 +52,8 @@ function Upload() {
   const [text, setText] = useState("")
   const [googleUrl, setGoogleUrl] = useState("")
   const params = useSearchParams()
+  const initialTemplate = params.get("modelo")
+  const [template, setTemplate] = useState<Template>(initialTemplate === "hse" || initialTemplate === "copsoq3" ? initialTemplate : "auto")
   const google = useQuery({ queryKey: ["google-status"], queryFn: async () => (await client.imports.googleStatus.$get()).json() })
   useEffect(() => {
     const g = params.get("google")
@@ -55,7 +64,7 @@ function Upload() {
   const isForms = googleUrl.includes("/forms/")
   const drafts = useQuery({ queryKey: ["imports"], queryFn: async () => (await client.imports.list.$get()).json() })
   const upload = useMutation({
-    mutationFn: async (v: { filename: string; data?: string; text?: string; googleUrl?: string }) => (await client.imports.upload.$post(v)).json(),
+    mutationFn: async (v: { filename: string; data?: string; text?: string; googleUrl?: string }) => (await client.imports.upload.$post({ ...v, template })).json(),
     onSuccess: (r) => router.replace(`/app/questionario/importar?id=${r.id}`),
     onError: (e) => toast(e.message, "error"),
   })
@@ -69,6 +78,15 @@ function Upload() {
     <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr] [&>*]:min-w-0">
       <Card className="flex flex-col gap-4">
         <h2 className="text-lg font-semibold">Enviar arquivo</h2>
+        <Field label="Modelo de leitura" htmlFor="tpl" hint={TEMPLATES[template].hint}>
+          <Select id="tpl" value={template} onChange={(e) => setTemplate(e.target.value as Template)}>
+            {(Object.keys(TEMPLATES) as Template[]).map((k) => (
+              <option key={k} value={k}>
+                {TEMPLATES[k].label}
+              </option>
+            ))}
+          </Select>
+        </Field>
         <button
           type="button"
           onClick={() => input.current?.click()}

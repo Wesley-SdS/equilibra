@@ -1,6 +1,7 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import Link from "next/link"
 import { useEffect, useState } from "react"
 import { PageHeader } from "@/components/app/page-header"
 import { Button, Card, Field, Select, Spinner, Textarea } from "@/components/ui/primitives"
@@ -31,7 +32,7 @@ export default function MethodologyPage() {
   }, [data.data])
 
   const save = useMutation({
-    mutationFn: async () => (await client.company.setMethodology.$post({ id: selected, note, questionnaireId: selected === "propria" ? questionnaireId || null : null, severity })).json(),
+    mutationFn: async () => (await client.company.setMethodology.$post({ id: selected, note, questionnaireId: needsQuestionnaire ? questionnaireId || null : null, severity })).json(),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["methodology"] })
       toast("Metodologia salva. Vale para as próximas campanhas NR-1.")
@@ -48,7 +49,9 @@ export default function MethodologyPage() {
   }
   const catalog = data.data.catalog
   const chosen = catalog.find((m) => m.id === selected)!
-  const nr1Questionnaires = (library.data ?? []).filter((q) => q.kind === "nr1" && q.status === "active")
+  const needsQuestionnaire = selected === "propria" || chosen.status === "importar"
+  // Instrumento de mercado: só o questionário importado com o modelo correspondente.
+  const nr1Questionnaires = (library.data ?? []).filter((q) => q.kind === "nr1" && q.status === "active" && (chosen.status === "importar" ? q.instrument === chosen.id : true))
 
   return (
     <>
@@ -64,20 +67,20 @@ export default function MethodologyPage() {
             <button
               key={m.id}
               type="button"
-              disabled={!can.edit || m.status !== "disponivel"}
+              disabled={!can.edit}
               onClick={() => {
                 setSelected(m.id)
                 setSeverity(m.id === data.data.current.id ? data.data.current.severity : m.severity)
                 if (m.id !== data.data.current.id) setNote(m.id === "propria" ? "" : m.justification)
               }}
-              className={cn("flex flex-col gap-2 rounded-2xl border p-4 text-left transition-colors disabled:cursor-default", on ? "border-brand bg-brand/[0.06]" : "border-line bg-surface hover:border-line-strong", m.status !== "disponivel" && "opacity-60")}
+              className={cn("flex flex-col gap-2 rounded-2xl border p-4 text-left transition-colors disabled:cursor-default", on ? "border-brand bg-brand/[0.06]" : "border-line bg-surface hover:border-line-strong")}
             >
               <div className="flex items-start justify-between gap-2">
                 <span className="font-semibold leading-snug">{m.name}</span>
                 {current ? (
                   <span className="shrink-0 rounded-full bg-brand/15 px-2 py-0.5 text-[11px] text-brand-fg">Em uso</span>
-                ) : m.status === "licenca" ? (
-                  <span className="shrink-0 rounded-full bg-risk-mod/50 px-2 py-0.5 text-[11px] text-risk-mod-fg">Aguardando licença</span>
+                ) : m.status === "importar" ? (
+                  <span className="shrink-0 rounded-full bg-tint/[0.08] px-2 py-0.5 text-[11px] text-muted">Importar arquivo oficial</span>
                 ) : null}
               </div>
               <span className="text-xs text-subtle">{m.source}</span>
@@ -92,8 +95,23 @@ export default function MethodologyPage() {
           <h2 className="text-lg font-semibold">{chosen.name}</h2>
           <p className="text-sm text-muted">Ajuste a justificativa técnica e a severidade de cada dimensão. Campanhas já lançadas mantêm a metodologia com que foram criadas.</p>
         </div>
-        {selected === "propria" && (
-          <Field label="Questionário da metodologia" htmlFor="mq" hint="Crie ou importe o instrumento da sua consultoria em Questionários (tipo NR-1, anônimo) e escolha-o aqui.">
+        {needsQuestionnaire && (
+          <Field
+            label="Questionário da metodologia"
+            htmlFor="mq"
+            hint={
+              chosen.status === "importar" ? (
+                <>
+                  {nr1Questionnaires.length ? "Questionários importados com o modelo oficial. " : "Nenhum questionário importado com este modelo ainda. "}
+                  <Link className="text-brand-fg underline" href={`/app/questionario/importar?modelo=${chosen.id}`}>
+                    Importar o instrumento oficial
+                  </Link>
+                </>
+              ) : (
+                "Crie ou importe o instrumento da sua consultoria em Questionários (tipo NR-1, anônimo) e escolha-o aqui."
+              )
+            }
+          >
             <Select id="mq" disabled={!can.edit} value={questionnaireId} onChange={(e) => setQuestionnaireId(e.target.value)}>
               <option value="">Escolha…</option>
               {nr1Questionnaires.map((q) => (

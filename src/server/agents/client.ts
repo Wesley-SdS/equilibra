@@ -71,7 +71,8 @@ export function setAgentRunner(runner: AgentRunner | null) {
   testRunner = runner
 }
 
-const anthropicRunner: AgentRunner = async ({ system, messages, schema, maxTokens }) => {
+/** Chamada real ao modelo, sem cota nem registro (usada pela avaliação de segurança em scripts/). */
+export const anthropicRunner: AgentRunner = async ({ system, messages, schema, maxTokens }) => {
   const client = await makeClient()
   if (!client) throw new HTTPException(503, { message: "Os copilotos não estão configurados neste ambiente." })
   const response = await client.messages.parse({

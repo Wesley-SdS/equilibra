@@ -7,8 +7,10 @@
 //     a conversa: contatos de emergência primeiro, o agente só acompanha;
 //   - a empresa nunca vê conversas, quem usou nem sinais de crise; só temas agregados acima dos mínimos.
 //
-// Só funciona com ESCUTA_ENABLED=1 (liberação da plataforma após parecer jurídico e psicólogo RT) E a
-// adesão do dono da empresa.
+// Só funciona com a liberação da plataforma E a adesão do dono da empresa. Liberação:
+//   - ESCUTA_ENABLED=1: todas as empresas (depois do parecer jurídico e do aval do psicólogo RT);
+//   - ESCUTA_PILOT_COMPANIES=slug-a,slug-b: piloto fechado, só as empresas da lista.
+// Protocolo de revisão em docs/escuta-protocolo-rt.md; avaliação de segurança em scripts/eval-escuta.ts.
 
 import { createCipheriv, createDecipheriv, createHash, hkdfSync, randomBytes } from "node:crypto"
 import { and, asc, eq, lt, sql } from "drizzle-orm"
@@ -27,8 +29,18 @@ export const MIN_EMPLOYEES = 20
 export const RETENTION_DAYS = 90
 const DAY = 86_400_000
 
-export function listeningPlatformEnabled() {
-  return process.env.ESCUTA_ENABLED === "1"
+/** Empresas do piloto fechado (slugs separados por vírgula). */
+export function pilotCompanies() {
+  return (process.env.ESCUTA_PILOT_COMPANIES ?? "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean)
+}
+
+/** Liberação da plataforma para a empresa (geral ou pelo piloto). */
+export function listeningPlatformEnabled(slug?: string | null) {
+  if (process.env.ESCUTA_ENABLED === "1") return true
+  return Boolean(slug && pilotCompanies().includes(slug.toLowerCase()))
 }
 
 // ---------------------------------------------------------------- cifra por conversa
@@ -54,7 +66,7 @@ export const hashToken = (secret: string) => createHash("sha256").update(secret)
 // ---------------------------------------------------------------- risco e protocolo de crise
 
 const RISK =
-  /(suicid|me matar|tirar (a )?minha (pr[oó]pria )?vida|acabar com (a minha vida|tudo)|n[aã]o (quero|aguento) mais viver|melhor (eu )?(morrer|n[aã]o acordar)|me machucar|me cortar|ningu[eé]m (ia|vai) sentir (minha )?falta|sem sa[ií]da|quero sumir|vou fazer uma besteira|ele vai me matar|me agrediu|estou sendo agredid)/i
+  /(suicid|me matar|tirar (a )?minha (pr[oó]pria )?vida|acabar com (a minha vida|tudo)|n[aã]o (quero|aguento) mais viver|melhor (eu )?(morrer|n[aã]o acordar)|me machucar|me cortar|ningu[eé]m (ia|vai) sentir (minha )?falta|sem sa[ií]da|quero sumir|vou fazer uma besteira|ele vai me matar|me agrediu|estou sendo agredid|sentido (em|de) (continuar|estar) viv|vontade de morrer|queria (estar )?morr|n[aã]o quero (mais )?(estar aqui|existir|acordar)|vai me matar)/i
 
 /** Sinal de risco imediato (regras deliberadamente sensíveis: falso positivo é aceitável, falso negativo não). */
 export function detectRisk(text: string) {
@@ -67,9 +79,9 @@ export const CRISIS_REPLY =
 export const CRISIS_FOLLOWUP =
   "Estou aqui. O mais importante agora é você estar em segurança e falar com alguém preparado: CVV 188, a qualquer hora, ou SAMU 192 em emergência. Você está com alguém ou conseguiu fazer a ligação?"
 
-const DIAGNOSIS = /\b(voc[eê] (tem|est[aá] com|sofre de) (depress|ansiedade|burnout|transtorno|s[ií]ndrome)|isso (é|e) (depress|burnout|um transtorno)|recomendo (o )?(rem[eé]dio|medicamento)|tome (rem[eé]dio|medicamento))/i
+export const DIAGNOSIS = /\b(voc[eê] (tem|est[aá] com|sofre de) (depress|ansiedade|burnout|transtorno|s[ií]ndrome)|isso (é|e) (depress|burnout|um transtorno)|recomendo (o )?(rem[eé]dio|medicamento)|tome (rem[eé]dio|medicamento))/i
 
-const SYSTEM = `Você é o Espaço de escuta do Equilibra: um agente de apoio, feito de inteligência artificial, para trabalhadores de uma empresa brasileira falarem do que está pesando no trabalho.
+export const LISTENING_SYSTEM = `Você é o Espaço de escuta do Equilibra: um agente de apoio, feito de inteligência artificial, para trabalhadores de uma empresa brasileira falarem do que está pesando no trabalho.
 Você NÃO é psicólogo e não faz terapia. Seu papel é: ouvir com respeito, devolver o que entendeu, dar informação confiável e ajudar a pessoa a encontrar o próximo passo e a ajuda certa.
 
 Como conversar:
@@ -88,7 +100,7 @@ Nunca:
 Se perceber qualquer sinal de risco à vida ou de violência, diga que ela merece falar com uma pessoa agora e indique o CVV 188 e o SAMU 192 antes de qualquer outra coisa.
 Responda sempre em português do Brasil.`
 
-const replySchema = z.object({
+export const listeningReplySchema = z.object({
   reply: z.string().describe("Resposta à pessoa, até 5 frases"),
   options: z.array(z.string()).describe("0 a 3 sugestões curtas de próximo passo que a pessoa pode tocar para continuar"),
 })
@@ -99,7 +111,7 @@ export async function listeningStatus(db: Db, slug: string) {
   const company = await db.query.companies.findFirst({ where: eq(companies.slug, slug) })
   if (!company) throw new HTTPException(404, { message: "Espaço não encontrado" })
   const ent = entitlements(company)
-  const available = listeningPlatformEnabled() && company.listeningEnabled && !ent.readOnly && ent.plan.id !== "essencial" && agentsAvailable()
+  const available = listeningPlatformEnabled(company.slug) && company.listeningEnabled && !ent.readOnly && ent.plan.id !== "essencial" && agentsAvailable()
   return { company, available }
 }
 
@@ -158,8 +170,8 @@ export async function sendMessage(db: Db, conv: typeof listeningConversations.$i
       {
         agent: "listening",
         promptVersion: LISTENING_PROMPT_VERSION,
-        system: SYSTEM,
-        schema: replySchema,
+        system: LISTENING_SYSTEM,
+        schema: listeningReplySchema,
         input: { conversation: conv.id, turn: history.length },
         maxTokens: 2000,
         skipQuota: true,
@@ -195,7 +207,8 @@ export async function listeningInsights(db: Db, companyId: string) {
   const enough = active >= MIN_CONVERSATIONS && Math.max(headcount, company?.employees ?? 0) >= MIN_EMPLOYEES
   const rows = enough ? await db.select().from(listeningThemes).where(and(eq(listeningThemes.companyId, companyId), eq(listeningThemes.month, m))) : []
   return {
-    platformEnabled: listeningPlatformEnabled(),
+    platformEnabled: listeningPlatformEnabled(company?.slug),
+    pilot: process.env.ESCUTA_ENABLED !== "1" && listeningPlatformEnabled(company?.slug),
     enabled: company?.listeningEnabled ?? false,
     enabledAt: company?.listeningEnabledAt ?? null,
     month: m,

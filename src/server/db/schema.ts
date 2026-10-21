@@ -120,6 +120,8 @@ export const questionnaires = pgTable("questionnaires", {
   anonymous: boolean("anonymous").notNull().default(true),
   status: text("status").$type<QuestionnaireStatus>().notNull().default("active"),
   origin: text("origin").$type<QuestionnaireOrigin>().notNull().default("manual"),
+  // Instrumento de mercado reconhecido na importação (pontuado pela chave oficial). COPSOQ não pode ser modificado.
+  instrument: text("instrument").$type<"hse" | "copsoq3">(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 })
@@ -378,6 +380,8 @@ export const imports = pgTable("imports", {
   status: text("status").$type<"draft" | "confirmed" | "discarded">().notNull().default("draft"),
   name: text("name").notNull(),
   kind: text("kind").$type<QuestionnaireKind>().notNull().default("clima"),
+  // Modelo de leitura escolhido no envio: automático ou instrumento de mercado (chave oficial).
+  template: text("template").$type<"auto" | "hse" | "copsoq3">().notNull().default("auto"),
   responseCount: integer("response_count").notNull().default(0),
   importResponses: boolean("import_responses").notNull().default(true),
   /** Valor da coluna de setor → id do setor da empresa, "new" (criar) ou null (pendente). */

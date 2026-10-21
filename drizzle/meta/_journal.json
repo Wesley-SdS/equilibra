@@ -120,6 +120,13 @@
       "when": 1792612150504,
       "tag": "0016_spotty_sally_floyd",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792624394842,
+      "tag": "0017_sour_cassandra_nova",
+      "breakpoints": true
     }
   ]
 }

@@ -127,7 +127,7 @@ export function Field({
   label: string
   htmlFor: string
   error?: string
-  hint?: string
+  hint?: React.ReactNode
   children: React.ReactNode
 }) {
   return (

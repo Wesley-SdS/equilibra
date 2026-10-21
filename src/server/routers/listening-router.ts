@@ -74,7 +74,8 @@ export const listeningAdminRouter = j.router({
   }),
 
   setEnabled: ownerProcedure.input(z.object({ enabled: z.boolean(), acknowledge: z.boolean().optional() })).mutation(async ({ c, ctx, input }) => {
-    if (input.enabled && !listeningPlatformEnabled()) {
+    const own = await ctx.db.query.companies.findFirst({ where: eq(companies.id, ctx.session.companyId) })
+    if (input.enabled && !listeningPlatformEnabled(own?.slug)) {
       throw new HTTPException(400, { message: "O Espaço de escuta ainda está em piloto fechado e não pode ser ativado nesta instalação." })
     }
     if (input.enabled && input.acknowledge !== true) {

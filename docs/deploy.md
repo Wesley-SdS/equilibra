@@ -37,7 +37,9 @@
 | `ANTHROPIC_API_KEY` | não | chave da Anthropic para os copilotos; sem ela, os copilotos usam o AI Gateway (OIDC na Vercel ou `AI_GATEWAY_API_KEY`) |
 | `AGENT_MODEL` | não | modelo dos copilotos; padrão `claude-opus-5-5` (direto) ou `anthropic/claude-opus-5.5` (Gateway) |
 | `AGENTS_DISABLED` | não | `1` desliga todos os copilotos (as telas seguem no fluxo manual) |
-| `ESCUTA_ENABLED` | não | `1` libera o Espaço de escuta na plataforma. **Só ligar depois do parecer jurídico e com o psicólogo responsável técnico contratado** (decisão 8 do PRD v2); cada empresa ainda precisa ativar |
+| `ESCUTA_ENABLED` | não | `1` libera o Espaço de escuta para todas as empresas. **Só ligar depois do parecer jurídico, do RIPD assinado e da aprovação do psicólogo responsável técnico** (decisão 8 do PRD v2; `docs/escuta-protocolo-rt.md`); cada empresa ainda precisa ativar |
+| `ESCUTA_PILOT_COMPANIES` | não | piloto fechado: slugs das empresas separados por vírgula (ex.: `padaria-sol,metal-norte`). Vale sem `ESCUTA_ENABLED` |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | não | importação direta do Google Forms (OAuth, escopos `forms.body.readonly` e `forms.responses.readonly`). No Google Cloud, cadastre a URI de redirecionamento `{APP_URL}/api/google/callback`. Sem elas, o Forms é importado pela planilha de respostas |
 
 Sem `RESEND_API_KEY`, o app funciona, mas os e-mails não são enviados (só registrados no log). Sem credencial de IA, os copilotos somem das telas e o resumo do relatório é montado por regras.
 

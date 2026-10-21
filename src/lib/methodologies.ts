@@ -17,7 +17,8 @@ export type Methodology = {
   name: string
   source: string
   url?: string
-  status: "disponivel" | "licenca"
+  /** "importar": a empresa importa o arquivo oficial e escolhe o questionário importado. */
+  status: "disponivel" | "importar"
   description: string
   /** Questionário de sistema que a campanha NR-1 usa por padrão (null = escolhido pela empresa). */
   standardQuestionnaireId: string | null
@@ -58,21 +59,23 @@ export const METHODOLOGIES: Methodology[] = [
     name: "COPSOQ III (versão curta, português)",
     source: "Copenhagen Psychosocial Questionnaire, 3ª versão · rede internacional COPSOQ",
     url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8834667/",
-    status: "licenca",
-    description: "Referência internacional mais citada pelas consultorias de SST. Disponível quando a licença de uso comercial for confirmada; consultorias licenciadas podem importar o instrumento e usá-lo como metodologia própria.",
+    status: "importar",
+    description: "Referência internacional mais citada pelas consultorias de SST. Obtenha a versão oficial em português com o membro da rede COPSOQ (uso gratuito, sem modificações) e importe o arquivo: o Equilibra reconhece as escalas pelos códigos e pontua sem alterar os itens.",
     standardQuestionnaireId: null,
     severity: { demandas: 4, controle: 3, lideranca: 3, colegas: 2, relacoes: 5, papel: 2, reconhecimento: 3 },
-    justification: "Copenhagen Psychosocial Questionnaire (COPSOQ III), versão curta adaptada ao português, aplicado de forma anônima.",
+    justification:
+      "Copenhagen Psychosocial Questionnaire (COPSOQ III), versão oficial em português, aplicado de forma anônima e sem modificações, conforme as diretrizes da COPSOQ International Network (licença CC BY-NC-ND 4.0; o questionário não é cobrado). As escalas foram mapeadas nas 7 dimensões de riscos psicossociais; indicadores de saúde e de resultado são relatados fora do score do inventário.",
   },
   {
     id: "hse",
     name: "HSE Management Standards Indicator Tool",
     source: "Health and Safety Executive (Reino Unido) · 35 itens em 7 domínios",
-    status: "licenca",
-    description: "Domínios quase idênticos aos do Equilibra (demandas, controle, apoio da gestão, apoio dos pares, relações, papel, mudança). Disponível quando os termos de uso comercial da tradução forem confirmados.",
+    status: "importar",
+    description: "Domínios quase idênticos aos do Equilibra (demandas, controle, apoio da gestão, apoio dos pares, relações, papel, mudança). Baixe o Indicator Tool gratuito no site do HSE (ou uma tradução validada) e importe o arquivo: o Equilibra pontua pela chave oficial dos 35 itens.",
     standardQuestionnaireId: null,
     severity: { demandas: 4, controle: 3, lideranca: 3, colegas: 2, relacoes: 5, papel: 3, reconhecimento: 3 },
-    justification: "HSE Management Standards Indicator Tool, 35 itens em 7 domínios, aplicado de forma anônima.",
+    justification:
+      "HSE Management Standards Indicator Tool (Health and Safety Executive, Reino Unido), 35 itens em 7 escalas (demandas, controle, apoio da gestão, apoio dos colegas, relacionamentos, papel e mudança), aplicado de forma anônima e pontuado pela chave oficial dos itens, mapeada nas 7 dimensões de riscos psicossociais. Contém informação do setor público licenciada sob a Open Government Licence v3.0.",
   },
   {
     id: "propria",

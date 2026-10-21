@@ -53,15 +53,15 @@ PRD em Claude Docs: https://claude.ai/code/artifact/1bcdb356-1c6e-4506-85b8-0508
 |---|---|---|
 | 1 | ✅ Questionário vira entidade versionada; campanha aponta para uma versão; NR-1 padrão sempre anônimo | Feito |
 | 1 | ✅ Biblioteca "Questionários" e escolha do questionário na nova campanha | Feito |
-| 1 | ✅ Importação de formulários (XLSX, CSV do Google Forms, PDF com texto, texto colado) com revisão e correção | Feito. OCR de PDF escaneado e OAuth do Google Forms ficaram para depois |
+| 1 | ✅ Importação de formulários (XLSX, CSV, PDF, PDF escaneado e foto pelo Claude, Google Sheets, Google Forms por OAuth, texto colado) com revisão e correção | Feito |
 | 1 | ✅ Modo identificado: pessoas, link pessoal com aceite, quem respondeu e o quê | Feito |
 | 1 | ✅ Copiloto de questionários e módulo comum de agentes (`src/server/agents/`) | Feito. Falta a `ANTHROPIC_API_KEY` ou o AI Gateway com Claude habilitado em produção |
-| 1 | 🟡 Metodologias configuráveis | Equilibra, Guia MTE e própria feitos; COPSOQ III e HSE aguardam a confirmação da licença de uso comercial |
+| 1 | ✅ Metodologias configuráveis | Equilibra, Guia MTE, própria, HSE Indicator Tool e COPSOQ III. HSE e COPSOQ entram pelo arquivo oficial importado com o modelo do instrumento (chave oficial de pontuação; o Equilibra não distribui os itens). COPSOQ não pode ser modificado (CC BY-NC-ND) e a cópia perde o nome |
 | 2 | ✅ Evolução redesenhada | Feito |
 | 2 | ✅ Cards do plano e copiloto do plano | Feito |
 | 2 | ✅ Relatório com resumo executivo aprovado e registro de observação e diálogo | Feito |
 | 2 | ✅ Copiloto do canal de relato | Feito |
-| 3 | 🟡 Espaço de escuta | Construído e testado, desligado por padrão (`ESCUTA_ENABLED`). Falta: parecer jurídico, psicólogo responsável técnico revisando prompt e protocolo de crise, RIPD e piloto com 3 empresas |
+| 3 | 🟡 Espaço de escuta | Construído e testado, desligado por padrão. Piloto por lista (`ESCUTA_PILOT_COMPANIES`), rascunho de RIPD, roteiro da consulta jurídica, protocolo do RT e avaliação de segurança (`scripts/eval-escuta.ts`) prontos. Falta o que não é código: parecer do advogado, contratar o psicólogo RT, rodar e assinar a avaliação, escolher as 3 empresas do piloto |
 
 ## Produtos 2, 3 e 4
 

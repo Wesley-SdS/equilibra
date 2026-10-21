@@ -52,6 +52,14 @@ export default function ListeningAdminPage() {
           </p>
         </Card>
       )}
+      {d.pilot && (
+        <Card className="mb-4 border-brand/40">
+          <h2 className="font-semibold">Sua empresa está no piloto</h2>
+          <p className="mt-1 text-sm leading-relaxed text-muted">
+            O Espaço de escuta está liberado só para as empresas do piloto, acompanhadas pelo psicólogo responsável técnico. Avise a equipe que é uma IA de apoio, não atendimento psicológico, e conte para nós o que funcionou e o que não funcionou.
+          </p>
+        </Card>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr] [&>*]:min-w-0">
         <Card className="flex flex-col gap-4">

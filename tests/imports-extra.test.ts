@@ -134,3 +134,69 @@ describe("PDF escaneado e foto pelo Claude", () => {
     expect(sent[0]).toMatchObject({ type: "image", source: { media_type: "image/jpeg" } })
   })
 })
+
+describe("instrumentos de mercado (HSE e COPSOQ)", () => {
+  const csv = (headers: string[], rows: string[][]) => Buffer.from([headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n")).toString("base64")
+
+  it("HSE: exige 35 itens e pontua pela chave oficial; vira metodologia da empresa", async () => {
+    const cookie = await setup()
+    const short = await call("imports/upload", { cookie, body: { filename: "hse.csv", template: "hse", data: csv(["Item 1", "Item 2"], [["Never", "Always"]]) } })
+    expect(short.status).toBe(422)
+    expect(short.text).toContain("35 itens")
+
+    const headers = Array.from({ length: 35 }, (_, i) => `Pergunta oficial número ${i + 1} do indicador`)
+    const rows = Array.from({ length: 6 }, (_, r) => headers.map((_, i) => ["Never", "Seldom", "Sometimes", "Often", "Always"][(r + i) % 5]!))
+    const withData = await call("imports/upload", { cookie, body: { filename: "hse.csv", template: "hse", data: csv(headers, rows) } })
+    expect(withData.status, withData.text).toBe(200)
+    // Só os itens (sem respostas): vira o questionário da metodologia.
+    const up = await call("imports/upload", { cookie, body: { filename: "hse.csv", template: "hse", data: csv(headers, []) } })
+    expect(up.status, up.text).toBe(200)
+    const imp = (await call(`imports/get?id=${encodeURIComponent(SuperJSON.stringify(up.json.id))}`, { cookie })).json
+    const byPos = (n: number) => imp.rows.find((r: any) => r.position === n - 1)
+    expect(byPos(3).final).toMatchObject({ dimension: "demandas", risk: true })
+    expect(byPos(8).final).toMatchObject({ dimension: "lideranca", risk: false })
+    expect(byPos(5).final).toMatchObject({ dimension: "relacoes", risk: true })
+    expect(byPos(26).final).toMatchObject({ dimension: "reconhecimento", risk: false })
+    expect(imp.rows.filter((r: any) => r.action === "pending")).toHaveLength(0)
+
+    const done = await call("imports/confirm", { cookie, body: { importId: up.json.id } })
+    expect(done.status, done.text).toBe(200)
+    const list = (await call("questionnaires/list", { cookie })).json
+    const hse = list.find((q: any) => q.instrument === "hse")
+    expect(hse).toMatchObject({ kind: "nr1", name: "HSE Management Standards Indicator Tool" })
+
+    const wrong = await call("company/setMethodology", { cookie, body: { id: "copsoq3", note: "x".repeat(40), questionnaireId: hse.id, severity: {} } })
+    expect(wrong.status).toBe(400)
+    const ok = await call("company/setMethodology", { cookie, body: { id: "hse", note: "Justificativa técnica do HSE para a empresa.", questionnaireId: hse.id, severity: {} } })
+    expect(ok.status, ok.text).toBe(200)
+  })
+
+  it("COPSOQ: reconhece códigos, tira o código do texto, deixa saúde fora do score e não pode ser modificado", async () => {
+    const cookie = await setup()
+    const headers = ["Setor", "QD1 Você se atrasa na entrega do seu trabalho?", "IN2 Você tem influência sobre o seu trabalho?", "BO1 Com que frequência você se sentiu esgotado?"]
+    const rows = Array.from({ length: 6 }, (_, r) => ["Produção", ["Nunca/quase nunca", "Raramente", "Às vezes"][r % 3]!, "Em grande medida", "Muito"])
+    const up = await call("imports/upload", { cookie, body: { filename: "copsoq.csv", template: "copsoq3", data: csv(headers, rows) } })
+    expect(up.status, up.text).toBe(200)
+    const imp = (await call(`imports/get?id=${encodeURIComponent(SuperJSON.stringify(up.json.id))}`, { cookie })).json
+    const qd = imp.rows.find((r: any) => r.raw.startsWith("QD1"))
+    expect(qd.final).toMatchObject({ text: "Você se atrasa na entrega do seu trabalho?", dimension: "demandas", risk: true })
+    expect(imp.rows.find((r: any) => r.raw.startsWith("IN2")).final).toMatchObject({ dimension: "controle", risk: false })
+    expect(imp.rows.find((r: any) => r.raw.startsWith("BO1")).final.dimension).toBeNull()
+
+    const bad = await call("imports/upload", { cookie, body: { filename: "x.csv", template: "copsoq3", data: csv(["Pergunta sem código"], [["Sempre"]]) } })
+    expect(bad.status).toBe(422)
+
+    const only = await call("imports/upload", { cookie, body: { filename: "copsoq.csv", template: "copsoq3", data: csv(headers, []) } })
+    expect((await call("imports/confirm", { cookie, body: { importId: only.json.id } })).status).toBe(200)
+    const q = (await call("questionnaires/list", { cookie })).json.find((x: any) => x.instrument === "copsoq3")
+    const full = (await call(`questionnaires/get?id=${encodeURIComponent(SuperJSON.stringify(q.id))}`, { cookie })).json
+    const items = full.current.items
+    const edit = await call("questionnaires/update", { cookie, body: { id: q.id, items: [...items, { text: "Item novo inventado pela empresa", dimension: "demandas", risk: true }] } })
+    expect(edit.status).toBe(400)
+    expect(edit.text).toContain("CC BY-NC-ND")
+    const copy = (await call("questionnaires/duplicate", { cookie, body: { id: q.id } })).json
+    const copied = (await call("questionnaires/list", { cookie })).json.find((x: any) => x.id === (copy.id ?? copy.questionnaireId))
+    expect(copied.name).not.toContain("COPSOQ")
+    expect(copied.instrument).toBeNull()
+  })
+})
