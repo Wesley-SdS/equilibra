@@ -33,9 +33,11 @@ type Draft = {
   cost: string
   status: Status
   employeeIds: string[]
+  steps: { text: string; done: boolean }[]
+  evidence: string
 }
 
-const EMPTY: Draft = { dimension: "demandas", what: "", why: "", sectorId: null, who: "", due: "", how: "", cost: "", status: "todo", employeeIds: [] }
+const EMPTY: Draft = { dimension: "demandas", what: "", why: "", sectorId: null, who: "", due: "", how: "", cost: "", status: "todo", employeeIds: [], steps: [], evidence: "" }
 
 function PlanContent() {
   const can = useCan()

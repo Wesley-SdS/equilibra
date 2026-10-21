@@ -281,6 +281,11 @@ export const actions = pgTable("actions", {
     .default("todo"),
   // Quando a ação foi sugerida automaticamente: motor e confiança da escolha.
   decision: jsonb("decision").$type<Decision>(),
+  // Etapas da ação (checklist com progresso no card) e evidência de conclusão (vai para o relatório).
+  steps: jsonb("steps").$type<{ text: string; done: boolean }[]>().notNull().default([]),
+  evidence: text("evidence").notNull().default(""),
+  // Quando a ação foi concluída (marca na linha do tempo da Evolução).
+  completedAt: timestamp("completed_at"),
   // Pessoas a quem a ação se destina (vem de campanhas identificadas). Vazio = setor ou empresa toda.
   employeeIds: jsonb("employee_ids").$type<string[]>().notNull().default([]),
   // Controle dos avisos de prazo do cron: último estágio avisado ("soon" | "overdue") e quando.
