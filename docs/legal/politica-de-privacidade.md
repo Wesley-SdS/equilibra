@@ -49,7 +49,11 @@ Para facilitar a divulgação, o RH da empresa cliente pode colar **telefones e 
 
 A empresa cliente pode criar questionários **identificados** para pulsos de equipe e acompanhamento de ações. Eles **nunca** são usados na avaliação de riscos psicossociais da NR-1, que é sempre anônima. Nesse modo, a empresa cadastra **nome, e-mail ou telefone e setor** das pessoas convidadas; cada pessoa recebe um **link pessoal**, vê antes de começar um aviso de que o RH e a gestão da empresa verão as respostas com o nome dela, e só responde depois de **aceitar esse aviso** (registramos a data do aceite). As respostas desses questionários ficam vinculadas à pessoa e são visíveis para os usuários do painel da empresa. A empresa é a controladora e define a finalidade, informada no aviso. A pessoa pode pedir à empresa a exclusão do seu cadastro, o que desfaz o vínculo com as respostas.
 
-### 3.5 Canal de relato
+### 3.5 Espaço de escuta (quando ativado pela empresa)
+
+O Espaço de escuta é um **agente de apoio feito de inteligência artificial**, que **não é psicólogo** e não faz terapia nem diagnóstico. Ele só funciona quando a empresa cliente o ativa. O trabalhador entra por um link, **sem login e sem informar nome**, aceita um termo específico e conversa. A conversa fica **cifrada com uma chave que existe apenas no aparelho da pessoa** (o {{nomeFantasia}} guarda só um código que não permite lê-la sem o aparelho), é **apagada após 90 dias sem uso** e pode ser apagada pela pessoa a qualquer momento. Para responder, cada mensagem é enviada ao modelo de IA (seção 5), sem dados de identificação. **A empresa nunca vê as conversas, quem usou, quantas vezes cada pessoa usou nem sinais de crise**; ela vê apenas **temas gerais** (como "carga de trabalho"), e só quando houver pelo menos 10 conversas no mês e 20 trabalhadores cadastrados. Em sinal de risco à vida, o agente mostra imediatamente contatos de ajuda humana (CVV 188, SAMU 192). Pessoas com menos de 18 anos não devem usar o recurso.
+
+### 3.6 Canal de relato
 - Categoria escolhida e **texto livre** escrito pela pessoa;
 - data (dia) do envio e protocolo gerado;
 - resultado da triagem automática (seção 6);
@@ -91,6 +95,8 @@ Usamos o modelo de decisão **Jev** (TypeSafe AI, acessado pelo Vercel AI Gatewa
 - **Triagem do canal de relato:** sugere categoria, gravidade e urgência para ordenar a fila de atendimento;
 - **Plano de ação:** sugere as medidas mais adequadas aos riscos encontrados;
 - **Perguntas da empresa:** indica a qual dimensão psicossocial cada pergunta se relaciona.
+
+Também oferecemos **copilotos** baseados em modelos de linguagem (Claude, da Anthropic, acessado pelo Vercel AI Gateway): sugerem itens de questionário, leem os dados agregados para propor ações, ajudam o RH a entender um relato e escrevem o rascunho do resumo do relatório. Eles **só propõem**: nada é salvo, enviado ou publicado sem a ação de um usuário, e cada interação é registrada na trilha de auditoria.
 
 Essas sugestões **não substituem a análise humana**: todo relato continua visível na íntegra, e as ações sugeridas podem ser editadas ou descartadas. **O score de risco da NR-1 não usa inteligência artificial**: é calculado por uma metodologia fixa e auditável. Você pode solicitar a revisão de decisões tomadas unicamente com base em tratamento automatizado (LGPD, art. 20) pelo canal da seção 10.
 

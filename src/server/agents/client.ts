@@ -91,7 +91,7 @@ const anthropicRunner: AgentRunner = async ({ system, messages, schema, maxToken
   }
 }
 
-export type AgentContext = { db: Db; companyId: string; userId: string }
+export type AgentContext = { db: Db; companyId: string; userId: string | null }
 
 /**
  * Executa um agente: confere a cota, chama o modelo, valida a saída com o schema e registra a
@@ -99,10 +99,22 @@ export type AgentContext = { db: Db; companyId: string; userId: string }
  */
 export async function runAgent<S extends z.ZodType>(
   ctx: AgentContext,
-  params: { agent: string; promptVersion: string; system: string; messages: Anthropic.MessageParam[]; schema: S; input: unknown; maxTokens?: number }
+  params: {
+    agent: string
+    promptVersion: string
+    system: string
+    messages: Anthropic.MessageParam[]
+    schema: S
+    input: unknown
+    maxTokens?: number
+    /** Espaço de escuta: não consome a cota dos copilotos do RH (tem limite próprio). */
+    skipQuota?: boolean
+    /** false = não guarda a saída em agent_runs (conversa do trabalhador nunca é gravada em claro). */
+    storeOutput?: boolean
+  }
 ): Promise<{ runId: string; output: z.infer<S> }> {
   if (!agentsAvailable()) throw new HTTPException(503, { message: "Os copilotos não estão configurados neste ambiente." })
-  await assertLimit(ctx.db, ctx.companyId, "agentRuns", 1)
+  if (!params.skipQuota) await assertLimit(ctx.db, ctx.companyId, "agentRuns", 1)
   const inputHash = createHash("sha256").update(JSON.stringify(params.input)).digest("hex")
   const started = Date.now()
   const record = async (status: "ok" | "refused" | "error", gen: Partial<RawGeneration> | null, output: unknown) => {
@@ -114,7 +126,7 @@ export async function runAgent<S extends z.ZodType>(
         agent: params.agent,
         promptVersion: params.promptVersion,
         inputHash,
-        output: output ?? null,
+        output: params.storeOutput === false ? null : (output ?? null),
         model: gen?.model ?? agentModel(),
         status,
         inputTokens: gen?.inputTokens ?? 0,

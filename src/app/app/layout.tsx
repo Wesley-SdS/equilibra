@@ -34,6 +34,7 @@ const NAV = [
       { href: "/app/plano", label: "Plano de ação", icon: "M9 11l3 3 8-8M20 12v7a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h11" },
       { href: "/app/relatorio", label: "Relatório PGR", icon: "M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6" },
       { href: "/app/canal", label: "Canal de relato", icon: "M21 12a8 8 0 0 1-11.8 7L4 20l1-4.6A8 8 0 1 1 21 12z" },
+      { href: "/app/escuta", label: "Espaço de escuta", icon: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2zM8 10h.01M12 10h.01M16 10h.01" },
     ],
   },
   {

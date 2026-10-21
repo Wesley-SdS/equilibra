@@ -34,7 +34,12 @@
 | `RESEND_API_KEY` | para e-mail real | chave do Resend |
 | `EMAIL_FROM` | com Resend | `Equilibra <nao-responda@seudominio.com.br>` (domínio verificado no Resend) |
 
-Sem `RESEND_API_KEY`, o app funciona, mas os e-mails não são enviados (só registrados no log).
+| `ANTHROPIC_API_KEY` | não | chave da Anthropic para os copilotos; sem ela, os copilotos usam o AI Gateway (OIDC na Vercel ou `AI_GATEWAY_API_KEY`) |
+| `AGENT_MODEL` | não | modelo dos copilotos; padrão `claude-opus-5-5` (direto) ou `anthropic/claude-opus-5.5` (Gateway) |
+| `AGENTS_DISABLED` | não | `1` desliga todos os copilotos (as telas seguem no fluxo manual) |
+| `ESCUTA_ENABLED` | não | `1` libera o Espaço de escuta na plataforma. **Só ligar depois do parecer jurídico e com o psicólogo responsável técnico contratado** (decisão 8 do PRD v2); cada empresa ainda precisa ativar |
+
+Sem `RESEND_API_KEY`, o app funciona, mas os e-mails não são enviados (só registrados no log). Sem credencial de IA, os copilotos somem das telas e o resumo do relatório é montado por regras.
 
 ## 3. Build
 

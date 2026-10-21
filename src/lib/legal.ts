@@ -4,7 +4,7 @@
 // registrar a nova versão.
 
 // Formato AAAA-MM-DD ou AAAA-MM-DD.N (N = revisão no mesmo dia).
-export const LEGAL_VERSION = "2026-10-19"
+export const LEGAL_VERSION = "2026-10-21"
 
 /** Versão para exibição: 17/10/2026 (rev. 2). */
 export function formatLegalVersion(v: string = LEGAL_VERSION) {
@@ -45,6 +45,12 @@ export const SUBPROCESSORS = [
     pais: "Brasil (aws-sa-east-1, São Paulo)",
   },
   {
+    nome: "Vercel AI Gateway / Anthropic (modelos Claude, copilotos e Espaço de escuta)",
+    finalidade: "Copilotos do painel (questionários, plano de ação, canal de relato, resumo do relatório) e respostas do Espaço de escuta, quando ativado",
+    dados: "Agregados da avaliação, textos de relatos e mensagens enviadas aos copilotos; no Espaço de escuta, a mensagem da conversa (sem identificação)",
+    pais: "EUA",
+  },
+  {
     nome: "Vercel AI Gateway / TypeSafe AI (modelo Jev)",
     finalidade: "Decisões automatizadas de apoio: triagem dos relatos do canal, escolha de ações do plano e classificação de perguntas",
     dados: "Texto dos relatos do canal; dados agregados de risco; texto das perguntas da empresa",
@@ -81,4 +87,8 @@ export const RETENTION = [
   { categoria: "Convites não aceitos", prazo: "Apagados após 30 dias" },
   { categoria: "Lista de envio da campanha (telefones e e-mails informados pelo RH)", prazo: "Apagada quando a campanha é encerrada ou vence, e pelo cliente a qualquer momento" },
   { categoria: "Registros de aceite dos termos", prazo: "Enquanto a conta existir" },
+  { categoria: "Cadastro de pessoas para questionários identificados", prazo: "Enquanto o cliente mantiver; a exclusão da pessoa desfaz o vínculo com as respostas" },
+  { categoria: "Arquivos importados (planilhas, PDFs)", prazo: "Lidos e descartados; os dados brutos do rascunho são apagados ao confirmar ou descartar a importação" },
+  { categoria: "Registros dos copilotos (hash da entrada, resposta, consumo)", prazo: "Durante o contrato; eliminados com os dados da empresa. A conversa do Espaço de escuta nunca é registrada aqui" },
+  { categoria: "Conversas do Espaço de escuta (cifradas, sem identificação)", prazo: "Apagadas após 90 dias sem uso, e pela pessoa a qualquer momento; a empresa só vê temas agregados" },
 ] as const

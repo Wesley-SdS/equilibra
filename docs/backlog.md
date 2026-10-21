@@ -47,19 +47,21 @@ Legenda: ✅ feito · 🟡 parcial · sem marca = a fazer
 
 ## PRD v2 (aprovado em 19/10/2026)
 
-PRD em Claude Docs: https://claude.ai/code/artifact/1bcdb356-1c6e-4506-85b8-050886c703d6 · artboards em `design/project`.
+PRD em Claude Docs: https://claude.ai/code/artifact/1bcdb356-1c6e-4506-85b8-050886c703d6 · artboards em `design/project`. Estado em 21/10/2026.
 
 | Fase | Item | Estado |
 |---|---|---|
-| 1 | ✅ Questionário vira entidade versionada (`questionnaires`, `questionnaire_versions`); campanha aponta para uma versão; NR-1 padrão migrado como v1 e sempre anônimo | Feito |
-| 1 | ✅ Biblioteca "Questionários" (criar, editar com nova versão, duplicar, arquivar) e escolha do questionário na nova campanha | Feito |
-| 1 | Modo identificado (switch), cadastro de pessoas e aba "quem respondeu" | A fazer |
-| 1 | Importação de formulários (XLSX, CSV, PDF, texto) com revisão e correção | A fazer |
-| 1 | Copiloto de questionários | A fazer |
-| 1 | Metodologias configuráveis (COPSOQ III, HSE, Guia MTE, própria) | A fazer, após confirmar licenças |
-| 2 | Redesenho de Evolução, cards do Plano e Relatório com resumo executivo | A fazer |
-| 2 | Copilotos do plano de ação e do canal; módulo comum `src/server/agents/` | A fazer |
-| 3 | Espaço de escuta (agente de apoio), só após parecer jurídico e psicólogo RT | A fazer |
+| 1 | ✅ Questionário vira entidade versionada; campanha aponta para uma versão; NR-1 padrão sempre anônimo | Feito |
+| 1 | ✅ Biblioteca "Questionários" e escolha do questionário na nova campanha | Feito |
+| 1 | ✅ Importação de formulários (XLSX, CSV do Google Forms, PDF com texto, texto colado) com revisão e correção | Feito. OCR de PDF escaneado e OAuth do Google Forms ficaram para depois |
+| 1 | ✅ Modo identificado: pessoas, link pessoal com aceite, quem respondeu e o quê | Feito |
+| 1 | ✅ Copiloto de questionários e módulo comum de agentes (`src/server/agents/`) | Feito. Falta a `ANTHROPIC_API_KEY` ou o AI Gateway com Claude habilitado em produção |
+| 1 | 🟡 Metodologias configuráveis | Equilibra, Guia MTE e própria feitos; COPSOQ III e HSE aguardam a confirmação da licença de uso comercial |
+| 2 | ✅ Evolução redesenhada | Feito |
+| 2 | ✅ Cards do plano e copiloto do plano | Feito |
+| 2 | ✅ Relatório com resumo executivo aprovado e registro de observação e diálogo | Feito |
+| 2 | ✅ Copiloto do canal de relato | Feito |
+| 3 | 🟡 Espaço de escuta | Construído e testado, desligado por padrão (`ESCUTA_ENABLED`). Falta: parecer jurídico, psicólogo responsável técnico revisando prompt e protocolo de crise, RIPD e piloto com 3 empresas |
 
 ## Produtos 2, 3 e 4
 

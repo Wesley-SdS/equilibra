@@ -40,7 +40,7 @@ export async function usage(db: Db, companyId: string) {
     db.select({ n: sql<number>`count(*)::int` }).from(customQuestions).where(and(eq(customQuestions.companyId, companyId), eq(customQuestions.active, true))),
     db.select({ n: sql<number>`count(*)::int` }).from(memberships).where(eq(memberships.companyId, companyId)),
     db.select({ n: sql<number>`count(*)::int` }).from(invites).where(and(eq(invites.companyId, companyId), isNull(invites.acceptedAt))),
-    db.select({ n: sql<number>`count(*)::int` }).from(agentRuns).where(and(eq(agentRuns.companyId, companyId), gte(agentRuns.createdAt, monthStart), ne(agentRuns.status, "error"))),
+    db.select({ n: sql<number>`count(*)::int` }).from(agentRuns).where(and(eq(agentRuns.companyId, companyId), gte(agentRuns.createdAt, monthStart), ne(agentRuns.status, "error"), ne(agentRuns.agent, "listening"))),
   ])) as { n: number }[][]
   return { employees: emp!.n, campaignsPerYear: camp!.n, customQuestions: cq!.n, seats: mem!.n + inv!.n, agentRuns: runs!.n }
 }

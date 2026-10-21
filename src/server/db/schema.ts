@@ -35,6 +35,9 @@ export const companies = pgTable("companies", {
   methodologyNote: text("methodology_note").notNull().default(""),
   methodologyQuestionnaireId: text("methodology_questionnaire_id"),
   severityOverrides: jsonb("severity_overrides").$type<Partial<Record<DimensionId, number>>>().notNull().default({}),
+  // Espaço de escuta (frente 6): só funciona com a plataforma liberada (ESCUTA_ENABLED) E a adesão do dono.
+  listeningEnabled: boolean("listening_enabled").notNull().default(false),
+  listeningEnabledAt: timestamp("listening_enabled_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 })
 
@@ -526,3 +529,49 @@ export const observations = pgTable("observations", {
   createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 })
+
+/**
+ * Espaço de escuta: conversa anônima de um trabalhador com o agente de apoio (IA, não psicólogo).
+ * Sem vínculo com pessoas, respostas ou cadastro. O texto é cifrado com uma chave derivada de um
+ * segredo que só existe no cookie do aparelho da pessoa: o servidor guarda apenas o hash.
+ */
+export const listeningConversations = pgTable("listening_conversations", {
+  id: id(),
+  companyId: text("company_id")
+    .notNull()
+    .references(() => companies.id, { onDelete: "cascade" }),
+  tokenHash: text("token_hash").notNull(),
+  consentAt: timestamp("consent_at").notNull(),
+  crisisAt: timestamp("crisis_at"),
+  /** Temas (dimensões) já contados por mês, para contar cada conversa uma vez por tema. */
+  themes: jsonb("themes").$type<Record<string, string[]>>().notNull().default({}),
+  lastMessageAt: timestamp("last_message_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+})
+
+export const listeningMessages = pgTable("listening_messages", {
+  id: id(),
+  conversationId: text("conversation_id")
+    .notNull()
+    .references(() => listeningConversations.id, { onDelete: "cascade" }),
+  seq: serial("seq").notNull(),
+  role: text("role").$type<"user" | "assistant">().notNull(),
+  /** AES-256-GCM: iv.tag.ciphertext em base64url. */
+  content: text("content").notNull(),
+  crisis: boolean("crisis").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+})
+
+/** Temas agregados por mês (nunca o texto): o que a empresa pode ver, acima dos mínimos. */
+export const listeningThemes = pgTable(
+  "listening_themes",
+  {
+    companyId: text("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    month: text("month").notNull(),
+    theme: text("theme").notNull(),
+    conversations: integer("conversations").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.companyId, t.month, t.theme] })]
+)
