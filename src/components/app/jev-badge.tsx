@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils"
 
-type Decision = { engine: "jev" | "regras"; model?: string; confidence?: number } | null | undefined
+type Decision = { engine: "jev" | "regras" | "copiloto"; model?: string; confidence?: number } | null | undefined
 
 /** Selo que mostra qual motor tomou uma decisão automática e com que confiança. */
 export function JevBadge({ decision, label, className }: { decision: Decision; label?: string; className?: string }) {

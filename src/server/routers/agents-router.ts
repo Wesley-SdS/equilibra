@@ -6,6 +6,7 @@ import { entitlements, usage } from "../billing"
 import { editorProcedure, j, privateProcedure } from "../jstack"
 import { agentsAvailable } from "../agents/client"
 import { proposeQuestionnaire } from "../agents/questionnaire-copilot"
+import { askPlanCopilot } from "../agents/plan-copilot"
 import { DIMENSIONS, type DimensionId } from "@/lib/methodology"
 import { QUESTIONNAIRE_KINDS, type QuestionnaireKind } from "@/lib/questionnaire"
 
@@ -39,6 +40,15 @@ export const agentsRouter = j.router({
     .mutation(async ({ c, ctx, input }) => {
       const result = await proposeQuestionnaire({ db: ctx.db, companyId: ctx.session.companyId, userId: ctx.session.userId }, input)
       await audit(ctx.db, ctx.session, { action: "create", entity: "copiloto", entityId: result.runId, summary: `Copiloto de questionários propôs ${result.items.length} itens` })
+      return c.superjson(result)
+    }),
+
+  /** Copiloto do plano de ação: lê os agregados, responde citando números e propõe ações 5W2H. */
+  plan: editorProcedure
+    .input(z.object({ question: z.string().trim().min(5, "Escreva a pergunta").max(800), campaignId: z.string().optional() }))
+    .mutation(async ({ c, ctx, input }) => {
+      const result = await askPlanCopilot({ db: ctx.db, companyId: ctx.session.companyId, userId: ctx.session.userId }, input)
+      if (result.runId) await audit(ctx.db, ctx.session, { action: "create", entity: "copiloto", entityId: result.runId, summary: `Copiloto do plano respondeu e propôs ${result.actions.length} ações` })
       return c.superjson(result)
     }),
 

@@ -166,7 +166,7 @@ export const campaigns = pgTable("campaigns", {
 export type CustomQuestionSnapshot = { id: string; text: string }
 
 /** Registro de uma decisão automática: qual motor decidiu e com que confiança (auditável). */
-export type Decision = { engine: "jev" | "regras"; model?: string; confidence?: number }
+export type Decision = { engine: "jev" | "regras" | "copiloto"; model?: string; confidence?: number }
 
 export type Triage = Decision & {
   category: string

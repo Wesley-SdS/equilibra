@@ -9,6 +9,7 @@ import { stageOf } from "@/lib/deadline"
 import { audit } from "../audit"
 import { computeDimension, computeHistory, computeInsights, computePortfolio } from "../insights"
 import { computeEvolution } from "../evolution"
+import { listActionsWithContext } from "../plan"
 import { editorProcedure, j, privateProcedure } from "../jstack"
 import { appUrl } from "../email"
 import { sendCampaignReminder } from "../reminders"
@@ -336,16 +337,14 @@ const actionInput = z.object({
   employeeIds: z.array(z.string()).max(500).default([]),
   steps: z.array(z.object({ text: z.string().trim().min(1).max(200), done: z.boolean() })).max(20).default([]),
   evidence: z.string().max(1000).default(""),
+  // Ação proposta pelo copiloto do plano e aceita pelo gestor.
+  fromCopilot: z.boolean().optional(),
 })
 
 export const actionsRouter = j.router({
+  /** Ações com o contexto de risco (score que motivou a ação e o da campanha seguinte). */
   list: privateProcedure.query(async ({ c, ctx }) => {
-    const rows = await ctx.db
-      .select()
-      .from(actions)
-      .where(eq(actions.companyId, ctx.session.companyId))
-      .orderBy(desc(actions.createdAt))
-    return c.superjson(rows)
+    return c.superjson(await listActionsWithContext(ctx.db, ctx.session.companyId))
   }),
   /** Quantas ações abertas estão atrasadas ou vencendo (indicador do menu). */
   deadlines: privateProcedure.query(async ({ c, ctx }) => {
@@ -360,7 +359,12 @@ export const actionsRouter = j.router({
     await assertWritable(ctx.db, ctx.session.companyId)
     const [row] = await ctx.db
       .insert(actions)
-      .values({ ...input, companyId: ctx.session.companyId, completedAt: input.status === "done" ? new Date() : null })
+      .values({
+        ...input,
+        companyId: ctx.session.companyId,
+        completedAt: input.status === "done" ? new Date() : null,
+        decision: input.fromCopilot ? { engine: "copiloto" as const } : null,
+      })
       .returning()
     await audit(ctx.db, ctx.session, { action: "create", entity: "ação", entityId: row!.id, summary: `Ação criada: ${row!.what}` })
     return c.superjson(row!)
@@ -368,7 +372,8 @@ export const actionsRouter = j.router({
   update: editorProcedure
     .input(actionInput.partial().extend({ id: z.string() }))
     .mutation(async ({ c, ctx, input }) => {
-      const { id, ...data } = input
+      const { id, fromCopilot: _fc, ...data } = input
+      void _fc
       const before = await ctx.db.query.actions.findFirst({ where: and(eq(actions.id, id), eq(actions.companyId, ctx.session.companyId)) })
       // Data de conclusão: marcada ao concluir, apagada se a ação for reaberta.
       const completion = data.status === undefined || data.status === before?.status ? {} : { completedAt: data.status === "done" ? new Date() : null }
