@@ -249,7 +249,7 @@ export async function parsePdf(buffer: Buffer): Promise<ParsedFile> {
   return parseText(merged, "pdf")
 }
 
-/** Perguntas lidas pelo Claude num PDF escaneado ou numa foto: entram como texto, para revisão. */
+/** Perguntas lidas pelo modelo de IA num PDF escaneado ou numa foto: entram como texto, para revisão. */
 export function fromExtracted(questions: string[], source: "pdf" | "image", identifiesPeople: boolean): ParsedFile {
   const lines = questions.map((q) => cleanText(q)).filter((q) => q.length >= 8)
   if (!lines.length) throw new ImportError("Não encontramos perguntas legíveis no documento. Tente uma foto mais nítida ou cole o texto.")
@@ -258,7 +258,7 @@ export function fromExtracted(questions: string[], source: "pdf" | "image", iden
 }
 
 export class ImportError extends Error {}
-/** PDF sem texto selecionável: pode ser lido pelo Claude, se os copilotos estiverem ativos. */
+/** PDF sem texto selecionável: pode ser lido pelo modelo de IA, se os copilotos estiverem ativos. */
 export class ScannedPdfError extends ImportError {}
 
 export function detectSource(filename: string): "xlsx" | "csv" | "pdf" | "image" | null {

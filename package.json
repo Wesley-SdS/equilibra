@@ -14,7 +14,9 @@
     "db:migrate": "tsx scripts/migrate.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.135.0",
+    "@ai-sdk/anthropic": "4.0.73",
+    "@ai-sdk/google": "4.0.89",
+    "@ai-sdk/openai": "4.0.85",
     "@electric-sql/pglite": "^0.5.10",
     "@react-pdf/renderer": "^4.9.0",
     "@sentry/nextjs": "^11.8.0",
@@ -22,6 +24,7 @@
     "@upstash/ratelimit": "^2.2.0",
     "@upstash/redis": "^1.39.0",
     "@vercel/oidc": "^4.0.1",
+    "ai": "7.0.129",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.4",
     "hono": "^4.13.13",

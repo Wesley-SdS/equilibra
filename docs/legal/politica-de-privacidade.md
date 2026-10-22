@@ -96,7 +96,7 @@ Usamos o modelo de decisão **Jev** (TypeSafe AI, acessado pelo Vercel AI Gatewa
 - **Plano de ação:** sugere as medidas mais adequadas aos riscos encontrados;
 - **Perguntas da empresa:** indica a qual dimensão psicossocial cada pergunta se relaciona.
 
-Também oferecemos **copilotos** baseados em modelos de linguagem (Claude, da Anthropic, acessado pelo Vercel AI Gateway): sugerem itens de questionário, leem os dados agregados para propor ações, ajudam o RH a entender um relato e escrevem o rascunho do resumo do relatório. Eles **só propõem**: nada é salvo, enviado ou publicado sem a ação de um usuário, e cada interação é registrada na trilha de auditoria.
+Também oferecemos **copilotos** baseados em modelos de linguagem (Claude, da Anthropic; Gemini, do Google; ou GPT, da OpenAI, conforme a configuração de cada copiloto, acessados diretamente ou pelo Vercel AI Gateway; os provedores são contratados sem uso dos dados para treinamento): sugerem itens de questionário, leem os dados agregados para propor ações, ajudam o RH a entender um relato e escrevem o rascunho do resumo do relatório. Eles **só propõem**: nada é salvo, enviado ou publicado sem a ação de um usuário, e cada interação é registrada na trilha de auditoria.
 
 Essas sugestões **não substituem a análise humana**: todo relato continua visível na íntegra, e as ações sugeridas podem ser editadas ou descartadas. **O score de risco da NR-1 não usa inteligência artificial**: é calculado por uma metodologia fixa e auditável. Você pode solicitar a revisão de decisões tomadas unicamente com base em tratamento automatizado (LGPD, art. 20) pelo canal da seção 10.
 

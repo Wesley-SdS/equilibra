@@ -45,7 +45,7 @@ export const SUBPROCESSORS = [
     pais: "Brasil (aws-sa-east-1, São Paulo)",
   },
   {
-    nome: "Vercel AI Gateway / Anthropic (modelos Claude, copilotos e Espaço de escuta)",
+    nome: "Provedor de modelos de linguagem configurado: Anthropic (Claude), Google (Gemini) ou OpenAI (GPT), diretamente ou pelo Vercel AI Gateway",
     finalidade: "Copilotos do painel (questionários, plano de ação, canal de relato, resumo do relatório) e respostas do Espaço de escuta, quando ativado",
     dados: "Agregados da avaliação, textos de relatos e mensagens enviadas aos copilotos; no Espaço de escuta, a mensagem da conversa (sem identificação)",
     pais: "EUA",

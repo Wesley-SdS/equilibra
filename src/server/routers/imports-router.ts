@@ -11,7 +11,7 @@ import { ImportError, MAX_IMPORT_BYTES, ScannedPdfError, cleanText, detectSource
 import { agentsAvailable } from "../agents/client"
 import { GOOGLE_TOKEN_COOKIE, googleFormsEnabled, importFromForms, importFromSheets } from "../google"
 import { deleteCookie, getCookie } from "hono/cookie"
-import { extractQuestionsWithClaude, type ExtractMedia } from "../agents/import-extractor"
+import { extractQuestionsWithAI, type ExtractMedia } from "../agents/import-extractor"
 import { rateLimit } from "../rate-limit"
 import { DIMENSIONS, type DimensionId } from "@/lib/methodology"
 import { INSTRUMENTS, copsoqKey, hseKey, type InstrumentId } from "@/lib/instruments"
@@ -230,12 +230,12 @@ export const importsRouter = j.router({
           if (!source) throw new ImportError("Formato não suportado. Envie XLSX, CSV, PDF ou foto (JPG, PNG).")
           const buffer = Buffer.from(input.data, "base64")
           if (buffer.length > MAX_IMPORT_BYTES) throw new ImportError("Arquivo grande demais (máximo de 3 MB).")
-          // PDF escaneado ou foto do questionário em papel: leitura pelo Claude (conta na cota dos copilotos).
-          const viaClaude = async (media: ExtractMedia, kind: "pdf" | "image") => {
-            if (!agentsAvailable()) {
+          // PDF escaneado ou foto do questionário em papel: leitura pelo modelo de IA do agente de importação (conta na cota dos copilotos).
+          const viaModel = async (media: ExtractMedia, kind: "pdf" | "image") => {
+            if (!agentsAvailable("import-extractor")) {
               throw new ImportError(`${kind === "pdf" ? "O PDF não tem texto selecionável (parece escaneado)" : "Fotos"} só podem ser lidos com os copilotos de IA ativos. Cole o texto das perguntas ou envie a planilha.`)
             }
-            const out = await extractQuestionsWithClaude({ db: ctx.db, companyId: ctx.session.companyId, userId: ctx.session.userId }, buffer, media)
+            const out = await extractQuestionsWithAI({ db: ctx.db, companyId: ctx.session.companyId, userId: ctx.session.userId }, buffer, media)
             return fromExtracted(out.questions, kind, out.identifiesPeople)
           }
           if (source === "pdf") {
@@ -243,10 +243,10 @@ export const importsRouter = j.router({
               parsed = await parsePdf(buffer)
             } catch (err) {
               if (!(err instanceof ScannedPdfError)) throw err
-              parsed = await viaClaude("application/pdf", "pdf")
+              parsed = await viaModel("application/pdf", "pdf")
             }
           } else if (source === "image") {
-            parsed = await viaClaude(imageMediaType(input.filename), "image")
+            parsed = await viaModel(imageMediaType(input.filename), "image")
           } else {
             parsed = parseSheet(buffer, source)
           }

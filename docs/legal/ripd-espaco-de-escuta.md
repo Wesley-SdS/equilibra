@@ -8,7 +8,7 @@
 | --- | --- |
 | Tratamento | Conversa anônima de trabalhadores com um agente de apoio feito de IA (não psicólogo) sobre o que pesa no trabalho |
 | Controlador | A empresa cliente que ativa o recurso (o dono da conta adere expressamente) |
-| Operador | Equilibra (plataforma), com suboperadores: provedor de nuvem (Vercel/Neon) e provedor do modelo de IA (Anthropic, diretamente ou via Vercel AI Gateway) |
+| Operador | Equilibra (plataforma), com suboperadores: provedor de nuvem (Vercel/Neon) e provedor do modelo de IA definido em `AGENT_MODEL_LISTENING` (Anthropic, Google ou OpenAI, diretamente ou via Vercel AI Gateway). Trocar de provedor exige atualizar este RIPD e rodar de novo a avaliação de segurança |
 | Titulares | Trabalhadores da empresa cliente, maiores de 18 anos |
 | Encarregado | _(preencher)_ |
 

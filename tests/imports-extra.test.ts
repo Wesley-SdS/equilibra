@@ -124,14 +124,14 @@ describe("PDF escaneado e foto pelo Claude", () => {
     })
     const pdf = await call("imports/upload", { cookie, body: { filename: "escaneado.pdf", data: BLANK_PDF } })
     expect(pdf.status, pdf.text).toBe(200)
-    expect(sent[0].type).toBe("document")
+    expect(sent[0]).toMatchObject({ type: "file", mediaType: "application/pdf" })
     const imp = (await call(`imports/get?id=${encodeURIComponent(SuperJSON.stringify(pdf.json.id))}`, { cookie })).json
     expect(imp.rows.map((r: any) => r.raw)).toEqual(["Recebo retorno claro sobre o meu trabalho.", "Tenho voz nas decisões que afetam a minha rotina."])
     expect(imp.dropped[0]).toContain("Dados pessoais")
 
     const photo = await call("imports/upload", { cookie, body: { filename: "questionario.jpg", data: Buffer.from("fake-jpeg").toString("base64") } })
     expect(photo.status, photo.text).toBe(200)
-    expect(sent[0]).toMatchObject({ type: "image", source: { media_type: "image/jpeg" } })
+    expect(sent[0]).toMatchObject({ type: "file", mediaType: "image/jpeg" })
   })
 })
 

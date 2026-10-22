@@ -523,6 +523,14 @@ export default function SettingsPage() {
 }
 
 /** Onde estão os copilotos e se estão ativos (eles somem das telas quando não há credencial de IA). */
+const COPILOT_PLACES = [
+  { agent: "questionnaire-copilot", label: "Questionários", where: "“Criar ou ajustar com o copiloto”, dentro de Novo questionário" },
+  { agent: "plan-copilot", label: "Plano de ação", where: "botão “Copiloto” no topo da página" },
+  { agent: "channel-copilot", label: "Canal de relato", where: "painel ao abrir a conversa de um relato" },
+  { agent: "report-summary", label: "Relatório PGR", where: "“Gerar resumo” do resumo executivo" },
+  { agent: "import-extractor", label: "Importação", where: "leitura de PDF escaneado e de foto do questionário" },
+] as const
+
 function CopilotStatusCard() {
   const copilot = useCopilot()
   const d = copilot.data
@@ -533,27 +541,23 @@ function CopilotStatusCard() {
         <h2 className="text-lg font-semibold">Copilotos de IA</h2>
         <span className={d?.available ? "rounded-full bg-brand/15 px-2.5 py-0.5 text-xs text-brand-fg" : "rounded-full bg-tint/[0.06] px-2.5 py-0.5 text-xs text-muted"}>{state}</span>
       </div>
-      <ul className="flex flex-col gap-1 text-sm text-muted">
-        <li>
-          <strong className="text-fg">Questionários:</strong> “Criar ou ajustar com o copiloto”, dentro de Novo questionário
-        </li>
-        <li>
-          <strong className="text-fg">Plano de ação:</strong> botão “Copiloto” no topo da página
-        </li>
-        <li>
-          <strong className="text-fg">Canal de relato:</strong> painel ao abrir a conversa de um relato
-        </li>
-        <li>
-          <strong className="text-fg">Relatório PGR:</strong> “Gerar resumo” do resumo executivo
-        </li>
-        <li>
-          <strong className="text-fg">Importação:</strong> leitura de PDF escaneado e de foto do questionário
-        </li>
+      <ul className="flex flex-col gap-2 text-sm text-muted">
+        {COPILOT_PLACES.map((p) => {
+          const a = d?.agents?.[p.agent]
+          return (
+            <li key={p.agent} className="flex flex-wrap items-baseline justify-between gap-x-3">
+              <span>
+                <strong className="text-fg">{p.label}:</strong> {p.where}
+              </span>
+              {a && <code className={cn("font-mono text-[11px]", a.configured ? "text-subtle" : "text-risk-crit-fg")}>{a.model}{a.configured ? "" : " · sem credencial"}</code>}
+            </li>
+          )
+        })}
       </ul>
       {d && (
         <p className="text-xs text-subtle">
           {!d.configured
-            ? "Sem credencial de IA neste ambiente (ANTHROPIC_API_KEY ou Vercel AI Gateway): os copilotos ficam ocultos e as telas seguem no modo manual."
+            ? "Sem credencial de IA neste ambiente (chave da Anthropic, do Google ou da OpenAI, ou o Vercel AI Gateway): os copilotos ficam ocultos e as telas seguem no modo manual."
             : d.limit === 0
               ? "O plano atual não inclui copilotos. Eles estão no Profissional (200 por mês) e no Empresa (1.000 por mês)."
               : `${d.used} de ${Number.isFinite(d.limit) ? d.limit : "∞"} interações usadas neste mês.`}

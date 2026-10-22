@@ -4,7 +4,7 @@ import { agentRuns } from "../db/schema"
 import { audit } from "../audit"
 import { entitlements, usage } from "../billing"
 import { editorProcedure, j, privateProcedure } from "../jstack"
-import { agentsAvailable } from "../agents/client"
+import { AGENTS, agentModel, agentsAvailable } from "../agents/client"
 import { proposeQuestionnaire } from "../agents/questionnaire-copilot"
 import { askPlanCopilot } from "../agents/plan-copilot"
 import { analyzeReport } from "../agents/channel-copilot"
@@ -20,7 +20,10 @@ export const agentsRouter = j.router({
     const company = await ctx.db.query.companies.findFirst({ where: (t, { eq: e }) => e(t.id, ctx.session.companyId) })
     const limit = company ? entitlements(company).limits.agentRuns : 0
     const used = (await usage(ctx.db, ctx.session.companyId)).agentRuns
-    return c.superjson({ available: agentsAvailable() && limit > 0, configured: agentsAvailable(), used, limit })
+    // Modelo de cada agente (provedor/modelo), para o RH saber qual IA processa cada tela.
+    const agents = Object.fromEntries(AGENTS.map((a) => [a, { model: agentModel(a), configured: agentsAvailable(a) }]))
+    const configured = AGENTS.some((a) => agentsAvailable(a))
+    return c.superjson({ available: configured && limit > 0, configured, used, limit, agents })
   }),
 
   /** Copiloto de questionários: propõe (ou ajusta) itens a partir da dor descrita pelo gestor. */

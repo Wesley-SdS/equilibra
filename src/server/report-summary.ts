@@ -72,7 +72,7 @@ Regras: use só os números dos fatos recebidos, sem inventar; escreva 4 a 7 fra
 
 export async function generateSummary(ctx: AgentContext, report: Report) {
   const facts = await summaryFacts(ctx.db, ctx.companyId, report)
-  if (!agentsAvailable()) return { text: rulesSummary(facts), engine: "regras" as const, runId: null }
+  if (!agentsAvailable("report-summary")) return { text: rulesSummary(facts), engine: "regras" as const, runId: null }
   try {
     const { runId, output } = await runAgent(ctx, {
       agent: "report-summary",

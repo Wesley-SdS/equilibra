@@ -1,13 +1,18 @@
 // Módulo comum dos copilotos (IA generativa). Toda chamada passa por aqui:
-//   - credencial: ANTHROPIC_API_KEY (direto na Anthropic) ou o Vercel AI Gateway (AI_GATEWAY_API_KEY ou OIDC na Vercel);
+//   - modelo por agente, de qualquer provedor (Anthropic, Google ou OpenAI) pelo AI SDK:
+//       AGENT_MODEL_<AGENTE> (ex.: AGENT_MODEL_IMPORT_EXTRACTOR=google/gemini-3.8-flash) > AGENT_MODEL > padrão;
+//   - credencial: chave direta do provedor (ANTHROPIC_API_KEY, GOOGLE_GENERATIVE_AI_API_KEY, OPENAI_API_KEY)
+//     ou o Vercel AI Gateway (AI_GATEWAY_API_KEY ou OIDC na Vercel), que atende os três;
 //   - cota mensal do plano (agent_runs) e bloqueio no excedente;
-//   - saída estruturada validada por Zod (output_config.format) — nada vira registro sem passar pelo schema;
+//   - saída estruturada validada por Zod — nada vira registro sem passar pelo schema;
 //   - registro em agent_runs (hash da entrada, saída, modelo, tokens, latência) e na trilha de auditoria.
-// Sem credencial, `agentsAvailable()` é false e as telas escondem os copilotos: o fluxo manual segue igual.
+// Sem credencial para o modelo do agente, `agentsAvailable()` é false e as telas escondem os copilotos.
 // O Jev (decisões tipadas) continua separado em ../jev.ts.
 
-import Anthropic from "@anthropic-ai/sdk"
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod"
+import { createAnthropic } from "@ai-sdk/anthropic"
+import { createGoogle } from "@ai-sdk/google"
+import { createOpenAI } from "@ai-sdk/openai"
+import { APICallError, Output, createGateway, generateText, type LanguageModel, type ModelMessage } from "ai"
 import { createHash } from "node:crypto"
 import { HTTPException } from "hono/http-exception"
 import type { z } from "zod/v4"
@@ -16,54 +21,82 @@ import { agentRuns } from "../db/schema"
 import { assertLimit } from "../billing"
 import { log } from "../log"
 
-const GATEWAY_URL = process.env.AI_GATEWAY_ANTHROPIC_URL ?? "https://ai-gateway.vercel.sh"
+/** Agentes do Equilibra. Cada um pode usar um modelo diferente. */
+export const AGENTS = ["import-extractor", "questionnaire-copilot", "plan-copilot", "channel-copilot", "report-summary", "listening"] as const
+export type AgentName = (typeof AGENTS)[number]
 
-export type AgentMode = "anthropic" | "gateway" | "off"
+export type AgentProvider = "anthropic" | "google" | "openai"
+const PROVIDERS: AgentProvider[] = ["anthropic", "google", "openai"]
+const DIRECT_KEY: Record<AgentProvider, string> = { anthropic: "ANTHROPIC_API_KEY", google: "GOOGLE_GENERATIVE_AI_API_KEY", openai: "OPENAI_API_KEY" }
 
-export function agentMode(): AgentMode {
+export const DEFAULT_MODEL = "anthropic/claude-opus-5.5"
+
+/** Modelo do agente no formato "provedor/modelo" (o mesmo id do AI Gateway). */
+export function agentModel(agent?: AgentName) {
+  const own = agent ? process.env[`AGENT_MODEL_${agent.toUpperCase().replace(/-/g, "_")}`] : undefined
+  const id = (own || process.env.AGENT_MODEL || DEFAULT_MODEL).trim()
+  // Compatibilidade: id sem provedor (ex.: "claude-opus-5-5") é da Anthropic.
+  return id.includes("/") ? id : `anthropic/${id}`
+}
+
+function parseModel(id: string): { provider: AgentProvider; name: string } {
+  const [provider, ...rest] = id.split("/")
+  if (!PROVIDERS.includes(provider as AgentProvider)) throw new Error(`Provedor de IA desconhecido em "${id}" (use anthropic/, google/ ou openai/)`)
+  return { provider: provider as AgentProvider, name: rest.join("/") }
+}
+
+const gatewayConfigured = () => Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL)
+
+function routeFor(model: string): "direct" | "gateway" | "off" {
   if (process.env.AGENTS_DISABLED === "1") return "off"
-  if (process.env.ANTHROPIC_API_KEY) return "anthropic"
-  if (process.env.AI_GATEWAY_API_KEY || process.env.VERCEL) return "gateway"
-  return "off"
+  if (process.env[DIRECT_KEY[parseModel(model).provider]]) return "direct"
+  return gatewayConfigured() ? "gateway" : "off"
 }
 
-export function agentsAvailable() {
-  return agentMode() !== "off" || testRunner !== null
-}
-
-/** Modelo: Claude Opus 5.5. No Gateway o id tem o prefixo do provedor. */
-export function agentModel() {
-  if (process.env.AGENT_MODEL) return process.env.AGENT_MODEL
-  return agentMode() === "gateway" ? "anthropic/claude-opus-5.5" : "claude-opus-5-5"
-}
-
-async function gatewayToken(): Promise<string | null> {
-  if (process.env.AI_GATEWAY_API_KEY) return process.env.AI_GATEWAY_API_KEY
-  if (!process.env.VERCEL) return null
+/** Como o agente chega ao modelo: chave direta do provedor, Gateway ou nenhum. */
+export function agentRoute(agent?: AgentName): "direct" | "gateway" | "off" {
   try {
-    const { getVercelOidcToken } = await import("@vercel/oidc")
-    return await getVercelOidcToken()
+    return routeFor(agentModel(agent))
   } catch (err) {
-    log.warn("agents.oidc_indisponivel", { err })
-    return null
+    log.error("agents.modelo_invalido", { agent, err })
+    return "off"
   }
 }
 
-async function makeClient(): Promise<Anthropic | null> {
-  const mode = agentMode()
-  if (mode === "anthropic") return new Anthropic({ timeout: 60_000, maxRetries: 1 })
-  if (mode === "gateway") {
-    const token = await gatewayToken()
-    if (!token) return null
-    // O Gateway aceita o token no cabeçalho Authorization (Bearer).
-    return new Anthropic({ apiKey: null, authToken: token, baseURL: GATEWAY_URL, timeout: 60_000, maxRetries: 1 })
-  }
-  return null
+export function agentsAvailable(agent?: AgentName) {
+  return testRunner !== null || agentRoute(agent) !== "off"
+}
+
+function languageModel(id: string, route: "direct" | "gateway"): LanguageModel {
+  if (route === "gateway") return createGateway()(id)
+  const { provider, name } = parseModel(id)
+  // Na API direta da Anthropic o id usa hífen onde o Gateway usa ponto (claude-opus-5.5 → claude-opus-5-5).
+  if (provider === "anthropic") return createAnthropic()(name.replace(/\./g, "-"))
+  if (provider === "google") return createGoogle()(name)
+  return createOpenAI()(name)
+}
+
+/** Conteúdo neutro de provedor: texto e arquivos (PDF ou imagem em base64). */
+export type AgentPart = { type: "text"; text: string } | { type: "file"; data: string; mediaType: string }
+export type AgentMessage = { role: "user" | "assistant"; content: string | AgentPart[] }
+
+function toModelMessages(messages: AgentMessage[]): ModelMessage[] {
+  return messages.map((m): ModelMessage => {
+    if (m.role === "assistant") return { role: "assistant", content: typeof m.content === "string" ? m.content : m.content.map((p) => (p.type === "text" ? p.text : "")).join("\n") }
+    if (typeof m.content === "string") return { role: "user", content: m.content }
+    return {
+      role: "user",
+      content: m.content.map((p) =>
+        p.type === "text" ? p : p.mediaType.startsWith("image/") ? { type: "image" as const, image: p.data, mediaType: p.mediaType } : { type: "file" as const, data: p.data, mediaType: p.mediaType }
+      ),
+    }
+  })
 }
 
 /** Resultado bruto de uma geração (o que o modelo devolveu, antes da validação). */
 export type RawGeneration = { output: unknown; stopReason: string | null; model: string; inputTokens: number; outputTokens: number }
-export type AgentRunner = (req: { system: string; messages: Anthropic.MessageParam[]; schema: z.ZodType; maxTokens: number }) => Promise<RawGeneration>
+export type AgentRequest = { system: string; messages: AgentMessage[]; schema: z.ZodType; maxTokens: number; model: string }
+export type AgentRunner = (req: AgentRequest) => Promise<RawGeneration>
 
 /** Nos testes, substitui a chamada ao modelo por uma função determinística. */
 let testRunner: AgentRunner | null = null
@@ -71,24 +104,38 @@ export function setAgentRunner(runner: AgentRunner | null) {
   testRunner = runner
 }
 
-/** Chamada real ao modelo, sem cota nem registro (usada pela avaliação de segurança em scripts/). */
-export const anthropicRunner: AgentRunner = async ({ system, messages, schema, maxTokens }) => {
-  const client = await makeClient()
-  if (!client) throw new HTTPException(503, { message: "Os copilotos não estão configurados neste ambiente." })
-  const response = await client.messages.parse({
-    model: agentModel(),
-    max_tokens: maxTokens,
+/** Chamada real ao modelo, sem cota nem registro (também usada pela avaliação de segurança em scripts/). */
+export const liveRunner: AgentRunner = async ({ system, messages, schema, maxTokens, model }) => {
+  const route = routeFor(model)
+  if (route === "off") throw new HTTPException(503, { message: "Os copilotos não estão configurados neste ambiente." })
+  const result = await generateText({
+    model: languageModel(model, route),
     system,
-    messages,
-    // Opus 5.5: pensamento adaptativo sempre ligado; o esforço controla a profundidade (padrão medium).
-    output_config: { effort: "medium", format: zodOutputFormat(schema) },
+    messages: toModelMessages(messages),
+    maxOutputTokens: maxTokens,
+    maxRetries: 1,
+    timeout: 60_000,
+    output: Output.object({ schema }),
+    // Raciocínio em nível médio em cada provedor (cada um lê só a sua chave).
+    providerOptions: {
+      anthropic: { effort: "medium" },
+      openai: { reasoningEffort: "medium" },
+      google: { thinkingConfig: { thinkingLevel: "medium" } },
+    },
   })
+  let output: unknown = null
+  try {
+    output = result.output
+  } catch {
+    // Sem objeto válido: o schema recusa adiante e a execução fica registrada como erro.
+  }
+  const refused = result.rawFinishReason === "refusal" || result.finishReason === "content-filter"
   return {
-    output: response.parsed_output,
-    stopReason: response.stop_reason,
-    model: response.model,
-    inputTokens: response.usage.input_tokens,
-    outputTokens: response.usage.output_tokens,
+    output,
+    stopReason: refused ? "refusal" : result.finishReason,
+    model,
+    inputTokens: result.usage.inputTokens ?? 0,
+    outputTokens: result.usage.outputTokens ?? 0,
   }
 }
 
@@ -101,10 +148,10 @@ export type AgentContext = { db: Db; companyId: string; userId: string | null }
 export async function runAgent<S extends z.ZodType>(
   ctx: AgentContext,
   params: {
-    agent: string
+    agent: AgentName
     promptVersion: string
     system: string
-    messages: Anthropic.MessageParam[]
+    messages: AgentMessage[]
     schema: S
     input: unknown
     maxTokens?: number
@@ -114,8 +161,9 @@ export async function runAgent<S extends z.ZodType>(
     storeOutput?: boolean
   }
 ): Promise<{ runId: string; output: z.infer<S> }> {
-  if (!agentsAvailable()) throw new HTTPException(503, { message: "Os copilotos não estão configurados neste ambiente." })
+  if (!agentsAvailable(params.agent)) throw new HTTPException(503, { message: "Os copilotos não estão configurados neste ambiente." })
   if (!params.skipQuota) await assertLimit(ctx.db, ctx.companyId, "agentRuns", 1)
+  const model = agentModel(params.agent)
   const inputHash = createHash("sha256").update(JSON.stringify(params.input)).digest("hex")
   const started = Date.now()
   const record = async (status: "ok" | "refused" | "error", gen: Partial<RawGeneration> | null, output: unknown) => {
@@ -128,7 +176,7 @@ export async function runAgent<S extends z.ZodType>(
         promptVersion: params.promptVersion,
         inputHash,
         output: params.storeOutput === false ? null : (output ?? null),
-        model: gen?.model ?? agentModel(),
+        model: gen?.model ?? model,
         status,
         inputTokens: gen?.inputTokens ?? 0,
         outputTokens: gen?.outputTokens ?? 0,
@@ -140,13 +188,14 @@ export async function runAgent<S extends z.ZodType>(
 
   let gen: RawGeneration
   try {
-    gen = await (testRunner ?? anthropicRunner)({ system: params.system, messages: params.messages, schema: params.schema, maxTokens: params.maxTokens ?? 8000 })
+    gen = await (testRunner ?? liveRunner)({ system: params.system, messages: params.messages, schema: params.schema, maxTokens: params.maxTokens ?? 8000, model })
   } catch (err) {
     if (err instanceof HTTPException) throw err
     await record("error", null, null)
-    if (err instanceof Anthropic.RateLimitError) throw new HTTPException(429, { message: "O copiloto está com muita demanda agora. Tente de novo em instantes." })
-    if (err instanceof Anthropic.APIError) log.error("agents.api_erro", { agent: params.agent, status: err.status, err: err.message })
-    else log.error("agents.falha", { agent: params.agent, err })
+    if (APICallError.isInstance(err)) {
+      log.error("agents.api_erro", { agent: params.agent, model, status: err.statusCode, err: err.message })
+      if (err.statusCode === 429) throw new HTTPException(429, { message: "O copiloto está com muita demanda agora. Tente de novo em instantes." })
+    } else log.error("agents.falha", { agent: params.agent, model, err })
     throw new HTTPException(502, { message: "O copiloto não respondeu. Tente de novo; o fluxo manual continua disponível." })
   }
   if (gen.stopReason === "refusal") {
@@ -156,7 +205,7 @@ export async function runAgent<S extends z.ZodType>(
   const parsed = params.schema.safeParse(gen.output)
   if (!parsed.success) {
     await record("error", gen, null)
-    log.warn("agents.saida_invalida", { agent: params.agent, issues: parsed.error.issues.slice(0, 3) })
+    log.warn("agents.saida_invalida", { agent: params.agent, model, issues: parsed.error.issues.slice(0, 3) })
     throw new HTTPException(502, { message: "A resposta do copiloto veio incompleta. Tente de novo." })
   }
   const runId = await record("ok", gen, parsed.data)

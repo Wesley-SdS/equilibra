@@ -111,7 +111,7 @@ export async function listeningStatus(db: Db, slug: string) {
   const company = await db.query.companies.findFirst({ where: eq(companies.slug, slug) })
   if (!company) throw new HTTPException(404, { message: "Espaço não encontrado" })
   const ent = entitlements(company)
-  const available = listeningPlatformEnabled(company.slug) && company.listeningEnabled && !ent.readOnly && ent.plan.id !== "essencial" && agentsAvailable()
+  const available = listeningPlatformEnabled(company.slug) && company.listeningEnabled && !ent.readOnly && ent.plan.id !== "essencial" && agentsAvailable("listening")
   return { company, available }
 }
 

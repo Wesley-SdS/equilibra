@@ -34,12 +34,15 @@
 | `RESEND_API_KEY` | para e-mail real | chave do Resend |
 | `EMAIL_FROM` | com Resend | `Equilibra <nao-responda@seudominio.com.br>` (domínio verificado no Resend) |
 
-| `ANTHROPIC_API_KEY` | não | chave da Anthropic para os copilotos; sem ela, os copilotos usam o AI Gateway (OIDC na Vercel ou `AI_GATEWAY_API_KEY`) |
-| `AGENT_MODEL` | não | modelo dos copilotos; padrão `claude-opus-5-5` (direto) ou `anthropic/claude-opus-5.5` (Gateway) |
+| `ANTHROPIC_API_KEY` / `GOOGLE_GENERATIVE_AI_API_KEY` / `OPENAI_API_KEY` | não | chave direta do provedor do modelo de cada agente; sem a chave do provedor, a chamada vai pelo AI Gateway (OIDC na Vercel ou `AI_GATEWAY_API_KEY`), que atende os três |
+| `AGENT_MODEL` | não | modelo padrão dos agentes no formato `provedor/modelo` (ids do AI Gateway), ex.: `anthropic/claude-sonnet-5.5`, `google/gemini-3.8-flash`, `openai/gpt-6-luna`. Padrão: `anthropic/claude-opus-5.5` |
+| `AGENT_MODEL_<AGENTE>` | não | modelo de um agente específico, sobrepõe `AGENT_MODEL`: `AGENT_MODEL_IMPORT_EXTRACTOR`, `AGENT_MODEL_QUESTIONNAIRE_COPILOT`, `AGENT_MODEL_PLAN_COPILOT`, `AGENT_MODEL_CHANNEL_COPILOT`, `AGENT_MODEL_REPORT_SUMMARY`, `AGENT_MODEL_LISTENING`. O modelo da escuta só muda depois de rodar `scripts/eval-escuta.ts` com ele e o RT aprovar |
 | `AGENTS_DISABLED` | não | `1` desliga todos os copilotos (as telas seguem no fluxo manual) |
 | `ESCUTA_ENABLED` | não | `1` libera o Espaço de escuta para todas as empresas. **Só ligar depois do parecer jurídico, do RIPD assinado e da aprovação do psicólogo responsável técnico** (decisão 8 do PRD v2; `docs/escuta-protocolo-rt.md`); cada empresa ainda precisa ativar |
 | `ESCUTA_PILOT_COMPANIES` | não | piloto fechado: slugs das empresas separados por vírgula (ex.: `padaria-sol,metal-norte`). Vale sem `ESCUTA_ENABLED` |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | não | importação direta do Google Forms (OAuth, escopos `forms.body.readonly` e `forms.responses.readonly`). No Google Cloud, cadastre a URI de redirecionamento `{APP_URL}/api/google/callback`. Sem elas, o Forms é importado pela planilha de respostas |
+
+> **Provedores de IA e LGPD.** Use só contas pagas ou o AI Gateway: a camada gratuita da API do Gemini pode usar os dados para melhorar os produtos do Google, o que contraria a política de privacidade ("sem uso dos dados para treinamento"). Cada provedor novo é um suboperador: confira o DPA dele e a transferência internacional (Res. CD/ANPD 19/2024) antes de apontar um agente para ele.
 
 Sem `RESEND_API_KEY`, o app funciona, mas os e-mails não são enviados (só registrados no log). Sem credencial de IA, os copilotos somem das telas e o resumo do relatório é montado por regras.
 

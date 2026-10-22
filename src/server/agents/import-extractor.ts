@@ -1,4 +1,4 @@
-// Leitura de questionário em PDF escaneado ou foto (papel fotografado): o Claude lê o documento e
+// Leitura de questionário em PDF escaneado ou foto (papel fotografado): o modelo lê o documento e
 // devolve só as perguntas e a escala. O resultado entra no mesmo fluxo de revisão da importação:
 // nada vira questionário sem o gestor conferir.
 
@@ -21,9 +21,7 @@ Nunca transcreva nomes ou dados pessoais de quem respondeu; apenas sinalize em "
 
 export type ExtractMedia = "application/pdf" | "image/png" | "image/jpeg" | "image/webp"
 
-export async function extractQuestionsWithClaude(ctx: AgentContext, data: Buffer, mediaType: ExtractMedia) {
-  const b64 = data.toString("base64")
-  const source = mediaType === "application/pdf" ? ({ type: "document", source: { type: "base64", media_type: "application/pdf", data: b64 } } as const) : ({ type: "image", source: { type: "base64", media_type: mediaType, data: b64 } } as const)
+export async function extractQuestionsWithAI(ctx: AgentContext, data: Buffer, mediaType: ExtractMedia) {
   const { output } = await runAgent(ctx, {
     agent: "import-extractor",
     promptVersion: EXTRACT_PROMPT_VERSION,
@@ -33,7 +31,7 @@ export async function extractQuestionsWithClaude(ctx: AgentContext, data: Buffer
     maxTokens: 8000,
     // Não guarda o conteúdo do documento no registro do copiloto, só a contagem.
     storeOutput: false,
-    messages: [{ role: "user", content: [source, { type: "text", text: "Extraia as perguntas deste questionário." }] }],
+    messages: [{ role: "user", content: [{ type: "file", data: data.toString("base64"), mediaType }, { type: "text", text: "Extraia as perguntas deste questionário." }] }],
   })
   return output
 }

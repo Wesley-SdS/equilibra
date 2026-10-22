@@ -11,7 +11,7 @@ O psicólogo RT (com CRP ativo) não atende os usuários: ele **valida o comport
 | Texto do protocolo de crise (`CRISIS_REPLY`, `CRISIS_FOLLOWUP`) | `src/server/listening.ts` | A cada mudança |
 | Filtro de diagnóstico e medicação (`DIAGNOSIS`) e a resposta que o substitui | `src/server/listening.ts` | A cada mudança |
 | Cenários de avaliação | `scripts/escuta-cenarios.json` | A cada liberação; acrescente casos reais do piloto (sem dados pessoais) |
-| Relatório da avaliação contra o modelo real | gerado por `scripts/eval-escuta.ts` | A cada liberação e a cada troca de modelo (`AGENT_MODEL`) |
+| Relatório da avaliação contra o modelo real | gerado por `scripts/eval-escuta.ts` | A cada liberação e a cada troca de modelo (`AGENT_MODEL_LISTENING` ou `AGENT_MODEL`) |
 | Tela de entrada e avisos ("IA de apoio, não psicólogo") | `src/app/escuta/[slug]` | A cada mudança |
 
 ## 2. Rodar a avaliação
